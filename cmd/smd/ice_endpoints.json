@@ -1,0 +1,35 @@
+{
+	"RedfishEndpoints": [
+		{
+			"ID": "x0c0s7b0",
+			"FQDN": "x0c0s7.ice.next.cray.com",
+			"User": "root",
+			"Password": "********"
+		}, {
+			"ID": "x0c0s8b0",
+			"FQDN": "x0c0s8.ice.next.cray.com",
+			"User": "root",
+			"Password": "********"
+		}, {
+			"ID": "x0c0s9b0",
+			"FQDN": "x0c0s9.ice.next.cray.com",
+			"User": "root",
+			"Password": "********"
+		}, {
+			"ID": "x0c0s10b0",
+			"FQDN": "x0c0s10.ice.next.cray.com",
+			"User": "root",
+			"Password": "********"
+		}, {
+			"ID": "x0c0s11b0",
+			"FQDN": "x0c0s11.ice.next.cray.com",
+			"User": "root",
+			"Password": "********"
+		}, {
+			"ID": "x0c0s12b0",
+			"FQDN": "x0c0s12.ice.next.cray.com",
+			"User": "root",
+			"Password": "********"
+		}
+	]
+}

@@ -1,0 +1,585 @@
+
+== Examples
+
+_Note: The examples below assume that the requests go through the API gateway (https//api-gw-service-nmn.local/apis/smd/...).  The apis/smd portion of the URL is added by the gateway and is not part of the internal endpoint URI that HSM sees._
+
+=== Add/Query/Delete Redfish Endpoints
+==== Manually Add a RedfishEndpoint
+NOTE: Automated processes now create RedfishEndpoints for many controllers in the system.  For those components that do not have endpoints created automatically, or to force-add components, the inventory discovery process can be bootstrapped by entering the controller endpoint(s) manually as follows.
+
+A valid River BMC will have the format x(cab-num)c(chassis-0-only-for-River)s(highest-slot-number-enclosure-occupies)b(BMC-number).  e.g. x1c0s4b0.  If a chassis has 4 nodes, each with their own BMCs, then use x1c0s4b[0-3].  If each manages a single node, the 4 node xnames will then be x1c0s4b[0-3]n0
+
+If hostname of the BMC FQDN is a valid BMC xname, the RedfishEndpoint ID field will be filled in automatically.  Otherwise, an explicit ID field must be supplied in the form of a valid BMC xname.   The FQDN may also be an IP address, but this supplies no domain for the RedfishEndpoint, and so no domain will be used for the node management interface FQDN.
+
+NOTE: Setting "RediscoverOnUpdate":true will automatically start inventory discovery when the node is added, removing the need for it to be manually triggered.
+
+* _Case 1: FQDN already contains a valid BMC name_
+
+    curl -d '{"FQDN": "x0c0s14b0.mgmt.domain.name.com", "RediscoverOnUpdate":true}' -H "Content-Type: application/json" -X POST https://api-gw-service-nmn.local/apis/smd/hsm/v1/Inventory/RedfishEndpoints
+
+* _Case 2: FQDN has right domain but is not a BMC/controler name.  ID must be given explicitly along with FQDN_
+
+    curl -d '{"ID": "x0c0s14b0","FQDN": "somebmcname.mgmt.domain.name.com", "RediscoverOnUpdate":true}' -H "Content-Type: application/json" -X POST https://api-gw-service-nmn.local/apis/smd/hsm/v1/Inventory/RedfishEndpoints
+
+
+* _Case 3: If a valid xname ID is given, FQDN also may be an IP address, but then there will be no domain name info for BMC or node's mgmt network FQDN in HSM_
+
+    curl -d '{"ID": "x0c0s14b0","FQDN": "10.100.164.207", "RediscoverOnUpdate":true}' -H "Content-Type: application/json" -X POST https://api-gw-service-nmn.local/apis/smd/hsm/v1/Inventory/RedfishEndpoints
+
+
+* _Case 4: Add named array of RedfishEndpoints via json file (all at once).  The array in the file should also be entitled "RedfishEndpoints"_
+
+    curl -d "@crush_endpoints.json" -H "Content-Type: application/json" -X POST https://api-gw-service-nmn.local/apis/smd/hsm/v1/Inventory/RedfishEndpoints
+
+==== Query the Collection of RedfishEndpoints
+
+* _Check endpoints after adding them via POST_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/Inventory/RedfishEndpoints
+
+This produces a named array, RedfishEndpoints, that contains all
+Redfish endpoints currently known.
+
+==== Query a Particular RedfishEndpoint
+
+* _Get a particular RedfishEndpoint by its xname ID_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/Inventory/RedfishEndpoints/x0c0s27b0
+
+==== Delete RedfishEndpoints
+
+* _Delete all RedfishEndpoints known to the system_
+    curl -X DELETE https://api-gw-service-nmn.local/apis/smd/hsm/v1/Inventory/RedfishEndpoints
+
+
+* _Delete a single RedfishEndpoint_
+    curl -X DELETE https://api-gw-service-nmn.local/apis/smd/hsm/v1/Inventory/RedfishEndpoints/x0c0s27b0
+
+Note that this also deletes any
+ComponentEndpoints that link to it if it has already been discovered.
+
+==== Retrieve RedfishEndpoint
+
+To bootstrap the discovery of components, we must know not only how to contact each RedfishEndpoint (which runs on a BMC or BMC-like controller), but also where precisely in the system the component is.  The xname identifies the location of all components in the system, including chassis, controllers, nodes, and so on.
+
+* _Get endpoint at specified xname_
+
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/Inventory/RedfishEndpoints/x0c0s16b0
+
+_Output_
+
+    {
+       "ID" : "x0c0s16b0",
+       "Type" : "NodeBMC",
+       "Enabled" : true,
+       "UseSSDP" : false,
+       "Hostname" : "x0c0s16b0",
+       "User" : "root",
+       "Password" : "calvin",
+       "FQDN" : "x0c0s16b0.some.domain.com",
+       "Domain" : "some.domain.com",
+       "MACRequired" : false,
+       "RediscoverOnUpdate" : true,
+       "DiscoveryInfo" : {
+          "LastDiscoveryAttempt" : "2018-09-07T17:23:43.362583Z",
+          "RedfishVersion" : "1.0.2",
+          "LastDiscoveryStatus" : "DiscoverOK"
+       }
+    }
+
+=== Inventory Discovery
+
+Once the RedfishEndpoint objects are created (either initially by hand, or by an upcoming process that will add them automatically), inventory discovery will query these controllers and create or update management plane and managed plane objects representing the components (e.g. nodes, node enclosures, node cards for future Mountain chassis CMM endpoints).
+
+Inventory discovery is a non-blocking operation.  A URI to a DiscoveryStatus objects will be returned instead and can then be polled to determine when the operation is complete.
+
+==== Initiate Inventory Discovery
+
+* _Start Inventory Discovery of system's subcomponents by querying ALL RedfishEndpoints_
+    curl -d '{}'  -H "Content-Type: application/json" -X POST https://api-gw-service-nmn.local/apis/smd/hsm/v1/Inventory/Discover
+
+* _Discover inventory info for just the given RedfishEndpoints and not the whole set_
+    curl -d '{"xnames": ["x0c0s26b0","x0c0s27b0"]}'  -H "Content-Type: application/json" -X POST https://api-gw-service-nmn.local/apis/smd/hsm/v1/Inventory/Discover
+
+If for some reason, a discovery operation completes abnormally and never completes, forcing an inventory operation to start is possible.  However, care should be taken not to start multiple queries on any endpoint or one or both may fail.
+
+* _Force inventory_
+    curl -d '{"force": true}'  -H "Content-Type: application/json" -X POST https://api-gw-service-nmn.local/apis/smd/hsm/v1/Inventory/Discover
+
+
+==== Check Inventory Discovery Status
+The discovery operation will return a link to a DiscoveryStatus object.  Read it to see if the operation is complete.
+
+
+* _Check discovery status_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/Inventory/DiscoveryStatus/0
+
+Also, to check the status of discovery for each individual endpoint, you can re-query the RedfishEndpoint objects and check their read-only DiscoveryStatus fields (this is usual query of the RedfishEndpoint collection, but there will be updates to read-only fields following discovery).
+
+* _Check discovery status (individual endpoints)_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/Inventory/RedfishEndpoints
+
+
+=== Query Component Endpoints
+
+Component Endpoints are created during inventory discovery.  They are the management-plane representation of system components and are linked to the parent RedfishEndpoint.  They provide a glue layer to bridge the higher-level representation of a component with how it is represented locally by Redfish.
+
+The collection of ComponentEndpoints can be obtained in full, optionally filtered on certain criteria (e.g. obtain just Node components), or accessed by their xname IDs individually.
+
+
+* _Get ComponentEndpoint at xname_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/Inventory/ComponentEndpoints/x0c0s16b0n0
+
+_Output_
+
+    {
+       "ID" : "x0c0s16b0n0",
+       "Type" : "Node",
+       "RedfishType" : "ComputerSystem",
+       "RedfishSubtype" : "Physical",
+       "OdataID" : "/redfish/v1/Systems/System.Embedded.1",
+       "MACAddr" : "18:66:da:be:3b:fa",
+       "FQDN" : "x0c0s16b0n0.some.domain.com",
+       "Domain" : "some.domain.com",
+       "Enabled" : true,
+       "ComponentEndpointType" : "ComponentEndpointComputerSystem",
+       "UUID" : "4c4c4544-004e-5910-8036-cac04f484b32",
+       "RedfishEndpointFQDN" : "x0c0s16b0.some.domain.com",
+       "RedfishEndpointID" : "x0c0s16b0",
+       "RedfishURL" : "x0c0s16b0.some.domain.com/redfish/v1/Systems/System.Embedded.1",
+       "RedfishSystemInfo" : {
+          "Name" : "System"
+          "EthernetNICInfo" : [
+             {
+                "PermanentMACAddress" : "18:66:da:be:3b:f6",
+                "Description" : "Integrated NIC 1 Port 1 Partition 1",
+                "MACAddress" : "18:66:da:be:3b:f6",
+                "@odata.id" : "/redfish/v1/Systems/System.Embedded.1/EthernetInterfaces/NIC.Integrated.1-1-1",
+                "RedfishId" : "NIC.Integrated.1-1-1"
+             },
+             {
+                "RedfishId" : "NIC.Integrated.1-2-1",
+                "MACAddress" : "18:66:da:be:3b:f8",
+                "@odata.id" : "/redfish/v1/Systems/System.Embedded.1/EthernetInterfaces/NIC.Integrated.1-2-1",
+                "Description" : "Integrated NIC 1 Port 2 Partition 1",
+                "PermanentMACAddress" : "18:66:da:be:3b:f8"
+             },
+             {
+                "PermanentMACAddress" : "18:66:da:be:3b:fa",
+                "Description" : "Integrated NIC 1 Port 3 Partition 1",
+                "RedfishId" : "NIC.Integrated.1-3-1",
+                "MACAddress" : "18:66:da:be:3b:fa",
+                "@odata.id" : "/redfish/v1/Systems/System.Embedded.1/EthernetInterfaces/NIC.Integrated.1-3-1"
+             }
+          ]
+       }
+    }
+
+==== Obtain the Collection of All ComponentEndpoints
+
+* _Obtain the complete set of ComponentEndpoints (e.g. post-discovery) as a named array, with no filtering_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/Inventory/ComponentEndpoints
+
+* _Filter 1: Obtain only the ComponentEndpoints that have a particular RedfishEndpoint as their parent_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/Inventory/ComponentEndpoints?redfish_ep=x0c0s27b0
+
+* _Filter 2: Obtain just the ComponentEndpoints with a given type (in this case just the nodes)_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/Inventory/ComponentEndpoints?type=Node
+
+* _Combining multiple query options is also allowed.  In this case, the query types are treated as a logical AND_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/Inventory/ComponentEndpoints?redfish_ep=x0c0s27b0\&type=Node
+
+This would produce only the Node ComponentEndpoint types found when discovering RedfishEndpoint x0c0s27b0.
+
+==== Query a Particular ComponentEndpoint by ID
+The object representing a particular ComponentEndpoint can also be obtained via its xname ID.
+
+* _Obtain component endpoint by xname ID_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/Inventory/ComponentEndpoints/x0c0s27b0n0
+
+==== Delete ComponentEndpoints
+Delete all ComponentEndpoints known to the system, e.g. prior to completely rediscovering the system.  Note that this does NOT delete any parent RedfishEndpoints.
+
+
+* _Delete all component endpoints_
+    curl -X DELETE https://api-gw-service-nmn.local/apis/smd/hsm/v1/Inventory/ComponentEndpoints
+
+* _Delete a single ComponentEndpoint.  Does not delete the parent RedfishEndpoint_
+    curl -X DELETE https://api-gw-service-nmn.local/apis/smd/hsm/v1/Inventory/ComponentEndpoints/x0c0s27b0n0
+
+
+=== Query and Update HMS Component Info (State/NID Info)
+
+HMS Components are the object that includes the information commonly retrived using xtcli status on XC.  They hide all Redfish-level info, are suitable for sharing with the managed plane, and provide a higher-level HMS representation of the component, including State, NID, Role (i.e. compute/service), Subtype, and so on.   As only nodes have NIDs, like all objects presented here, the main ID is the xname, but some filtering options allow for filtering on the NIDs or a NID range.
+
+HMS Components are also created during inventory discovery.  Unlike ComponentEndpoints, however, they are not strictly linked to the parent RedfishEndpoint, and are not automatically deleted when the RedfishEndpoints are (though they can be deleted via a separate call).  This is because these components can also represent abstract components, such as removed components (e.g. which would remain, but have their states changed to "Empty" upon removal).
+
+
+* _Get HMS Component information_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/State/Components/x0c0s16b0n0
+
+_Output_
+
+    {
+        "NID" : 16,
+        "State" : "On",
+        "ID" : "x0c0s16b0n0",
+        "Type" : "Node",
+        "NetType" : "Sling",
+        "Flag" : "OK",
+        "Role" : "Compute",
+        "Arch" : "X86"
+    }
+
+==== Query HMS Component Info
+Get all HMS Components found by inventory discovery as a named ("Components") array.
+
+* _Get all HMS components_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/State/Components
+
+* _Get a particular HMS Component by its xname ID_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/State/Components/x0c0s27b0n0
+
+* _Get a particular HMS component by its NID (Nodes alone have NIDs)_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/State/Components/ByNID/832
+
+
+* _Use filtering options. Just get the "Node" typed components_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/State/Components?type=Node
+
+
+The complete list of currently supported filter parameters is as follows:
+
+    type:      Retrieve all Components with the given HMS type (e.g. Node)
+    state:     Retrieve all Components with the given HMS state (e.g. Ready, On, Off)
+    flag:      Retrieve all Components with the given HMS flag value.
+    role:      Retrieve all Components (i.e. nodes) with the given HMS role
+    subtype:   Retrieve all Components with the given HMS subtype (if populated)
+    arch:      Retrieve all Components with the given architecture.
+    nid:       Retrieve all Components (i.e. one node) with the given integer NID
+    nid_start: Retrieve all Components (i.e. nodes) with NIDs equal to or greater than the provided integer.
+    nid_end:   Retrieve all Components (i.e. nodes) with NIDs less than or equal to the provided integer.
+    partition  Retrieve all Components in the given partition (if one group also given, works as group && partition)
+    group      Retrieve all Components in the given group (if one partition also given, works as group && partition)
+
+Combining multiple query options is also allowed.  In this case, the query types are treated as a logical AND. So the following command
+provides only components of type Node whose NIDs are greater than or equal to 1 and less than or equal to 850.
+
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/State/Components?type=Node\&nid_start=1\&nid_end=850
+
+
+==== Delete HMS Components
+
+* _Delete all HMS Components known to the system_
+    curl -X DELETE https://api-gw-service-nmn.local/apis/smd/hsm/v1/State/Components
+
+As noted, these are NOT automatically deleted when RedfishEndpoints or ComponentEndpoints are deleted.
+
+
+* _Delete just a single Component with the given xname ID_
+    curl -X DELETE https://api-gw-service-nmn.local/apis/smd/hsm/v1/State/Components/x0c0s27b0n0
+
+CAUTION: Not recommended in normal operation.
+
+==== Modify HMS Component Info (e.g. State Changes)
+Normally, all of the above info is static, set only during inventory discovery.  However, HMS Components are intended to change dynamically outside of discovery as system operations proceed, an obvious example being state changes.
+
+These are PATCH operations and each modifies a only a given field or fields, leaving the others unaffected.  As certain types of changes trigger certain types of activity, simply replacing the entire object with a PUT (and thus potentially doing several different types of updates at once) is not allowed.
+
+===== Modify State and Flag Value
+
+* _Patch the State and Flag (Flag field is optional here, and defaults to OK if omitted)_
+    curl -X PATCH -d '{"State": "Ready", "Flag": "OK"}' https://api-gw-service-nmn.local/apis/smd/hsm/v1/State/Components/x0c0s27b0n0/StateData
+
+State values include the following:
+
+    Unknown:   Could not get State, perhaps because we can't access the monitoring
+               endpoint.
+    Empty:     Component is no longer populated.
+    Populated: Component is present, but state is not being actively monitored
+    Off:       Component is powered off
+    On:        Component is powered on
+    Ready:     Component is powered on and is fully booted and heartbeating
+               Ready for jobs.
+    Standby:   Component began booting but is not yet (or is no longer) booted.
+               Still booting (if Flag=OK), no Heartbeat and declared dead (if Alert)
+    Halt:      Component has been halted and is no longer running.
+               Flag indicates normal/abnormal halt.
+
+Flag values are one of the following:
+
+    OK:      The transition to the current state occurred normally.
+    Warning: Some abnormal activity has been detected, but nothing has failed yet.
+             It may pass or turn into an alert.
+    Alert:   The transition to the current state happened as a result of some
+             kind of error.
+
+===== Flag Only:
+* _Patch the Health Status Flag only - State is not modified_
+    curl -X PATCH -d '{"Flag": "OK"}' https://api-gw-service-nmn.local/apis/smd/hsm/v1/State/Components/x0c0s27b0n0/FlagOnly
+
+
+===== Node Role
+
+* _Patch the Role of a node (e.g. Compute or NCN type, for example Storage)_
+    curl -X PATCH -d '{"Role": "Compute"}' https://api-gw-service-nmn.local/apis/smd/hsm/v1/State/Components/x0c0s27b0n0/Role
+
+
+===== NID
+You can patch the NID field, but currently the NID assigned during inventory discovery will overwrite it if inventory discovery is run again (so it needs to be changed back after each one). NOTE: this is not necessarily the long-term way to manage changes to NIDs.
+
+* _Patch the NID field_
+    curl -X PATCH -d '{"NID": 27}'   https://api-gw-service-nmn.local/apis/smd/hsm/v1/State/Components/x0c0s27b0n0/NID
+
+=== Component Groups, Partitions, and Memberships
+==== Groups
+
+Groups are groupings of the components in /hsm/v1/State/Components, usually
+nodes.  Components can be members of any number of groups, but if a group
+has exclusiveGroup=<excl-label> set, then a node may only be a member of one
+group that matches that exclusive label.  For example, if the exclusive group
+label 'colors' is associated with groups 'blue', 'red' and 'green', then a
+component that is part of 'green' could not also be placed in 'red' (hence
+the 'exclusive' moniker).
+
+_Sample Group (contains optional fields tags and exclusiveGroup)_
+
+    {
+        "label" : "blue",
+        "description" : "blue node group",
+        "tags" : [
+           "tag1",
+           "tag2"
+        ],
+        "members" : {
+            "ids" : [
+                "x0c0s0b0n0",
+                "x0c0s0b0n1",
+                "x0c0s0b1n0",
+                "x0c0s0b1n1"
+            ]
+        },
+        "exclusiveGroup" : "colors"
+    }
+
+===== Creating a New Group
+
+A group is basically defined by it's members list and identifying label. It
+is also possible to add a description and a free form set of tags to help
+organize groups.
+
+The members list can be set initially with the full list of member ids, or
+can begin empty and have component ids added individually through the operations
+on its members object (see below).
+
+* _Create a new non-exclusive group with an empty members list and two (optional) tags_
+    curl -X POST -d '{"label":"grp1", "tags":["tag1","tag2"], "description":"node group 1"}' https://api-gw-service-nmn.local/apis/smd/hsm/v1/groups
+
+
+* _Create a new group with a pre-set members list, and which is part of the 'colors' exclusive group_
+    curl -X POST -d '{"label": "blue", "description":"blue node group", "exclusiveGroup":"colors","members":{"ids":["x0c0s0b0n0","x0c0s0b0n1","x0c0s0b1n0","x0c0s0b1n1"]}}' https://api-gw-service-nmn.local/apis/smd/hsm/v1/groups
+
+===== Retrieving a Group
+
+This retrieves the complete group object, i.e. as would be submitted when the
+group was created (above), except up-to-date with any additions or deletions
+from the members set.
+
+
+* _Retrieve all fields for the just-created blue group, including the members list_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/groups/blue
+
+===== Deleting a Group
+
+This removes the group entirely.  It's label will no longer exist, and will
+be removed from all members who were formerly a part of it.
+
+* _Delete the just-created blue group_
+    curl -X DELETE https://api-gw-service-nmn.local/apis/smd/hsm/v1/groups/blue
+
+==== Group Members
+
+The members object in the group definition has additional actions available
+for managing the members after the group has been created.
+
+_Sample Output_
+
+    {
+        "ids" : [
+            "x0c0s0b0n0","x0c0s0b0n1","x0c0s0b1n0","x0c0s0b1n1"
+        ]
+    }
+
+===== Retrieve Members
+
+* _Retrieve just the members array for the blue group_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/groups/blue/members
+
+* _Retrieve only the members of blue that are ALSO in partition p1_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/groups/blue/members?partition=p1
+
+* _Retrieve only the members of blue that are NOT in ANY partition currently_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/groups/blue/members?partition=NULL
+
+===== Add Component to Group
+
+Add a single new component to a group.  The only time this is not permitted
+is if the component already exists, or the group has an exclusiveGroup label
+and the component is already a member of a group with that exclusive label.
+
+
+* _Add the component 'x1c0s0b0n0' to group 'blue'_
+    curl -X POST -d '{"id":"x1c0s0b0n0"}' https://api-gw-service-nmn.local/apis/smd/hsm/v1/groups/blue/members
+
+===== Remove Group Member
+
+This removes a single member with the given xname id from the given group.
+
+* _Delete the component 'x1c0s0b0n0' from group 'blue'_
+    curl -X DELETE https://api-gw-service-nmn.local/apis/smd/hsm/v1/groups/blue/members/x1c0s0b0n0
+
+==== Partitions
+
+Partitions are basically a special kind of group.  They are non-overlapping and
+each component can be a member of (at most) one, in constrast to groups where
+many memberships are possible.  Partitions have a specific predefined meaning,
+intended to logically divide a single physical system.  This is in constrast
+to groups which are be created in an ad-hoc manner for whatever needs arise.
+
+_Sample Partition (contains optional field tags)_
+
+    {
+        "name" : "partition 1",
+        "description" : "partition 1",
+        "tags" : [
+           "tag2"
+        ],
+        "members" : {
+            "ids" : [
+                "x0c0s0b0n0",
+                "x0c0s0b0n1",
+                "x0c0s0b1n0",
+                "x0c0s0b1n1"
+            ]
+        },
+    }
+
+===== Creating a New Partition
+
+Creating partitions is very similar to creating groups.  Members can be
+provided in an initial list, or can be initially empty and added to later.
+There is no exclusiveGroups field because partition memberships are always
+exclusive (at most one partition of any name for a given component).
+
+
+* _Create a new partition with an empty members list and two optional tags_
+    curl -X POST -d '{"name":"partition1", "tags":["tag1","tag2"], "description":"node partition 1"}' https://api-gw-service-nmn.local/apis/smd/hsm/v1/partitions
+
+* _Create a new partition with a pre-set members list_
+    curl -X POST -d '{"name": "partition1", "description":"node partition1","members":{"ids":["x0c0s0b0n0","x0c0s0b0n1","x0c0s0b1n0","x0c0s0b1n1"]}}' https://api-gw-service-nmn.local/apis/smd/hsm/v1/partitions
+
+===== Retrieving a Partition
+
+Get all partition info by partition name.  Very similar to how groups are
+retrieved and modified.
+
+
+* _Retrieve all fields for the just-created partition1 partition, including the members list_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/partitions/partition1
+
+===== Deleting a Partition
+
+This deletes the partition in its entirety.  The former members will now have
+no partition assigned to them and are ready to be assigned to a new partition.
+
+
+* _Delete the just-created partition1 partition, so all members are no longer in it_
+    curl -X DELETE https://api-gw-service-nmn.local/apis/smd/hsm/v1/partitions/partition1
+
+==== Partition Members
+
+Like groups, POSTs and DELETEs to this endpoint of an existing partition can be
+used to change the members set for the partition.
+
+_Sample Output_
+    {
+        "ids" : [
+            "x0c0s0b0n0","x0c0s0b0n1","x0c0s0b1n0","x0c0s0b1n1"
+        ]
+    }
+
+===== Retrieve Members
+
+Again, very similar to how group members are retrieved and modified,
+except that there are no filtering options (but there are partition and
+group filtering parameters (among others) for the /hsm/v1/State/Components and
+/hsm/v1/memberships collections, with both essentially working the same way).
+
+
+* _Retrieve just the members array for the 'partition1' partition_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/partitions/partition1/members
+
+===== Add Component to PartitioSamplen
+
+Adds a single component to a partition's members list, assuming it is not
+already a member, or in another partition.  In other words, the component
+should not presently be in any partition.  Something that can be verified
+by looking at it's memberships info (see /memberships below).
+
+
+* _Add the component 'x1c0s0b0n0' to 'partition1'_
+    curl -X POST -d '{"id":"x1c0s0b0n0"}' https://api-gw-service-nmn.local/apis/smd/hsm/v1/partitions/partition1/members
+
+===== Remove Partition Member
+
+Remove a single component from a partition (presuming it is a current member).
+It will no longer be in any partition and is free to be assigned to a new one.
+
+
+* _Delete the component 'x1c0s0b0n0' from partition 'partition1'_
+    curl -X DELETE https://api-gw-service-nmn.local/apis/smd/hsm/v1/partitions/partition1/members/x1c0s0b0n0
+
+==== Memberships
+
+Memberships are a read-only resource that is generated automatically by changes
+to groups and partitions.  Each component in State/Component is represented
+and the same filter options can be used to prune the list, or a specific
+component xname id can be given.   All groups and the partition (if any) of
+each component are listed.
+
+_Example Membership_
+
+    {
+        "id" : "x2c3s0b0n0",
+        "groupLabels" : [
+           "grp1",
+           "red",
+           "my_nodes"
+         ],
+         "partitionName" : "partition2"
+    }
+
+===== Retrieve component group and partition memberships
+
+By default, the memberships collection contains all components, whether in
+any groups or not, but more frequently a filtered subset will be desired.
+Querying the memberships collection supports the same query options as
+/hsm/v1/State/Components (see above).
+
+
+* _Retrieve all component memberships_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/memberships
+
+* _Retrieve component memberships filtered by type=node_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/memberships?type=node
+
+* _Retrieve only nodes not in any partition_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/memberships?type=node\&partition=NULL
+
+
+===== Revieve group and partition membership data for a given component
+
+Any component in /hsm/v1/State/Components can have it's group and memberships
+(if any) looked up by individual xname.
+
+
+* _Retrieve group and partition membership for node x0c0s0b0n0_
+    curl https://api-gw-service-nmn.local/apis/smd/hsm/v1/memberships/x0c0s0b0n0

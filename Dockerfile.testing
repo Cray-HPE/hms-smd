@@ -1,0 +1,9 @@
+# Copyright 2019-2020 Hewlett Packard Enterprise Development LP
+
+FROM cray/smd-base
+
+# Run unit tests...
+RUN set -ex && \
+    go test -v stash.us.cray.com/HMS/hms-smd/cmd/smd && \
+    go test -v stash.us.cray.com/HMS/hms-smd/internal/./... && \
+    go test -v stash.us.cray.com/HMS/hms-smd/pkg/./...

@@ -1,0 +1,134 @@
+# Please refer to https://stash.us.cray.com/projects/CLOUD/repos/cray-charts/browse/stable/cray-service/values.yaml?at=refs%2Fheads%2Fmaster
+# for more info on values you can set/override
+# Note that cray-service.containers[*].image and cray-service.initContainers[*].image map values are one of the only structures that
+# differ from the standard kubernetes container spec:
+# image:
+#   repository: ""
+#   tag: "" (default = "latest")
+#   pullPolicy: "" (default = "IfNotPresent")
+
+dockerKubectlTag: 0.2.0
+
+schemaStorageClass: ceph-cephfs-external
+schemaAccessMode: ReadWriteMany
+
+hms_ca_uri: ""
+
+cray-service:
+  type: "Deployment"
+  nameOverride: "cray-smd"
+  fullnameOverride: "cray-smd"
+  replicaCount: 3
+  containers:
+    cray-smd:
+      name: "cray-smd"
+      image:
+        repository: "cray/cray-smd"
+      resources:
+        limits:
+          cpu: "4"
+          memory: 4Gi
+        requests:
+          cpu: 500m
+          memory: 256Mi
+      env:
+        # NOTE: overridden if POSTGRES_HOST is set
+        - name: SMD_DBHOST
+          value: cray-smd-postgres
+        # NOTE: overwritten if POSTGRES_PORT is set
+        - name: SMD_DBPORT
+          value: "5432"
+        - name: SMD_DBNAME
+          value: "hmsds"
+        - name: SMD_DBOPTS
+          value: ""
+        - name: SMD_DBUSER
+          valueFrom:
+            secretKeyRef:
+              name: hmsdsuser.cray-smd-postgres.credentials
+              key: username
+        - name: SMD_DBPASS
+          valueFrom:
+            secretKeyRef:
+              name: hmsdsuser.cray-smd-postgres.credentials
+              key: password
+        - name: RF_MSG_HOST
+          value: cray-shared-kafka-kafka-bootstrap.services.svc.cluster.local:9092:cray-dmtf-resource-event
+        - name: TLSCERT
+          value: ""
+        - name: TLSKEY
+          value: ""
+        - name: VAULT_ADDR
+          value: "http://cray-vault.vault:8200"
+        - name: VAULT_SKIP_VERIFY
+          value: "true"
+        - name: SMD_RVAULT
+          value: "true"
+        - name: SMD_WVAULT
+          value: "true"
+        - name: SMD_SLS_HOST
+          value: "http://cray-sls/v1"
+        - name: LOGLEVEL
+          value: "2"
+        - name: SMD_HWINVHIST_AGE_MAX_DAYS
+          value: "365"
+        - name: HMS_CONFIG_PATH
+          value: "/hms_config/hms_config.json"
+        - name: SMD_CA_URI
+          valueFrom:
+            configMapKeyRef:
+              name: smd-cacert-info
+              key: CA_URI
+        - name: SMD_HBTD_HOST
+          value: "http://cray-hbtd/hmi/v1"
+      ports:
+        - name: http
+          containerPort: 27779
+      livenessProbe:
+        httpGet:
+          port: 27779
+          path: /hsm/v1/service/liveness
+        initialDelaySeconds: 5
+        periodSeconds: 10
+      readinessProbe:
+        httpGet:
+          port: 27779
+          path: /hsm/v1/service/ready
+        initialDelaySeconds: 15
+        periodSeconds: 30
+      volumeMounts:
+        - name: hms-config-vol
+          mountPath: /hms_config/
+        - name: cray-pki-cacert-vol
+          mountPath: /usr/local/cray-pki
+  volumes:
+    hms-config-vol:
+      name: hms-config-vol
+      configMap:
+        name: cray-hms-base-config
+        optional: true
+    cray-pki-cacert-vol:
+      name: cray-pki-cacert-vol
+      configMap:
+        name: cray-configmap-ca-public-key
+        optional: true
+  sqlCluster:
+    enabled: true
+    users:
+      hmsdsuser: []
+    databases:
+      hmsds: hmsdsuser
+    volumeSize: 30Gi
+    resources:
+      limits:
+        cpu: "16"
+        memory: 8Gi
+      requests:
+        cpu: 100m
+        memory: 100Mi
+  ingress:
+    enabled: true
+    prefix: "/apis/smd/"
+    uri: "/"
+  podAnnotations:
+    traffic.sidecar.istio.io/excludeOutboundPorts: "8082,9092,2181"

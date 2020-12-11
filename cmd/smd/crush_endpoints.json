@@ -1,0 +1,64 @@
+{
+   "RedfishEndpoints": [
+       {
+            "ID": "x1c0s0b0",
+            "Domain": "us.cray.com",
+            "FQDN": "shastabmc00.us.cray.com",
+            "User": "root",
+            "Password": "********"
+        }, {
+            "ID": "x1c0s1b0",
+            "Hostname": "shastabmc01",
+            "Domain": "us.cray.com",
+            "User": "root",
+            "Password": "********"
+        },{
+            "ID": "x1c0s2b0",
+            "FQDN": "172.30.79.230",
+            "User": "root",
+            "Password": "********"
+        },{
+            "ID": "x0c0s14b0",
+            "FQDN": "x0c0s14.crush.next.cray.com",
+            "User": "root",
+            "Password": "calvin"
+        },{
+            "ID": "x0c0s15b0",
+            "FQDN": "x0c0s16.crush.next.cray.com",
+            "User": "root",
+            "Password": "calvin"
+        },{
+            "ID": "x0c0s18b0",
+            "FQDN": "x0c0s18.crush.next.cray.com",
+            "User": "root",
+            "Password": "calvin"
+        },{
+            "ID": "x0c0s22b0",
+            "Hostname" : "10.100.16.22",
+            "User": "root",
+            "Password": "calvin"
+        },{
+            "ID": "x0c0s24b0",
+            "Hostname": "x0c0s24",
+            "FQDN": "x0c0s24.crush.next.cray.com",
+            "User": "root",
+            "Password": "calvin"
+        },{
+            "ID": "x0c0s25b0",
+            "FQDN": "x0c0s25.crush.next.cray.com",
+            "User": "root",
+            "Password": "calvin"
+        },{
+            "ID": "x0c0s26b0",
+            "FQDN": "x0c0s26.crush.next.cray.com",
+            "User": "root",
+            "Password": "calvin"
+        },{
+            "ID": "x0c0s27b0",
+            "Hostname": "x0c0s27",
+            "Domain": "crush.next.cray.com",
+            "User": "root",
+            "Password": "calvin"
+        }
+    ]
+}

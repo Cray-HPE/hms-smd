@@ -1,0 +1,208 @@
+# Copyright 2019-2020 Hewlett Packard Enterprise Development LP
+
+# Tavern test cases for the Hardware State Manager (HSM) state change notifications (SCN) API.
+# Author: Mitch Schooler
+# Service: Hardware State Manager
+
+# HMS test metrics test cases: 4
+# 1. GET /Subscriptions/SCN API response code
+# 2. GET /Subscriptions/SCN API response body
+# 3. GET /Subscriptions/SCN/{num} API response code
+# 4. GET /Subscriptions/SCN/{num} API response body
+---
+test_name: Ensure that we can gather information from the state change notifications collection
+# drax-ncn-w001:~ # curl -s -S -X GET -H "Authorization: Bearer ${TOKEN}" https://api-gw-service-nmn.local/apis/smd/hsm/v1/Subscriptions/SCN | jq '.'
+# {
+#   "SubscriptionList": [
+#     {
+#       "ID": 1,
+#       "Subscriber": "cray-hmnfd-b59dcfbd8-n6dgx_40",
+#       "Enabled": true,
+#       "Roles": [
+#         "compute",
+#         "service"
+#       ],
+#       "States": [
+#         "Empty",
+#         "Populated",
+#         "Off",
+#         "On",
+#         "Standby",
+#         "Halt",
+#         "Ready"
+#       ],
+#       "Url": "http://cray-hmnfd/hmi/v1/scn"
+#     },
+#     <snip>
+#     {
+#       "ID": 6,
+#       "Subscriber": "cray-hmnfd-b59dcfbd8-mldvq_38",
+#       "SoftwareStatus": [
+#         "dvsavailable",
+#         "dvsunavailable"
+#       ],
+#       "States": [
+#         "ready",
+#         "standby",
+#         "halt"
+#       ],
+#       "Url": "http://cray-hmnfd/hmi/v1/scn"
+#     }
+#   ]
+# }
+#
+# Empty subscriptions list example:
+# C02VF3KDHTD8:~ schooler$ curl -k https://redbull.us.cray.com:30443/apis/smd/hsm/v1/Subscriptions/SCN 2> /dev/null | python -m json.tool
+# {
+#     "SubscriptionList": null
+# }
+
+stages:
+  # 1. GET /Subscriptions/SCN API response code
+  # 2. GET /Subscriptions/SCN API response body
+  - name: Ensure that we can conduct a query on the state change notifications collection
+    request:
+      url: "{base_url}/smd/hsm/v1/Subscriptions/SCN"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      body:
+        $ext:
+          function: tavern.testutils.helpers:validate_pykwalify
+          extra_kwargs:
+            schema:
+              type: map
+              mapping:
+                SubscriptionList:
+                  type: seq
+                  matching: all
+                  sequence:
+                    - type: map
+                      mapping:
+                        Enabled:
+                          type: bool
+                          required: False
+                        ID:
+                          type: int
+                          required: True
+                        Roles:
+                          type: seq
+                          required: False
+                          matching: all
+                          sequence:
+                            - type: str
+                              enum:
+                                - "compute"
+                                - "service"
+                        SoftwareStatus:
+                          type: seq
+                          required: False
+                          matching: all
+                          sequence:
+                            - type: str
+                        States:
+                          type: seq
+                          required: True
+                          matching: all
+                          sequence:
+                            - type: str
+                              enum:
+                                - "Empty"
+                                - "empty"
+                                - "Unknown"
+                                - "unknown"
+                                - "Populated"
+                                - "populated"
+                                - "Off"
+                                - "off"
+                                - "On"
+                                - "on"
+                                - "Standby"
+                                - "standby"
+                                - "Halt"
+                                - "halt"
+                                - "Ready"
+                                - "ready"
+                        Subscriber:
+                          type: str
+                          required: True
+                        Url:
+                          type: str
+                          required: True
+      save:
+        $ext:
+          function: hms_hsm_lib_ncn-resources_remote-resources:get_scn_subscription_first_id
+        body:
+          ID: SubscriptionList
+
+  # 3. GET /Subscriptions/SCN/{num} API response code
+  # 4. GET /Subscriptions/SCN/{num} API response body
+  - name: Ensure that we can conduct a query for a specific ID from the state change notifications collection
+    request:
+      url: "{base_url}/smd/hsm/v1/Subscriptions/SCN/{ID}"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      body:
+        $ext:
+          function: tavern.testutils.helpers:validate_pykwalify
+          extra_kwargs:
+            schema:
+              type: map
+              mapping:
+                Enabled:
+                  type: bool
+                  required: False
+                ID:
+                  type: int
+                  required: True
+                Roles:
+                  type: seq
+                  required: False
+                  matching: all
+                  sequence:
+                    - type: str
+                      enum:
+                        - "compute"
+                        - "service"
+                SoftwareStatus:
+                  type: seq
+                  required: False
+                  matching: all
+                  sequence:
+                    - type: str
+                States:
+                  type: seq
+                  required: True
+                  matching: all
+                  sequence:
+                    - type: str
+                      enum:
+                        - "Empty"
+                        - "empty"
+                        - "Unknown"
+                        - "unknown"
+                        - "Populated"
+                        - "populated"
+                        - "Off"
+                        - "off"
+                        - "On"
+                        - "on"
+                        - "Standby"
+                        - "standby"
+                        - "Halt"
+                        - "halt"
+                        - "Ready"
+                        - "ready"
+                Subscriber:
+                  type: str
+                  required: True
+                Url:
+                  type: str
+                  required: True

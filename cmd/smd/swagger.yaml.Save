@@ -1,0 +1,5158 @@
+swagger: '2.0'
+info:
+  description: >-
+    This is the Hardware State Manager schema
+  version: 1.0.0
+  title: Hardware State Manager
+host: 'hsmserver:8080'
+basePath: /hsm/v1
+schemes:
+  - http
+produces:
+  - application/json
+consumes:
+  - application/json
+tags:
+ - name: Component
+   description: >-
+     High-level component info by xname: state, flag, NID, role, etc.
+ - name: HWInventoryBylocation
+   description: >-
+     Hardware inventory information for the given system location/xname
+ - name: HWInventoryByFRU
+   description: >-
+     This represents a physical piece of hardware with properties specific
+     to a unique component in the system.  The information in this record
+     is constant regardless of where the hardware item is currently in
+     the system (if it is in the system).  If a HWInventoryBylocation
+     entry is currently populated with a piece of hardware, it will have
+     the corresponding HWInventoryByFRU object embedded.  This FRU info can
+     also be looked by by their FRU ID regardless of the current location.
+ - name: HWInventory
+   description: >-
+     HWInventoryByLocation collection containing all components matching
+     the query that was submitted.
+ - name: RedfishEndpoint
+   description: >-
+     This is a BMC or other Redfish controller that has a Redfish entry
+     point and Redfish service root.  It is used to discover the components
+     managed by this endpoint during discovery and handles all Redfish
+     interactions by these subcomponents.  If the endpoint has been discovered,
+     this entry will include the ComponentEndpoint entries for these managed
+     subcomponents.
+     operations 
+ - name: ComponentEndpoint
+   description: >-
+     The Redfish-discovered properties for a component discovered through,
+     and managed by, a RedfishEndpoint, such as a node, blade, and so on.
+     These are obtainable via a discovered RedfishEndpoint or can be
+     looked up by their xnames separately so that just the information
+     for a particular component, e.g. node can be retrieved.  They can
+     also provide a back-reference to the parent endpoint.
+ - name: SystemInformationBlock
+   description: >-
+      A packaging up of relevant Component, HWInventory, HSNType,
+      and HSNInfo structs matching a particular query and delivered as
+      a single data structure.  This provides commonly needed information
+      that may be needed by a large number of endpoints in a single,
+      self-contained object.  While the all of the individual sections,
+      (except for the HSNInfo, which is obtained from the fabric manager)
+      can be queried using the more general APIs for these structures, the
+      SIB offers one-stop-shopping to package up data needed by clients to,
+      for example, bootstrap their initial system state.
+ - name: DiscoveryStatus
+   description: >-
+     Contains information of the status of a discovery operation for clients
+     to query.  A discover operation will return a link or links to such
+     status objects so that it can be determined when the discovery operation
+     is complete.
+ - name: Discover
+   description: >-
+     This is an action to trigger a discovery of system component data
+     by interrogating all (or a subset) of the RedfishEndpoints currently
+     known to the system.
+paths:
+  ########################################################################
+  #
+  # State Component API Calls
+  #
+  ########################################################################
+  /State/Components:
+    get:
+      tags:
+        - Component
+      summary: GET collection of HMS Components
+      description: >-
+        Retrieve State/Components collection in full in the form of a
+        ComponentArray.  Full results can also be filtered by query
+        parameters.  Only the first filter parameter of each type is
+        used and the parameters are applied in an AND fashion.
+        If the collection is empty or the filters have no match, an
+        empty array is returned.
+      operationId: doComponentsGet
+      produces:
+        - application/json
+      parameters:
+        - name: type
+          in: query
+          type: string
+          description: >-
+            Retrieve all Components with the given HMS type.
+        - name: state
+          in: query
+          type: string
+          description: >-
+            Retrieve all Components with the given HMS state.
+        - name: flag
+          in: query
+          type: string
+          description: >-
+            Retrieve all Components with the given HMS flag value.
+        - name: role
+          in: query
+          type: string
+          description: >-
+            Retrieve all Components (i.e. nodes) with the given HMS role
+        - name: subtype
+          in: query
+          type: string
+          description: >-
+            Retrieve all Components with the given HMS subtype.
+        - name: arch
+          in: query
+          type: string
+          description: >-
+            Retrieve all Components with the given architecture.
+        - name: nid
+          in: query
+          type: string
+          description: >-
+            Retrieve all Components (i.e. one node) with the given integer NID
+        - name: nid_start
+          in: query
+          type: string
+          description: >-
+            Retrieve all Components (i.e. nodes) with NIDs equal to or greater
+            than the provided integer.
+        - name: nid_end
+          in: query
+          type: string
+          description: >-
+            Retrieve all Components (i.e. nodes) with NIDs less than or equal
+            to the provided integer.
+        # Still in progress
+        - name: partition
+          in: query
+          type: string
+          description: >-
+            Restrict search to the given hard:soft partition.
+        - name: stateonly
+          in: query
+          type: boolean
+          description: >-
+            Return only component state and flag fields (plus xname/id and
+            type).  Results can be modified and used for bulk state/flag-
+            only patch operations.
+        - name: flagonly
+          in: query
+          type: boolean
+          description: >-
+            Return only component flag field (plus xname/id and type).
+            Results can be modified and used for bulk flag-only patch
+            operations.
+        - name: roleonly
+          in: query
+          type: boolean
+          description: >-
+            Return only component role field (plus xname/id and type).
+            Results can be modified and used for bulk role-only patches.
+        - name: nidonly
+          in: query
+          type: boolean
+          description: >-
+            Return only component NID field (plus xname/id and type).
+            Results can be modified and used for bulk NID-only patches.
+      responses:
+        "200":
+          description: >-
+            ComponentArray representing results of query.
+          schema:
+            $ref: '#/definitions/ComponentArray_ComponentArray'
+        "400":
+          description: Bad Request such as invalid argument for filter
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      tags:
+        - Component
+      summary: >-
+        DELETE ALL Components 
+      description: >-
+        Deletes all entries in the Components collection.
+      operationId: doComponentsDeleteAll
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: >-
+            Zero (success) error code - one or more entries deleted.
+            Message contains count of deleted items.
+          schema:
+            $ref: '#/definitions/Error'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist - Collection is empty
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+#  /State/Components/ByNID:
+#    get:
+#      tags:
+#        - Component
+#      summary: GET Component-by-NID Resource IDs Collection
+#      description: >-
+#        This produces a collection of URIs to all Components using their
+#        ByNID path.
+#      operationId: doComponentResourceURIByNIDGet
+#      produces:
+#        - application/json
+#      parameters:
+#        - name: partition
+#          in: query
+#          type: string
+#          description: >-
+#            Restrict search to the given partition.
+#      responses:
+#        "200":
+#          description: Collection of Component Resource IDs.
+#          schema:
+#            $ref: '#/definitions/ComponentByNID.1.0.0_ResourceURICollection'
+#          examples:
+#            application/json:
+#              Name: State Component by NID Collection
+#              Members:
+#                - URI: /hsm/v1/State/Components/ByNID/0
+#                - URI: /hsm/v1/State/Components/ByNID/1
+#              MemberCount: 2
+#        "400":
+#          description: Bad Request
+#          schema:
+#            $ref: '#/definitions/Error'
+#        "404":
+#          description: Does Not Exist
+#          schema:
+#            $ref: '#/definitions/Error'
+#        default:
+#          description: Unexpected error
+#          schema:
+#            $ref: '#/definitions/Error'
+  /State/Components/{xname}:
+    get:
+      tags:
+        - Component
+      summary: GET Component at {xname}
+      operationId: doComponentGet
+      produces:
+        - application/json
+      parameters:
+        - name: xname
+          in: path
+          type: string
+          description: Locational xname of component to return.
+          required: true
+      responses:
+        "200":
+          description: Component entry matching xname/id
+          schema:
+            $ref: '#/definitions/Component.1.0.0_Component'
+        "400":
+          description: Bad Request or invalid xname
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    patch:
+      tags:
+        - Component
+      summary: >-
+        PATCH Component State Data at {xname} 
+      description:
+        Modify the Component.  Without additional modifier in path, default
+        is to update StateData (state and flag) only.  If Flag field is
+        omitted, Flag is reverted to 'OK'.
+      operationId: doCompStateDefault
+      produces:
+        - application/json
+      parameters:
+        - name: xname
+          in: path
+          type: string
+          description: Locational xname of component to set state/flag on.
+          required: true
+        - name: payload
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Component.1.0.0_Patch.StateData'
+      responses:
+        "204":
+          description: Success.
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      tags:
+        - Component
+      summary: DELETE Component with ID {xname}
+      operationId: doComponentDelete
+      produces:
+        - application/json
+      parameters:
+        - name: xname
+          in: path
+          type: string
+          description: Locational xname of Component record to delete.
+          required: true
+      responses:
+        "200":
+          description: Zero (success) error code - Component is deleted.
+          schema:
+            $ref: '#/definitions/Error'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: XName does Not Exist - no matching ID to delete
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /State/Components/ByNID/{nid}:
+    get:
+      tags:
+        - Component
+      summary: GET Component with NID={nid}
+      operationId: doComponentByNIDGet
+      produces:
+        - application/json
+      parameters:
+        - name: nid
+          in: path
+          type: string
+          description: NID of component to return.
+          required: true
+      responses:
+        "200":
+          description: Component entry matching xname/id
+          schema:
+            $ref: '#/definitions/Component.1.0.0_Component'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+#  /State/Components/StateData:
+#    patch:
+#      tags:
+#        - Component
+#      summary: >-
+#        PATCH Multiple Components' State Data via ComponentArray
+#      description: >-
+#        Modify the submitted ComponentArray, to update for each entry the 
+#        corresponding state and flag values only.  If the Flag field is omitted,
+#        Flag is reverted to 'OK'.  Other fields are ignored.  ID field must
+#        be present for all entries.
+#      operationId: doCompArrayStateDataPatch
+#      produces:
+#        - application/json
+#      parameters:
+#        - name: payload
+#          in: body
+#          required: true
+#          schema:
+#            $ref: '#/definitions/ComponentArray_PatchArray.StateData'
+#      responses:
+#        "204":
+#          description: Success.
+#        "400":
+#          description: Bad Request
+#          schema:
+#            $ref: '#/definitions/Error'
+#        "404":
+#          description: Does Not Exist
+#          schema:
+#            $ref: '#/definitions/Error'
+#        default:
+#          description: Unexpected error
+#          schema:
+#            $ref: '#/definitions/Error'
+  /State/Components/StateData/{xname}:
+    patch:
+      tags:
+        - Component
+      summary: >-
+        PATCH Component State Data at {xname}
+      description: >-
+        Modify the Component's State and Flag fields only.  If Flag field is
+        omitted, the Flag value is reverted to 'OK'.
+      operationId: doCompStatePatch
+      produces:
+        - application/json
+      parameters:
+        - name: xname
+          in: path
+          type: string
+          description: Locational xname of component to set state/flag on.
+          required: true
+        - name: payload
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Component.1.0.0_Patch.StateData'
+      responses:
+        "204":
+          description: Success.
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+#  /State/Components/FlagOnly:
+#    patch:
+#      tags:
+#        - Component
+#      summary: >-
+#        PATCH Multiple Components' Flag values via ComponentArray
+#      description: >-
+#        Modify the submitted ComponentArray, to update for each entry the 
+#        corresponding Flag value.  Other fields are ignored and unchanged.
+#        ID field must be present for all entries.
+#      operationId: doCompArrayFlagOnly
+#      produces:
+#        - application/json
+#      parameters:
+#        - name: payload
+#          in: body
+#          required: true
+#          schema:
+#            $ref: '#/definitions/ComponentArray_PatchArray.FlagOnly'
+#      responses:
+#        "204":
+#          description: Success.
+#        "400":
+#          description: Bad Request
+#          schema:
+#            $ref: '#/definitions/Error'
+#        "404":
+#          description: Does Not Exist
+#          schema:
+#            $ref: '#/definitions/Error'
+#        default:
+#          description: Unexpected error
+#          schema:
+#            $ref: '#/definitions/Error'
+  /State/Components/FlagOnly/{xname}:
+     patch:
+      tags:
+        - Component
+      summary: >-
+        PATCH Component Flag value at {xname}
+      description: The State is unmodified.  Flag value alone updated.
+      operationId: doCompFlagOnlyPatch
+      produces:
+        - application/json
+      parameters:
+        - name: xname
+          in: path
+          type: string
+          description: Locational xname of component to modify flag on.
+          required: true
+        - name: payload
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Component.1.0.0_Patch.FlagOnly'
+      responses:
+        "200":
+          description: Success.
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+#  /State/Components/Role:
+#    patch:
+#      tags:
+#        - Component
+#      summary: >-
+#        PATCH Multiple Components' Role values via ComponentArray
+#      description: >-
+#        Modify the submitted ComponentArray, to update for each entry the 
+#        corresponding Role value.  Other fields are ignored and unchanged.
+#        ID field must be present for all entries.
+#      operationId: doCompArrayRolePatch
+#      produces:
+#        - application/json
+#      parameters:
+#        - name: payload
+#          in: body
+#          required: true
+#          schema:
+#            $ref: '#/definitions/ComponentArray_PatchArray.Role'
+#      responses:
+#        "204":
+#          description: Success.
+#        "400":
+#          description: Bad Request
+#          schema:
+#            $ref: '#/definitions/Error'
+#        "404":
+#          description: Does Not Exist
+#          schema:
+#            $ref: '#/definitions/Error'
+#        default:
+#          description: Unexpected error
+#          schema:
+#            $ref: '#/definitions/Error'
+  /State/Components/Role/{xname}:
+    patch:
+      tags:
+        - Component
+      summary: >-
+        PATCH Component Role value at {xname}
+      description: >-
+        Modify the Component's Role field only.  The State and other fields
+        are unmodified.  Valid only for nodes and other types for which
+        Role is valid.
+      operationId: doCompRolePatch
+      produces:
+        - application/json
+      parameters:
+        - name: xname
+          in: path
+          type: string
+          description: Locational xname of component to modify Role on.
+          required: true
+        - name: payload
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Component.1.0.0_Patch.Role'
+      responses:
+        "200":
+          description: Success.
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+#  /State/Components/NID:
+#    patch:
+#      tags:
+#        - Component
+#      summary: >-
+#        PATCH Multiple Components' NIDs via ComponentArray
+#      description: >-
+#        Modify the submitted ComponentArray, to update for each entry the 
+#        corresponding NID value.  Other fields are ignored and unchanged.
+#        ID field must be present for all entries.
+#      operationId: doCompArrayNIDPatch
+#      produces:
+#        - application/json
+#      parameters:
+#        - name: payload
+#          in: body
+#          required: true
+#          schema:
+#            $ref: '#/definitions/ComponentArray_PatchArray.NID'
+#      responses:
+#        "204":
+#          description: Success.
+#        "400":
+#          description: Bad Request
+#          schema:
+#            $ref: '#/definitions/Error'
+#        "404":
+#          description: Does Not Exist
+#          schema:
+#            $ref: '#/definitions/Error'
+#        default:
+#          description: Unexpected error
+#          schema:
+#            $ref: '#/definitions/Error'
+  /State/Components/NID/{xname}:
+     patch:
+      tags:
+        - Component
+      summary: >-
+        PATCH Component NID value at {xname}
+      description: >-
+        Modify the Component's NID field only.  The State and other fields
+        are unmodified.  Valid only for nodes or another types for which
+        NID is valid.
+      operationId: doCompNIDPatch
+      produces:
+        - application/json
+      parameters:
+        - name: xname
+          in: path
+          type: string
+          description: Locational xname of component to modify NID on.
+          required: true
+        - name: payload
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Component.1.0.0_Patch.NID'
+      responses:
+        "200":
+          description: Success.
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /State/Components/Query:
+    post:
+      tags:
+        - Component
+      summary: POST Component Query (by xname list), returning ComponentArray
+      description: >-
+        Given payload of component ids, retrieve the targeted entries in the
+        form of a ComponentArray.
+      operationId: doComponentsQueryPost
+      produces:
+        - application/json
+      parameters:
+        - name: payload
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ComponentArray_PostQuery'
+      responses:
+        "200":
+          description: >-
+            ComponentArray representing results of query.
+          schema:
+            $ref: '#/definitions/ComponentArray_ComponentArray'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /State/Components/ByNID/Query:
+    post:
+      tags:
+        - Component
+      summary: POST Component Query (by NID ranges), returning ComponentArray
+      description: >-
+        Given payload of NID Ranges, retrieve the targeted entries in the
+        form of a ComponentArray.
+      operationId: doComponentByNIDQueryPost
+      produces:
+        - application/json
+      parameters:
+        - name: payload
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ComponentArray_PostByNIDQuery'
+      responses:
+        "200":
+          description: >-
+            ComponentArray representing results of query.
+          schema:
+            $ref: '#/definitions/ComponentArray_ComponentArray'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /State/Components/Query/{xname}:
+    get:
+      tags:
+        - Component
+      summary: >-
+        GET Component Query for {xname}, returning ComponentArray
+      description: >-
+        Given xname and modifiers in query string, retrieve zero or more
+        Component entries in the form of a ComponentArray.
+      operationId: doComponentQueryGet
+      produces:
+        - application/json
+      parameters:
+        - name: xname
+          in: path
+          type: string
+          description: Locational xname of component to query.
+          required: true
+        - name: type
+          in: query
+          type: string
+          description: >-
+            Retrieve xname's children of type={type} instead of {xname}.
+        - name: state
+          in: query
+          type: string
+          description: >-
+            Retrieve all Components with the given HMS state.
+        - name: flag
+          in: query
+          type: string
+          description: >-
+            Retrieve all Components with the given HMS flag value.
+        - name: role
+          in: query
+          type: string
+          description: >-
+            Retrieve all Components (i.e. nodes) with the given HMS role
+        - name: subtype
+          in: query
+          type: string
+          description: >-
+            Retrieve all Components with the given HMS subtype.
+        - name: arch
+          in: query
+          type: string
+          description: >-
+            Retrieve all Components with the given architecture.
+        - name: nid
+          in: query
+          type: string
+          description: >-
+            Retrieve all Components (i.e. one node) with the given integer NID
+        - name: nid_start
+          in: query
+          type: string
+          description: >-
+            Retrieve all Components (i.e. nodes) with NIDs equal to or greater
+            than the provided integer.
+        - name: nid_end
+          in: query
+          type: string
+          description: >-
+            Retrieve all Components (i.e. nodes) with NIDs less than or equal
+            to the provided integer.
+        # Still in progress
+        - name: children
+          in: query
+          type: boolean
+          description: >-
+            Also return children of the selected components.
+        # Still in progress
+        - name: parents
+          in: query
+          type: boolean
+          description: >-
+            Also return parents of the selected components.
+        # Still in progress
+        - name: partition
+          in: query
+          type: string
+          description: >-
+            Restrict search to the given hard:soft partition.
+        - name: stateonly
+          in: query
+          type: boolean
+          description: >-
+            Return only component state and flag fields (plus xname/id and
+            type).  Results can be modified and used for bulk state/flag-
+            only patch operations.
+        - name: flagonly
+          in: query
+          type: boolean
+          description: >-
+            Return only component flag field (plus xname/id and type).
+            Results can be modified and used for bulk flag-only patch
+            operations.
+        - name: roleonly
+          in: query
+          type: boolean
+          description: >-
+            Return only component role field (plus xname/id and type).
+            Results can be modified and used for bulk role-only patches.
+        - name: nidonly
+          in: query
+          type: boolean
+          description: >-
+            Return only component NID field (plus xname/id and type).
+            Results can be modified and used for bulk NID-only patches.
+      responses:
+        "200":
+          description: >-
+            ComponentArray representing results of query.
+          schema:
+            $ref: '#/definitions/ComponentArray_ComponentArray'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  ########################################################################
+  #
+  # SystemInformationBlock (SIB) API Calls
+  #
+  ########################################################################
+  /State/SIB/Query:
+    post:
+      tags:
+        - SystemInformationBlock
+      summary: >-
+        POST SystemInformationBlock (SIB) Query
+      description: >-
+        Get the system information block for the system (s0) or subset of
+        the system (such as a partition or parent component).  Clients
+        can select one or all of the subsections of the SIB (a client may
+        not, for example, need the HWInventory data) to be delivered.
+      operationId: doSIBQueryPost
+      produces:
+        - application/json
+      parameters:
+        - name: payload
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/SystemInformationBlock.1.0.0_PostQuery'
+      responses:
+        "200":
+          description: >-
+            SystemInformationBlock based on xname in body and containing all
+            sections or just those specified in the 'Items' parameter in
+            the body.
+          schema:
+            $ref: '#/definitions/SystemInformationBlock.1.0.0_SystemInformationBlock'
+        "204":
+          description: >-
+            Success but no response.  Data will be delivered over message bus.
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /State/SIB/Query/{xname}:
+    get:
+      tags:
+        - SystemInformationBlock
+      summary: >-
+        GET SystemInformationBlock (SIB) Query for {xname}
+      description: >-
+        Get the system information block for the system (s0) or subset of
+        the system (such as a partition or parent component).  Clients
+        can select one or all of the subsections of the SIB (a client may
+        not, for example, need the HWInventory data) to be delivered.
+      operationId: doSIBQueryGet
+      produces:
+        - application/json
+      parameters:
+        - name: xname
+          in: path
+          type: string
+          description: >-
+            Locational xname of root-component/partition/s0 used to
+            generate SIB.
+          required: true
+        - name: items
+          in: query
+          description: >-
+            A '+' separated list of the SIB sections to retrieve.  If this
+            item is not given, the default is all four sections- "NodeList",
+            "HWInventory", "HSNType", and "HSNInfo".
+          type: string
+        - name: usemsgbus
+          in: query
+          type: boolean
+          description: Deliver over message bus.  Default false.
+      responses:
+        "200":
+          description: >-
+            SystemInformationBlock based on xname and containing all
+            sections or just those specified in the 'items' query
+            parameter.
+          schema:
+            $ref: '#/definitions/SystemInformationBlock.1.0.0_SystemInformationBlock'
+        "204":
+          description: >-
+            Success but no response.  Data will be delivered over message bus.
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  ########################################################################
+  #
+  # Hardware Inventory API calls
+  #
+  ########################################################################
+  /Inventory/Hardware/{xname}:
+    get:
+      tags:
+        - HWInventoryBylocation
+      summary: >-
+        GET HWInventoryByLocation entry at {xname}
+      operationId: doHWInvByLocationGet
+      produces:
+        - application/json
+      parameters:
+        - name: xname
+          in: path
+          type: string
+          description: Locational xname of hardware inventory record to return.
+          required: true
+      responses:
+        "200":
+          description: HWInventoryBylocation entry matching xname/id
+          schema:
+            $ref: '#/definitions/HWInventory.1.0.0_HWInventoryByLocation'
+          examples:
+            application/json:
+              # TODO: this is the exact same example as the HWInvByLocNode
+              # subclass.  This is the most instructive example, but we
+              # should probably provide both a River and Mountain example
+              # instead of the same one.
+              ID: x0c0s0b0n0
+              Type: Node
+              Ordinal: 0
+              Status: Populated
+              HWInventoryByLocationType: HWInvByLocNode
+              NodeLocationInfo:
+                Id: System.Embedded.1
+                Name: Name describing system or where it is located, per mgfr
+                Description: Description of system/node type, per mgfr
+                Hostname: if_defined_in_Redfish
+                ProcessorSummary:
+                  Count: 2
+                  Model: Multi-Core Intel(R) Xeon(R) processor E5-16xx Series
+                MemorySummary:
+                  TotalSystemMemoryGiB: 64
+              PopulatedFRU:
+                FRUID: Dell-99999-1234.1234.2345
+                Type: Node
+                Subtype: River
+                HWInventoryByFRUType: HWInvByFRUNode
+                NodeFRUInfo:
+                  AssetTag: AdminAssignedAssetTag
+                  BiosVersion: v1.0.2.9999
+                  Model: OKS0P2354
+                  Manufacturer: Dell
+                  PartNumber: 99999
+                  SerialNumber: 1234.1234.2345
+                  SKU: as213234
+                  SystemType: Physical
+                  UUID: 26276e2a-29dd-43eb-8ca6-8186bbc3d971
+              Processors: 
+                - ID: x0c0s0b0n0p0
+                  Type: Processor
+                  Ordinal: 0
+                  Status: Populated
+                  HWInventoryByLocationType: HWInvByLocProcessor
+                  ProcessorLocationInfo:
+                    Id: CPU1
+                    Name: Processor
+                    Description: Socket 1 Processor
+                    Socket: CPU 1
+                  PopulatedFRU:
+                    FRUID: HOW-TO-ID-CPUS-FROM-REDFISH-IF-AT-ALL
+                    Type: Processor
+                    Subtype: SKL24
+                    HWInventoryByFRUType: HWInvByFRUProcessor
+                    ProcessorFRUInfo:
+                      InstructionSet: x86-64
+                      Manufacturer: Intel
+                      MaxSpeedMHz: 2600
+                      Model: Intel(R) Xeon(R) CPU E5-2623 v4 @ 2.60GHz
+                      ProcessorArchitecture: x86
+                      ProcessorId:
+                        EffectiveFamily: 6
+                        EffectiveModel: 79
+                        IdentificationRegisters: 0x000406F1
+                        MicrocodeInfo: 0xB000017
+                        Step: 1
+                        VendorID: GenuineIntel
+                      ProcessorType: CPU
+                      TotalCores: 24
+                      TotalThreads: 48
+                - ID: x0c0s0b0n0p1
+                  Type: Processor
+                  Ordinal: 1
+                  Status: Populated
+                  HWInventoryByLocationType: HWInvByLocProcessor
+                  ProcessorLocationInfo:
+                    Id: CPU2
+                    Name: Processor
+                    Description: Socket 2 Processor
+                    Socket: CPU 2
+                  PopulatedFRU:
+                    FRUID: HOW-TO-ID-CPUS-FROM-REDFISH-IF-AT-ALL
+                    Type: Processor
+                    Subtype: SKL24
+                    HWInventoryByFRUType: HWInvByFRUProcessor
+                    ProcessorFRUInfo:
+                      InstructionSet: x86-64
+                      Manufacturer: Intel
+                      MaxSpeedMHz: 2600
+                      Model: Intel(R) Xeon(R) CPU E5-2623 v4 @ 2.60GHz
+                      ProcessorArchitecture: x86
+                      ProcessorId:
+                        EffectiveFamily: 6
+                        EffectiveModel: 79
+                        IdentificationRegisters: 0x000406F1
+                        MicrocodeInfo: 0xB000017
+                        Step: 1
+                        VendorID: GenuineIntel
+                      ProcessorType: CPU
+                      TotalCores: 24
+                      TotalThreads: 48
+              Memory:
+                - ID: x0c0s0b0n0d0
+                  Type: Memory
+                  Ordinal: 0
+                  Status: Populated
+                  HWInventoryByLocationType: HWInvByLocMemory
+                  MemoryLocationInfo:
+                    Id: DIMM1
+                    Name: DIMM Slot 1
+                    MemoryLocation:
+                      Socket: 1
+                      MemoryController: 1
+                      Channel: 1
+                      Slot: 1
+                  PopulatedFRU:
+                    FRUID: MFR-PARTNUMBER-SERIALNUMBER
+                    Type: Memory
+                    Subtype: DIMM2400G32
+                    HWInventoryByFRUType: HWInvByFRUMemory
+                    MemoryFRUInfo:
+                      BaseModuleType: RDIMM
+                      BusWidthBits: 72
+                      CapacityMiB: 32768
+                      DataWidthBits: 64
+                      ErrorCorrection: MultiBitECC
+                      Manufacturer: Micron
+                      MemoryType: DRAM
+                      MemoryDeviceType: DDR4
+                      OperatingSpeedMhz: 2400
+                      PartNumber: XYZ-123-1232
+                      RankCount: 2
+                      SerialNumber: 12344567689
+                - ID: x0c0s0b0n0d1
+                  Type: Memory
+                  Ordinal: 1
+                  Status: Empty
+                  HWInventoryByLocationType: HWInvByLocMemory
+                  MemoryLocationInfo:
+                    Id: DIMM2
+                    Name: Socket 1 DIMM Slot 2
+                    MemoryLocation:
+                      Socket: 1
+                      MemoryController: 1
+                      Channel: 1
+                      Slot: 2
+                  PopulatedFRU:
+                - ID: x0c0s0b0n0d2
+                  Type: Memory
+                  Ordinal: 2
+                  Status: Populated
+                  HWInventoryByLocationType: HWInvByLocMemory
+                  MemoryLocationInfo:
+                    Id: DIMM3
+                    Name: Socket 2 DIMM Slot 1
+                    MemoryLocation:
+                      Socket: 2
+                      MemoryController: 2
+                      Channel: 1
+                      Slot: 1
+                  PopulatedFRU:
+                    FRUID: MFR-PARTNUMBER-SERIALNUMBER_2
+                    Type: Memory
+                    Subtype: DIMM2400G32
+                    HWInventoryByFRUType: HWInvByFRUMemory
+                    MemoryFRUInfo:
+                      BaseModuleType: RDIMM
+                      BusWidthBits: 72
+                      CapacityMiB: 32768
+                      DataWidthBits: 64
+                      ErrorCorrection: MultiBitECC
+                      Manufacturer: Micron
+                      MemoryType: DRAM
+                      MemoryDeviceType: DDR4
+                      OperatingSpeedMhz: 2400
+                      PartNumber: XYZ-123-1232
+                      RankCount: 2
+                      SerialNumber: 346456346346
+                - ID: x0c0s0b0n0d3
+                  Type: Memory
+                  Ordinal: 3
+                  Status: Empty
+                  HWInventoryByLocationType: HWInvByLocMemory
+                  MemoryLocationInfo:
+                    Id: DIMM3
+                    Name: Socket 2 DIMM Slot 2
+                    MemoryLocation:
+                      Socket: 2
+                      MemoryController: 2
+                      Channel: 1
+                      Slot: 2
+                  PopulatedFRU:
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /Inventory/Hardware/ByFRU/{fruID}:
+    get:
+      tags:
+        - HWInventoryByFRU
+      summary: GET HWInventoryByFRU for {fruID}
+      operationId: doHWInvByFRUGet
+      produces:
+        - application/json
+      parameters:
+        - name: fruID
+          in: path
+          type: string
+          description: >-
+            Global HMS FRU Identifier (serial number, etc.) of the hardware
+            component to select.
+          required: true
+      responses:
+        "200":
+          description: HWInventoryBylocation entry matching xname/id
+          schema:
+            $ref: '#/definitions/HWInventory.1.0.0_HWInventoryByFRU'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /Inventory/Hardware/Query/{xname}:
+    get:
+      tags:
+        - HWInventory
+      summary: GET results of HWInventory query starting at {xname}
+      description: >-
+        Given xname and modifiers in query string, retrieve zero or more
+        HWInventoryByLocation entries in the form of a HWInventory.  The
+        FRU data will be included in each HWInventoryByLocation entry if
+        the location is populated.
+      operationId: doHWInvByLocationQueryGet
+      produces:
+        - application/json
+      parameters:
+        - name: xname
+          in: path
+          type: string
+          description: >-
+            Locational xname of parent component, system (e.g. s0, all) or
+            partition to target for hardware inventory
+          required: true
+        # Not supported yet
+        - name: type
+          in: query
+          type: string
+          description: >-
+            Retrieve xname's children of type={type} instead of {xname}.
+        - name: children
+          in: query
+          type: boolean
+          description: >-
+            Also return children of the selected components.  Default is
+            true for Node components, false for others.
+        - name: parents
+          in: query
+          type: boolean
+          description: >-
+            Also return parents of the selected components.
+        - name: partition
+          in: query
+          type: string
+          description: >-
+            Restrict search to the given partition.
+        - name: format
+          in: query
+          type: string
+          description: >-
+            How to display results
+              FullyFlat      All component types listed in their own
+                             arrays only.  No nesting of any children.
+              Hierarchical   All subcomponents listed as children up to
+                             top level component (or set of cabinets)
+              NestNodesOnly  Flat except that node subcomponents are nested
+                             hierarchically.
+            Default is NestNodesOnly.
+      responses:
+        "200":
+          description: >-
+            ComponentArray representing results of query.
+          schema:
+            $ref: '#/definitions/HWInventory.1.0.0_HWInventory'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error' 
+        "404":
+          description: Does Not Exist
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  ########################################################################
+  #
+  # RedfishEndpoint API Calls
+  #
+  ########################################################################
+  /Inventory/RedfishEndpoints:
+    get:
+      tags:
+        - RedfishEndpoint
+      summary: >-
+        GET ALL RedfishEndpoints, returning RedfishEndpointArray
+      description: >-
+        Get all Redfish endpoint entries as a named array.
+      operationId: doRedfishEndpointsGet
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: >-
+            Named RedfishEndpoints array representing all current RF endpoints.
+          schema:
+            $ref: '#/definitions/RedfishEndpointArray_RedfishEndpointArray'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    post:
+      tags:
+        - RedfishEndpoint
+      summary: POST (CREATE) RedfishEndpoint(s)
+      description: >-
+        Create a new RedfishEndpoint whose ID field is a valid xname.
+        ID can be given explicitly, or if the Hostname or hostname portion
+        of the FQDN is given, and is a valid xname, this will be used for
+        the ID instead.  The Hostname/Domain can be given as separate
+        fields and will be used to create a FQDN if one is not given.  The
+        reverse is also true.  If FQDN is an IP address it will be
+        treated as a hostname with a blank domain.  The domain field is
+        used currently to assign the domain for discovered nodes
+        automatically.
+        
+        If ID is given and is a valid XName, the hostname/domain/FQDN 
+        does not need to have an XName as the hostname portion.  It can
+        be any address.
+        
+        The ID and FQDN must be unique across all entries.
+      operationId: doRedfishEndpointsPost
+      produces:
+        - application/json
+      parameters:
+        - name: payload
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/RedfishEndpoint.1.0.0_RedfishEndpoint'
+      responses:
+        "201":
+          description: Success, returns array of created resource URIs
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ResourceURI.1.0.0'
+          examples:
+            application/json:
+              - URI: /hsm/v1/Inventory/RedfishEndpoints/x0c0s0b0
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "409":
+          description: Conflict. Duplicate resource would be created.
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      tags:
+        - RedfishEndpoint
+      summary: >-
+        DELETE ALL RedfishEndpoints 
+      description: >-
+        Deletes all entries in the RedfishEndpoint collection.
+      operationId: doRedfishEndpointsDeleteAll
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: >-
+            Zero (success) error code - one or more entries deleted.
+            Message contains count of deleted items.
+          schema:
+            $ref: '#/definitions/Error'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist - Collection is empty
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /Inventory/RedfishEndpoints/{xname}:
+    get:
+      tags:
+        - RedfishEndpoint
+      summary: GET RedfishEndpoint at {xname}
+      operationId: doRedfishEndpointGet
+      produces:
+        - application/json
+      parameters:
+        - name: xname
+          in: path
+          type: string
+          description: Locational xname of RedfishEndpoint record to return.
+          required: true
+      responses:
+        "200":
+          description: HWInventoryBylocation entry matching xname/id
+          schema:
+            $ref: '#/definitions/RedfishEndpoint.1.0.0_RedfishEndpoint'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      tags:
+        - RedfishEndpoint
+      summary: DELETE RedfishEndpoint with ID {xname}
+      operationId: doRedfishEndpointDelete
+      produces:
+        - application/json
+      parameters:
+        - name: xname
+          in: path
+          type: string
+          description: Locational xname of RedfishEndpoint record to delete.
+          required: true
+      responses:
+        "200":
+          description: Zero (success) error code - component is deleted.
+          schema:
+            $ref: '#/definitions/Error'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: XName does Not Exist - no matching ID to delete
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      tags:
+        - RedfishEndpoint
+      summary: PUT (UPDATE) definition for RedfishEndpoint ID {xname}
+      operationId: doRedfishEndpointPut
+      produces:
+        - application/json
+      parameters:
+        - name: xname
+          in: path
+          type: string
+          description: >-
+            Locational xname of RedfishEndpoint record to create or update.
+          required: true
+        - name: payload
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/RedfishEndpoint.1.0.0_RedfishEndpoint'
+      responses:
+        "200":
+          description: Success, return updated RedfishEndpoint resource
+          schema:
+            $ref: '#/definitions/RedfishEndpoint.1.0.0_RedfishEndpoint'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: XName does Not Exist - no matching ID to update
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /Inventory/RedfishEndpoints/Query:
+    post:
+      tags:
+        - RedfishEndpoint
+      summary: >-
+        POST RedfishEndpoint query, returning RedfishEndpointArray
+      description: >-
+        Given payload of locational xnames, retrieve the targeted entries
+        in the form of a RedfishEndpointArray.
+      operationId: doRedfishEndpointQueryPost
+      produces:
+        - application/json
+      parameters:
+        - name: payload
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/RedfishEndpointArray_PostQuery'
+      responses:
+        "200":
+          description: >-
+            ComponentArray representing results of query.
+          schema:
+            $ref: '#/definitions/RedfishEndpointArray_RedfishEndpointArray'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /Inventory/RedfishEndpoints/Query/{xname}:
+    get:
+      tags:
+        - RedfishEndpoint
+      summary: >-
+        GET RedfishEndpoint Query for {xname}, returning RedfishEndpointArray
+      description: >-
+        Given xname and modifiers in query string, retrieve zero or more
+        RedfishEndpoint entries in the form of a RedfishEndpointArray.
+      operationId: doRedfishEndpointQueryGet
+      produces:
+        - application/json
+      parameters:
+        - name: xname
+          in: path
+          type: string
+          description: Locational xname of RedfishEndpoint to query.
+          required: true
+        - name: type
+          in: query
+          type: string
+          description: >-
+            Retrieve xname's children of type={type} instead of {xname}.
+        - name: children
+          in: query
+          type: boolean
+          description: >-
+            Also return children of the selected RedfishEndpoints.
+        - name: parents
+          in: query
+          type: boolean
+          description: >-
+            Also return parents of the selected RedfishEndpoints.
+        - name: partition
+          in: query
+          type: string
+          description: >-
+            Restrict search to the given hard:soft partition.
+      responses:
+        "200":
+          description: >-
+            RedfishEndpointArray representing results of query.
+          schema:
+            $ref: '#/definitions/RedfishEndpointArray_RedfishEndpointArray'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist - no matches
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  ########################################################################
+  #
+  # ComponentEndpoint API - ComponentEndpoints discovered under Redfish EP
+  #
+  ########################################################################
+  /Inventory/ComponentEndpoints:
+    get:
+      tags:
+        - ComponentEndpoint
+      summary: GET ComponentEndpoints Collection
+      description: >-
+        Retrieve ComponentEndpoints collection in full in the form of a
+        ComponentEndpointArray.  Full results can also be filtered by query
+        parameters.  Only the first filter parameter of each type is
+        used and the parameters are applied in an AND fashion.
+        If the collection is empty or the filters have no match, an
+        empty array is returned.
+      operationId: doComponentEndpointsGet
+      produces:
+        - application/json
+      parameters:
+        - name: redfish_ep
+          in: query
+          type: string
+          description: >-
+            Retrieve all ComponentEndpoints managed by the parent Redfish EP.
+        - name: type
+          in: query
+          type: string
+          description: >-
+            Retrieve all ComponentEndpoints with the given HMS type.
+        - name: redfish_type
+          in: query
+          type: string
+          description: >-
+            Retrieve all ComponentEndpoints with the given Redfish type.
+        # Not implmented.
+        - name: partition
+          in: query
+          type: string
+          description: >-
+            Restrict search to the given hard.soft partition.
+      responses:
+        "200":
+          description: >-
+            ComponentEndpointArray representing the ComponentEndpoint 
+            collection or a filtered subset thereof. 
+          schema:
+            $ref: '#/definitions/ComponentEndpointArray_ComponentEndpointArray'
+          examples:
+            application/json:
+              ComponentEndpoints:
+              - ID: x0c0s0b0n0
+                Type: Node
+                Domain: mgmt.example.domain.com
+                FQDN: x0c0s0b0n0.mgmt.example.domain.com
+                RedfishType: ComputerSystem
+                RedfishSubtype: Physical
+                ComponentEndpointType: ComponentEndpointComputerSystem
+                MACAddr: d0:94:66:00:aa:37
+                UUID: bf9362ad-b29c-40ed-9881-18a5dba3a26b
+                OdataID: /redfish/v1/Systems/System.Embedded.1
+                RedfishEndpointID: x0c0s0b0
+                RedfishEndpointFQDN: x0c0s0b0.mgmt.example.domain.com
+                RedfishURL: x0c0s0b0.mgmt.example.domain.com/redfish/v1/Systems/System.Embedded.1
+                RedfishSystemInfo:
+                  Name: System Embedded 1
+                  Actions:
+                    '#ComputerSystem.Reset':
+                      AllowableValues:
+                      - On
+                      - ForceOff
+                      target: /redfish/v1/Systems/System.Embedded.1/Actions/ComputerSystem.Reset
+                  EthernetNICInfo:
+                    - RedfishId: "1"
+                      "@odata.id": /redfish/v1/Systems/System.Embedded.1/EthernetInterfaces/1
+                      Description: Management Network Interface
+                      InterfaceEnabled: true
+                      MACAddress: d0:94:66:00:aa:37,
+                      PermanentMACAddress: d0:94:66:00:aa:37
+                    - RedfishId: "2"
+                      "@odata.id": /redfish/v1/Systems/System.Embedded.1/EthernetInterfaces/2
+                      Description: Management Network Interface
+                      InterfaceEnabled: true
+                      MACAddress: d0:94:66:00:aa:38
+                      PermanentMACAddress: d0:94:66:00:aa:38
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      tags:
+        - ComponentEndpoint
+      summary: >-
+        DELETE ALL ComponentEndpoints 
+      description: >-
+        Deletes all entries in the ComponentEndpoint collection.
+      operationId: doComponentEndpointsDeleteAll
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: >-
+            Zero (success) error code - one or more entries deleted.
+            Message contains count of deleted items.
+          schema:
+            $ref: '#/definitions/Error'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist - Collection is empty
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /Inventory/ComponentEndpoints/{xname}:
+    get:
+      tags:
+        - ComponentEndpoint
+      summary: GET ComponentEndpoint at {xname}
+      operationId: doComponentEndpointGet
+      produces:
+        - application/json
+      parameters:
+        - name: xname
+          in: path
+          type: string
+          description: Locational xname of ComponentEndpoint record to return.
+          required: true
+      responses:
+        "200":
+          description: HWInventoryBylocation entry matching xname/id
+          schema:
+            $ref: '#/definitions/ComponentEndpoint.1.0.0_ComponentEndpoint'
+          examples:
+            application/json:
+              ID: x0c0s0b0n0
+              Type: Node
+              Domain: mgmt.example.domain.com
+              FQDN: x0c0s0b0n0.mgmt.example.domain.com
+              RedfishType: ComputerSystem
+              RedfishSubtype: Physical
+              ComponentEndpointType: ComponentEndpointComputerSystem
+              MACAddr: d0:94:66:00:aa:37
+              UUID: bf9362ad-b29c-40ed-9881-18a5dba3a26b
+              OdataID: /redfish/v1/Systems/System.Embedded.1
+              RedfishEndpointID: x0c0s0b0
+              RedfishEndpointFQDN: x0c0s0b0.mgmt.example.domain.com
+              RedfishURL: x0c0s0b0.mgmt.example.domain.com/redfish/v1/Systems/System.Embedded.1
+              RedfishSystemInfo:
+                Name: System Embedded 1
+                Actions:
+                  '#ComputerSystem.Reset':
+                    AllowableValues:
+                    - On
+                    - ForceOff
+                    target: /redfish/v1/Systems/System.Embedded.1/Actions/ComputerSystem.Reset
+                EthernetNICInfo:
+                  - RedfishId: "1"
+                    "@odata.id": /redfish/v1/Systems/System.Embedded.1/EthernetInterfaces/1
+                    Description: Management Network Interface
+                    InterfaceEnabled: true
+                    MACAddress: d0:94:66:00:aa:37
+                    PermanentMACAddress: d0:94:66:00:aa:37
+                  - RedfishId: "2"
+                    "@odata.id": /redfish/v1/Systems/System.Embedded.1/EthernetInterfaces/2
+                    Description: Management Network Interface
+                    InterfaceEnabled: true
+                    MACAddress: ae:12:ce:7a:aa:99
+                    PermanentMACAddress: ae:12:ce:7a:aa:99
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      tags:
+        - ComponentEndpoint
+      summary: DELETE ComponentEndpoint with ID {xname}
+      operationId: doComponentEndpointDelete
+      produces:
+        - application/json
+      parameters:
+        - name: xname
+          in: path
+          type: string
+          description: Locational xname of ComponentEndpoint record to delete.
+          required: true
+      responses:
+        "200":
+          description: Zero (success) error code - ComponentEndpoint is deleted.
+          schema:
+            $ref: '#/definitions/Error'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: XName does Not Exist - no matching ID to delete
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /Inventory/ComponentEndpoints/Query:
+    post:
+      tags:
+        - ComponentEndpoint
+      summary: >-
+        POST ComponentEndpoint query, returning ComponentEndpointArray
+      description: >-
+        Given payload of locational xnames, retrieve the targeted entries
+        in the form of a ComponentEndpointArray.
+      operationId: doComponentEndpointQueryPost
+      produces:
+        - application/json
+      parameters:
+        - name: payload
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ComponentEndpointArray_PostQuery'
+      responses:
+        "200":
+          description: >-
+            ComponentArray representing results of query.
+          schema:
+            $ref: '#/definitions/ComponentEndpointArray_ComponentEndpointArray'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /Inventory/ComponentEndpoints/Query/{xname}:
+    get:
+      tags:
+        - ComponentEndpoint
+      summary: >-
+        GET ComponentEndpoint query for {xname}, returning ComponentEndpointArray
+      description: >-
+        Given xname and modifiers in query string, retrieve zero or more
+        ComponentEndpoint entries in the form of a ComponentEndpointArray.
+      operationId: doComponentEndpointQueryGet
+      produces:
+        - application/json
+      parameters:
+        - name: xname
+          in: path
+          type: string
+          description: Locational xname of ComponentEndpoint to query.
+          required: true
+        - name: type
+          in: query
+          type: string
+          description: >-
+            Retrieve xname's children of type={type} instead of {xname}.
+        - name: children
+          in: query
+          type: boolean
+          description: >-
+            Also return children of the selected ComponentEndpoints.
+        - name: parents
+          in: query
+          type: boolean
+          description: >-
+            Also return parents of the selected ComponentEndpoints.
+        - name: partition
+          in: query
+          type: string
+          description: >-
+            Restrict search to the given hard:soft partition.
+      responses:
+        "200":
+          description: >-
+            ComponentEndpointArray representing results of query.
+          schema:
+            $ref: '#/definitions/ComponentEndpointArray_ComponentEndpointArray'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Does Not Exist
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  ########################################################################
+  #
+  # Discovery API Calls - Discover action and DiscoveryStatus
+  #
+  ########################################################################
+  /Inventory/DiscoveryStatus:
+    get:
+      tags:
+        - DiscoveryStatus
+      summary: >-
+        GET ALL DiscoveryStatus entries in collection.
+      description: >-
+        Get all DiscoveryStatus entries as a unnamed array.
+      operationId: doDiscoveryStatusGetAll
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: >-
+            Unnamed DiscoveryStatus array representing all entries 
+            in collection.
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/DiscoveryStatus.1.0.0_DiscoveryStatus'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /Inventory/DiscoveryStatus/{id}:
+    get:
+      tags:
+        - DiscoveryStatus
+      summary: >-
+        GET DiscoveryStatus entry matching {id}
+      description: >-
+        Get given DiscoveryStatus entry
+      operationId: doDiscoveryStatusGet
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          type: number
+          format: int32
+          description: Postive integer ID of DiscoveryStatus entry to retrieve
+          required: true
+      responses:
+        "200":
+          description: >-
+            Success.  Returns matching DiscoveryStatus entry. 
+          schema:
+              $ref: '#/definitions/DiscoveryStatus.1.0.0_DiscoveryStatus'
+        "400":
+          description: Bad Request, e.g. not a positive integer
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Not found (no such ID)
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /Inventory/Discover:
+    post:
+      tags:
+        - Discover
+      summary: POST Discover operation request
+      description: >-
+        Discover and populate database with component data (ComponentEndpoints,
+        HMS Components, HWInventory) based on interrogating RedfishEndpoint
+        entries.  If not all RedfishEndpoints should be discovered, an
+        array of xnames can be provided in the DiscoverInput payload. 
+      operationId: doInventoryDiscoverPost
+      produces:
+        - application/json
+      parameters:
+        - name: payload
+          in: body
+          required: false
+          schema:
+            $ref: '#/definitions/Discover.1.0.0_DiscoverInput'
+      responses:
+        "200":
+          description: >- 
+            Success, discovery started.  DiscoverStatus link(s) to check in 
+            returned URI array.
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ResourceURI.1.0.0'
+          examples:
+            application/json:
+              - URI: /hsm/v1/Inventory/DiscoveryStatus/0
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: >-
+            One or more requested RedfishEndpoint xname IDs was not found.
+          schema:
+            $ref: '#/definitions/Error'
+        "409":
+          description: >-
+            Conflict.  One or more DiscoveryStatus objects is InProgress 
+            or Pending and prevents this operation from starting.  Try again
+            later or use force option (should never be needed unless some
+            kind of problem has occurred).  Simultaneous discoveries could
+            cause one or both to fail.
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+definitions:
+  ##########################################################################
+  #
+  # State Component data structures
+  #
+  ##########################################################################
+  Component.1.0.0_Component:
+    description: >-
+      This is the logical representation of a component for which state is
+      tracked and includes other variables that may be needed by clients.
+      It is keyed by the physical location i.e. xname.
+    properties:
+      ID:
+        # Uniquely identifies the component by its physical location (xname)
+        $ref: '#/definitions/XName.1.0.0'
+      Type:
+        # HMS Logical component type e.g. Node, Cabinet, etc.
+        $ref: '#/definitions/HMSType.1.0.0'
+      State:
+        # Logical component state e.g. On, Off, Ready.
+        $ref: '#/definitions/HMSState.1.0.0'
+      Flag:
+        # Logical component state flag e.g. OK, Alert.
+        $ref: '#/definitions/HMSFlag.1.0.0'
+      NID:
+        description: This is the integer Node ID if the component is a node.
+        type: integer
+      Role:
+        # Component/node role currently assigned if not default.
+        $ref: '#/definitions/HMSRole.1.0.0'
+      Subtype:
+        description: Further distinguishes between components of same type.
+        type: string
+        readOnly: true
+      NetType:
+        # Type of network for HSN, if applicable and present.
+        $ref: '#/definitions/NetType.1.0.0'
+      Arch:
+        # Architecture type e.g. X86 or ARM.
+        $ref: '#/definitions/HMSArch.1.0.0'
+    type: object
+  #
+  # Component Patch operation payloads.  Modify only selected fields
+  # given the corresponding API that is used to patch.
+  #
+  Component.1.0.0_Patch.StateData:
+    description: >-
+      This is the payload of a StateData patch operation on a component.
+      It is the default patch operation on Component objects.  Flag is
+      optional and will be reset to OK if no Flag value is given.
+    properties:
+      State:
+        # Logical component state e.g. On, Off, Ready.
+        $ref: '#/definitions/HMSState.1.0.0'
+      Flag:
+        # Logical component state flag e.g. OK, Alert.
+        $ref: '#/definitions/HMSFlag.1.0.0'
+      ExtendedInfo:
+        # This is the message that should explain what triggered the change.
+        # it is optional and may be omitted.
+        $ref: '#/definitions/Message_1.0.0_ExtendedInfo'
+    type: object
+    required:
+      - State
+  Component.1.0.0_Patch.FlagOnly:
+    description: >-
+      This is the payload of a FlagOnly patch operation on a component.
+      Flag is required and the State field is unmodified regardless of the
+      value given.
+    properties:
+      Flag:
+        # Logical component state flag e.g. OK, Alert.
+        $ref: '#/definitions/HMSFlag.1.0.0'
+      ExtendedInfo:
+        # This is the message that should explain what triggered the change.
+        # it is optional and may be omitted.
+        $ref: '#/definitions/Message_1.0.0_ExtendedInfo'
+    type: object
+    required:
+      - Flag
+  Component.1.0.0_Patch.Role:
+    description: >-
+      This is the payload of a Role patch operation on a Component.
+      Role is required, however operation will fail if Role is not
+      a supported property of the corresponding HMS type.
+    properties:
+      Role:
+        # Component/node role currently assigned if not default.
+        $ref: '#/definitions/HMSRole.1.0.0'
+      ExtendedInfo:
+        # This is the message that should explain what triggered the change.
+        # it is optional and may be omitted.
+        $ref: '#/definitions/Message_1.0.0_ExtendedInfo'
+    type: object
+    required:
+      - Role
+  Component.1.0.0_Patch.NID:
+    description: >-
+      This is the payload of a NID patch operation on a Component.
+      NID is required but the operation will fail if NID is not a valid 
+    properties:
+      NID:
+        description: This is the integer Node ID if the component is a node.
+        type: integer
+      ExtendedInfo:
+        # This is the message that should explain what triggered the change.
+        # it is optional and may be omitted.
+        $ref: '#/definitions/Message_1.0.0_ExtendedInfo'
+    type: object
+    required:
+      - NID
+  #
+  # Component Patch payloads - Bulk operations with ComponentArray
+  #
+  Component.1.0.0_PatchArrayItem.StateData:
+    description: >-
+      This is one entry in a a StateData patch operation on an entire
+      ComponentArray.  Flag is optional and will be reset to OK if no Flag
+      value is given.
+    properties:
+      ID:
+        $ref: '#/definitions/XNameForQuery.1.0.0'
+      Type:
+        $ref: '#/definitions/HMSType.1.0.0'
+      State:
+        # Logical component state e.g. On, Off, Ready.
+        $ref: '#/definitions/HMSState.1.0.0'
+      Flag:
+        # Logical component state flag e.g. OK, Alert.
+        $ref: '#/definitions/HMSFlag.1.0.0'
+      ExtendedInfo:
+        # This is the message that should explain what triggered the change.
+        # it is optional and may be omitted.
+        $ref: '#/definitions/Message_1.0.0_ExtendedInfo'
+    required:
+      - ID
+      - State
+    type: object
+  Component.1.0.0_PatchArrayItem.FlagOnly:
+    description: >-
+      This is one entry in a a FlagOnly patch operation on an entire
+      ComponentArray.  ID and Flag are required or the operation will fail.
+      Only the Flag field is updated.
+    properties:
+      ID:
+        $ref: '#/definitions/XNameForQuery.1.0.0'
+      Type:
+        $ref: '#/definitions/HMSType.1.0.0'
+      Flag:
+        # Logical component state flag e.g. OK, Alert.
+        $ref: '#/definitions/HMSFlag.1.0.0'
+      ExtendedInfo:
+        # This is the message that should explain what triggered the change.
+        # it is optional and may be omitted.
+        $ref: '#/definitions/Message_1.0.0_ExtendedInfo'
+    required:
+      - ID
+      - Flag
+    type: object
+  Component.1.0.0_PatchArrayItem.Role:
+    description: >-
+      This is one entry in a a Role patch operation on an entire
+      ComponentArray.  ID and Role are required or the operation will fail.
+      Only the Role field is updated, and then only if it is appropriate
+      for the corresponding HMS type of the entry (e.g. Node).
+    properties:
+      ID:
+        $ref: '#/definitions/XNameForQuery.1.0.0'
+      Type:
+        $ref: '#/definitions/HMSType.1.0.0'
+      Role:
+        # Component Role.
+        $ref: '#/definitions/HMSRole.1.0.0'
+      ExtendedInfo:
+        # This is the message that should explain what triggered the change.
+        # it is optional and may be omitted.
+        $ref: '#/definitions/Message_1.0.0_ExtendedInfo'
+    required:
+      - ID
+      - Role
+    type: object
+  Component.1.0.0_PatchArrayItem.NID:
+    description: >-
+      This is one entry in a a NID patch operation on an entire
+      ComponentArray.  ID and NID are required or the operation will fail.
+      Only the NID field is updated, and then only if it is appropriate
+      for the corresponding HMS type of the entry (e.g. node).
+    properties:
+      ID:
+        $ref: '#/definitions/XNameForQuery.1.0.0'
+      Type:
+        $ref: '#/definitions/HMSType.1.0.0'
+      NID:
+        description: This is the integer Node ID if the component is a node.
+        type: integer
+      ExtendedInfo:
+        # This is the message that should explain what triggered the change.
+        # it is optional and may be omitted.
+        $ref: '#/definitions/Message_1.0.0_ExtendedInfo'
+    required:
+      - ID
+      - NID
+    type: object
+  Component.1.0.0_ResourceURICollection:
+    properties:
+      Name:
+        description: >-
+          Should describe the collection, though the type of resources
+          the links correspond to should also be inferred from the context
+          in which the collection was obtained.
+        type: string
+        readOnly: true
+        example: (Type of Object) Collection
+      Members:
+        description: An array of ResourceIds.
+        items:
+          $ref: '#/definitions/ResourceURI.1.0.0'
+        type: array
+        readOnly: true
+      MemberCount:
+        description: Number of ResourceURIs in the collection
+        type: number
+        format: int32
+        readOnly: true
+    type: object
+  ComponentByNID.1.0.0_ResourceURICollection:
+    properties:
+      Name:
+        description: >-
+          Should describe the collection, though the type of resources
+          the links correspond to should also be inferred from the context
+          in which the collection was obtained.
+        type: string
+        readOnly: true
+        example: (Type of Object) Collection
+      Members:
+        description: An array of ResourceIds.
+        items:
+          $ref: '#/definitions/ResourceURI.1.0.0'
+        type: array
+        readOnly: true
+      MemberCount:
+        description: Number of ResourceURIs in the collection
+        type: number
+        format: int32
+        readOnly: true
+    type: object
+  #
+  # ComponentArray 
+  #
+  ComponentArray_ComponentArray:
+    description: >-
+      This is a collection of Component objects returned whenever a query
+      is expected to result in 0 to n matches.
+    properties:
+      Components:
+        description: Contains the HMS component objects in the array.
+        items:
+          $ref: '#/definitions/Component.1.0.0_Component'
+        type: array
+    type: object
+  ComponentArray_PatchArray.StateData:
+    description: >-
+      This is a collection of Component objects with just the ID and 
+      State and Flag fields populated.
+    properties:
+      Name:
+        description: Descriptive name, e.g. why it was generated.
+        readOnly: true
+        type: string
+      Components:
+        description: >-
+          Contains the Component objects in the array but with just the
+          Component ID and the patchable fields for a StateData patch
+          operation filled in.  Other Component fields are not undated
+          during these operations.
+        items:
+          $ref: '#/definitions/Component.1.0.0_PatchArrayItem.StateData'
+        type: array
+    type: object
+  ComponentArray_PatchArray.FlagOnly:
+    description: >-
+      This is a collection of Component objects with just the ID and 
+      Flag fields populated.
+    properties:
+      Name:
+        description: Optional descriptive name, e.g. why it was generated.
+        readOnly: true
+        type: string
+      Components:
+        description: >-
+          Contains the Component objects in the array but with just the
+          Component ID and the patchable fields for a FlagOnly patch
+          operation filled in.  Other Component fields are not undated
+          during these operations.
+        items:
+          $ref: '#/definitions/Component.1.0.0_PatchArrayItem.FlagOnly'
+        type: array
+    type: object
+  ComponentArray_PatchArray.Role:
+    description: >-
+      This is a collection of Component objects with just the ID and 
+      Role fields populated.
+    properties:
+      Name:
+        description: Optional descriptive name, e.g. why it was generated.
+        readOnly: true
+        type: string
+      Components:
+        description: >-
+          Contains the Component objects in the array but with just the
+          Component ID and the patchable fields for a Role patch
+          operation filled in.  Other Component fields are not undated
+          during these operations.
+        items:
+          $ref: '#/definitions/Component.1.0.0_PatchArrayItem.Role'
+        type: array
+    type: object
+  ComponentArray_PatchArray.NID:
+    description: >-
+      This is a collection of Component objects with just the ID and 
+      NID fields populated.
+    properties:
+      Name:
+        description: Descriptive name e.g. why it was generated.
+        readOnly: true
+        type: string
+      Components:
+        description: >-
+          Contains the Component objects in the array but with just the
+          Component ID and the patchable fields for a NID patch
+          operation filled in.  Other Component fields are not undated
+          during these operations.
+        items:
+          $ref: '#/definitions/Component.1.0.0_PatchArrayItem.NID'
+        type: array
+    type: object
+  #
+  # Query POSTs to supply arbitrary list of components.
+  #
+  ComponentArray_PostQuery:
+    description: >-
+      There are limits to the length of an HTTP URL and query string.
+      Hence, if we wish to query an arbitrary list of XName/IDs, it
+      will need to be in the body of the request.  This object is
+      used for this purpose.  It is similar to the analagous GET operation.
+    properties:
+      ComponentIDs:
+        description: >-
+          An array of XName/ID values for the components to query.
+        items:
+          $ref: '#/definitions/XNameForQuery.1.0.0'
+        type: array
+      # Still in progress
+      partition:
+        $ref: '#/definitions/XNamePartition.1.0.0'
+      stateonly:
+        description: >-
+          Return only component state and flag fields (plus xname/id and
+          type).  Results can be modified and used for bulk state/flag-
+          only patch operations.
+        type: boolean
+      flagonly:
+        description: >-
+          Return only component flag field (plus xname/id and type).
+          Results can be modified and used for bulk flag-only patch
+          operations.
+        type: boolean
+      roleonly:
+        description: >-
+          Return only component role field (plus xname/id and type).
+          Results can be modified and used for bulk role-only patches.
+        type: boolean
+      nidonly:
+        description: >-
+          Return only component NID field (plus xname/id and type).
+          Results can be modified and used for bulk NID-only patches.
+        type: boolean
+      type:
+        description: >-
+          Retrieve all Components with the given HMS type.
+        items:
+          type: string
+        type: array
+      state:
+        description: >-
+          Retrieve all Components with the given HMS state.
+        items:
+          type: string
+        type: array
+      flag:
+        description: >-
+          Retrieve all Components with the given HMS flag value.
+        items:
+          type: string
+        type: array
+      role:
+        description: >-
+          Retrieve all Components (i.e. nodes) with the given HMS role
+        items:
+          type: string
+        type: array
+      subtype:
+        description: >-
+          Retrieve all Components with the given HMS subtype.
+        items:
+          type: string
+        type: array
+      arch:
+        description: >-
+          Retrieve all Components with the given architecture.
+        items:
+          type: string
+        type: array
+      nid:
+        description: >-
+          Retrieve all Components (i.e. one node) with the given integer NID
+        items:
+          type: string
+        type: array
+      nid_start:
+        description: >-
+          Retrieve all Components (i.e. nodes) with NIDs equal to or greater
+          than the provided integer.
+        items:
+          type: string
+        type: array
+      nid_end:
+        description: >-
+          Retrieve all Components (i.e. nodes) with NIDs less than or equal
+          to the provided integer.
+    required:
+      - ComponentIDs
+    type: object
+  ComponentArray_PostByNIDQuery:
+    description: >-
+      There are limits to the length of an HTTP URL and query string.
+      Hence, if we wish to query an arbitrary list of NIDs, it
+      will need to be in the body of the request.  This object is
+      used for this purpose.  Parameters are similar to the analagous GET
+      operation.
+    properties:
+      #NIDs:
+      #  description: >-
+      #    NID values to query, producing a ComponentArray with the matching
+      #    components.
+      #  items:
+      #    type: integer
+      #    format: int32
+      #  type: array
+      NIDRanges:
+        description: >-
+          NID range values to query, producing a ComponentArray with the
+          matching components, e.g. "0-24" or "2".  Add each multiple ranges
+          as a separate array item.
+        items:
+          $ref: '#/definitions/NIDRange.1.0.0'
+        type: array
+      partition:
+        $ref: '#/definitions/XNamePartition.1.0.0'
+      stateonly:
+        description: >-
+          Return only component state and flag fields (plus xname/id and
+          type).  Results can be modified and used for bulk state/flag-
+          only patch operations.
+        type: boolean
+      flagonly:
+        description: >-
+          Return only component flag field (plus xname/id and type).
+          Results can be modified and used for bulk flag-only patch
+          operations.
+        type: boolean
+      roleonly:
+        description: >-
+          Return only component role field (plus xname/id and type).
+          Results can be modified and used for bulk role-only patches.
+        type: boolean
+      nidonly:
+        description: >-
+          Return only component NID field (plus xname/id and type).
+          Results can be modified and used for bulk NID-only patches.
+        type: boolean
+    required:
+      - NIDRanges
+    type: object
+  #########################################################################
+  #
+  # Redfish ComponentEndpoint data - Represents Redfish discovered data for
+  #                                  components running under a particular
+  #                                  Redfish endpoint, needed for services
+  #                                  that interact with these at via Redfish.
+  #
+  #########################################################################
+  ComponentEndpoint.1.0.0_ComponentEndpoint:
+    description: >-
+      This describes a child component of a Redfish endpoint and is populated
+      when Redfish endpoint discovery occurs.  It is used by services that
+      need to interact directly with the component via Redfish.
+      It represents a physical component of some time and has a corresponding
+      representation as an HMS Component, hence the name.
+      There are also ServiceEndpoints which represent Redfish services that
+      are discovered when the RedfishEndpoint is discovered.
+      
+      NOTE: These records are discovered, not created, and therefore are not
+      writable (since any changes would be overwritten by a subsequent
+      discovery).
+      
+      Additional info is appended depending on RedfishType (discriminator)
+    properties:
+      ID:
+        # Uniquely identifies the component endpoint by its location i.e. xname.
+        $ref: '#/definitions/XName.1.0.0'
+      Type:
+        # HMS Logical component type e.g. Node, Cabinet, etc.
+        $ref: '#/definitions/HMSType.1.0.0'
+      Domain:
+        description: Domain of component FQDN.  Hostname is always ID/xname
+        type: string
+        example: mgmt.example.domain.com
+      FQDN:
+        description: >-
+          Fully-qualified domain name of component on management network if
+          for example the component is a node.
+        type: string
+        readOnly: true
+        example: x0c0s0b0n0.mgmt.example.domain.com
+      RedfishType:
+        # This is the Redfish object type, not to be confused with the HMS 
+        # component type.  In this case, either a Manager, Chassis or 
+        # ComputerSystem.
+        $ref: '#/definitions/RedfishType.1.0.0'
+      RedfishSubtype:
+        # This is the type corresponding to the redfish object type, i.e. the
+        # ChassisType field, SystemType, ManagerType fields.
+        $ref: '#/definitions/RedfishSubtype.1.0.0'
+      ComponentEndpointType:
+        description: >-
+          This is used as a discriminator to determine the additional RF-type-
+          specific data that is kept for a ComponentEndpoint.
+        enum:
+          - ComponentEndpointChassis
+          - ComponentEndpointComputerSystem
+          - ComponentEndpointManager
+        type: string
+        readOnly: true
+        example: ComponentEndpointComputerSystem
+      MACAddr:
+        description: >-
+          If the component e.g. a ComputerSystem/Node has a MAC on the
+          management network, i.e. corresponding to the FQDN field's
+          ethernet interface, this field will be present.  Not the HSN
+          MAC.  Represented as the standard colon-separated 6 byte hex string.
+        pattern: '^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$'
+        type: string
+        example: ae:12:ce:7a:aa:99
+      UUID:
+        $ref: '#/definitions/UUID.1.0.0'
+      OdataID:
+        # This is the relative path to the component relative to the parent
+        # RedfishEndpoint's service root.
+        $ref: '#/definitions/OdataID.1.0.0'
+      RedfishEndpointID:
+        # Unique identifier for the parent RedfishEndpoint by its location
+        # i.e. xname.  This is essentially a back-reference to the RF endpoint
+        # that was used to discover this component.
+        $ref: '#/definitions/XNameRFEndpoint.1.0.0'
+      RedfishEndpointFQDN:
+        description: >-
+          This is a back-reference to the fully-qualified domain name of the
+          parent Redfish endpoint that was used to discover the component.  It
+          is the RedfishEndpointID field i.e. the hostname/xname plus its
+          current domain.
+        type: string
+        readOnly: true
+        example: x0c0s0b0.mgmt.example.domain.com
+      RedfishURL:
+        description: >-
+          This is the complete URL to the corresponding Redfish object,
+          combining the RedfishEndpoint's FQDN and the OdataID.
+        type: string
+        readOnly: true
+        example: x0c0s0b0.mgmt.example.domain.com/redfish/v1/Systems/System.Embedded.1
+    type: object
+    discriminator: ComponentEndpointType
+  ComponentEndpointChassis:
+    description: >-
+      This is a subtype of ComponentEndpoint for Chassis RF components,
+      i.e. of most HMS components other than nodes and BMCs.
+      This subtype is used when the ComponentEndpoint's ComponentEndpointType
+      is 'ComponentEndpointChassis' via the 'discriminator: 
+      ComponentEndpointType' property.
+    allOf:
+      - $ref: '#/definitions/ComponentEndpoint.1.0.0_ComponentEndpoint'
+      - type: object
+        properties:
+          RedfishChassisInfo:
+            $ref: '#/definitions/ComponentEndpoint.1.0.0_RedfishChassisInfo'
+    type: object
+  ComponentEndpointComputerSystem:
+    description: >-
+      This is a subtype of ComponentEndpoint for ComputerSystem RF components,
+      i.e. a node HMS type.
+      This subtype is used when the ComponentEndpoint's ComponentEndpointType
+      is 'ComponentEndpointComputerSystem' via the 'discriminator:
+      ComponentEndpointType' property.
+    allOf:
+      - $ref: '#/definitions/ComponentEndpoint.1.0.0_ComponentEndpoint'
+      - type: object
+        properties:
+          RedfishSystemInfo:
+            $ref: '#/definitions/ComponentEndpoint.1.0.0_RedfishSystemInfo'
+    type: object
+  ComponentEndpointManager:
+    description: >-
+      This is a subtype of ComponentEndpoint for Manager RF components,
+      i.e. any BMC type.  For example NodeBMC is a Manager, NodeEnclosure
+      is a Chassis RF type.
+      This subtype is used when the ComponentEndpoint's ComponentEndpointType
+      is 'ComponentEndpointManager' via the 'discriminator:
+      ComponentEndpointType' property.
+    allOf:
+      - $ref: '#/definitions/ComponentEndpoint.1.0.0_ComponentEndpoint'
+      - type: object
+        properties:
+          RedfishManagerInfo:
+            $ref: '#/definitions/ComponentEndpoint.1.0.0_RedfishManagerInfo'
+    type: object
+  ComponentEndpoint.1.0.0_RedfishChassisInfo:
+    description: >-
+      This is the ChassisInfo field in the RF Chassis subtype of 
+      ComponentEndpoint, i.e. when the latter's RedfishType is Chassis.
+      This is where new fields will be added.
+    properties:
+      Name:
+        description:  The Redfish 'Name' of the Chassis.
+        type: string
+        readOnly: true
+      Actions:
+        $ref: '#/definitions/Actions_1.0.0_ChassisActions'
+    type: object
+  ComponentEndpoint.1.0.0_RedfishSystemInfo:
+    description: >-
+      This is the SystemInfo object in the RF ComputerSystem subtype of 
+      ComponentEndpoint, i.e. when the latter's RedfishType is ComputerSystem.
+      It contains HMS-Node/ComputerSystem-specific Redfish fields that need
+      to be collected during discovery and made available to clients.
+      This is where new fields will be added.  Mostly placeholder now.
+    properties:
+      Name:
+        description:  The Redfish 'name' of the ComputerSystem.
+        type: string
+        readOnly: true
+      Actions:
+        $ref: '#/definitions/Actions_1.0.0_ComputerSystemActions'
+      EthernetNICInfo:
+        items:
+          $ref: '#/definitions/EthernetNICInfo_1.0.0'
+        type: array
+    type: object
+  ComponentEndpoint.1.0.0_RedfishManagerInfo:
+    description: >-
+      This is the ManagerInfo object in the RF Manager subtype of 
+      ComponentEndpoint, i.e. when the latter's RedfishType is Manager.
+      It contains BMC/Manager-specific Redfish fields that need
+      to be collected during discovery and made available to clients.
+      This is where new fields will be added.  Mostly placeholder now.
+    properties:
+      Name:
+        description:  The Redfish 'Name' of the Manager.
+        type: string
+        readOnly: true
+      Actions:
+        $ref: '#/definitions/Actions_1.0.0_ManagerActions'
+      EthernetNICInfo:
+        items:
+          $ref: '#/definitions/EthernetNICInfo_1.0.0'
+        type: array
+    type: object
+  ComponentEndpoint.1.0.0_ResourceURICollection:
+    properties:
+      Name:
+        description: >-
+          Should describe the collection, though the type of resources
+          the links correspond to should also be inferred from the context
+          in which the collection was obtained.
+        type: string
+        readOnly: true
+        example: (Type of Object) Collection
+      Members:
+        description: An array of ResourceIds.
+        items:
+          $ref: '#/definitions/ResourceURI.1.0.0'
+        type: array
+        readOnly: true
+      MemberCount:
+        description: Number of ResourceURIs in the collection
+        type: number
+        format: int32
+        readOnly: true
+    type: object
+  ComponentEndpointArray_ComponentEndpointArray:
+    description: >-
+      This is a collection of ComponentEndpoint objects returned whenever a
+      query is expected to result in 0 to n matches.
+    properties:
+      ComponentEndpoints:
+        description: Contains the HMS RedfishEndpoint objects in the array.
+        items:
+          $ref: '#/definitions/ComponentEndpoint.1.0.0_ComponentEndpoint'
+        type: array
+    type: object
+  #
+  # ComponentEndpoint POST query bodies
+  #
+  ComponentEndpointArray_PostQuery:
+    description: >-
+      There are limits to the length of an HTTP URL and query string.
+      Hence, if we wish to query an arbitrary list of XName/IDs, it
+      will need to be in the body of the request.  This object is
+      used for this purpose.  It is similar to the analagous GET operation.
+    properties:
+      ComponentEndpointIDs:
+        description: >-
+          An array of XName/ID values for the ComponentEndpoints to query.
+        items:
+          $ref: '#/definitions/XNameForQuery.1.0.0'
+        type: array
+      partition:
+        $ref: '#/definitions/XNamePartition.1.0.0'
+    required:
+      - ComponentEndpointIDs
+    type: object
+  ###########################################################################
+  #
+  # HSN Info - HSN NIC Addresses and Coordinates by xname
+  #
+  ###########################################################################
+  HSNInfo.1.0.0:
+    description: >-
+      Component to NIC and Network Coordinate Map
+    properties:
+      HSNTopology:
+        $ref: '#/definitions/HSNTopology.1.0.0'
+      HSNNetworkType:
+        $ref: '#/definitions/NetType.1.0.0'
+      HSNInfoEntries:
+        description: Contains an HSN info entry for each component.
+        items:
+          $ref: '#/definitions/HSNInfoEntry.1.0.0'
+        type: array
+    readOnly: true
+    type: object
+  HSNInfoEntry.1.0.0:
+    description: The HSN info for an individual component, e.g. node.
+    properties:
+      ID:
+        # The xname of the component location
+        $ref: '#/definitions/XName.1.0.0'
+      Type:
+        # The HMS Type of the location/xname
+        $ref: '#/definitions/HMSType.1.0.0'
+      NICAddrs:
+        #  A collection of HSN NIC addresses in string form.
+        $ref: '#/definitions/NICAddrs.1.0.0'
+      HSNCoords:
+        description:
+          HSN Coordinates of the components, an integer tuple of a particular
+          length in array form.
+        items:
+          type: integer
+          format: int32
+        type: array
+        example: [0, 0, 0, 0, 0]
+    readOnly: true
+    type: object 
+  HSNTopology.1.0.0:
+    description: Numerical identifier for HSN topology class
+    type: integer
+    format: int32
+    example: 0
+  ###########################################################################
+  #
+  # Hardware Inventory
+  #
+  ###########################################################################
+  HWInventory.1.0.0_HWInventory:
+    description: >-
+      This is a collection of hardware inventory data.  Depending on
+      the query only some of these arrays will be populated.
+      
+      Also, depending on the query that produced the inventory, some
+      components may have their subcomponents nested underneath them 
+      (hierarchical query), rather than all arranged in their own arrays by
+      their types (flat query).
+      
+      The default is hierarchical for node subcomponents (Processors, Memory)
+      and flat for everything else, but other query types are possible and can
+      use this same basic structure.
+      
+      Either way, the 'Target' field is the parent component, partition or
+      system that is used to select the components for the query.
+    properties:
+      XName:
+        # Partition, component or s0 that is used to select the components
+        # in the inventory.
+        $ref: '#/definitions/XName.1.0.0'
+      Format:
+        description: >-
+          How results are displayed
+            FullyFlat      All component types listed in their own
+                           arrays only.  No nesting of any children
+            Hierarchical   All subcomponents listed as children up to
+                           top level component (or set of cabinets)
+            NestNodesOnly  Flat except that node subcomponents are nested
+                           hierarchically.
+          Default is NestNodesOnly.
+        enum:
+          - FullyFlat
+          - Hierarchical
+          - NestNodesOnly
+        type: string
+        example: NestNodesOnly
+      Cabinets:
+        description: >-
+          All components with HMS type 'Cabinet' appropriate given Target
+          component/partition and query type.
+        items:
+          $ref: '#/definitions/HWInvByLocCabinet'
+        readOnly: true
+        type: array
+      Chassis:
+        description: >-
+          All appropriate components with HMS type 'Chassis' given Target
+          component/partition and query type.
+        items:
+          $ref: '#/definitions/HWInvByLocChassis'
+        readOnly: true
+        type: array
+      ComputeModules:
+        description: >-
+          All appropriate components with HMS type 'ComputeModule' given
+          Target component/partition and query type.
+        items:
+          $ref: '#/definitions/HWInvByLocComputeModule'
+        readOnly: true
+        type: array
+      RouterModules:
+        description: >-
+           All appropriate components with HMS type 'RouterModule' given
+           Target component/partition and query type.
+        items:
+          $ref: '#/definitions/HWInvByLocRouterModule'
+        readOnly: true
+        type: array
+      RouterTORs:
+        description: >-
+           All appropriate components with HMS type 'RouterTOR' given
+           Target component/partition and query type.
+        items:
+          $ref: '#/definitions/HWInvByLocRouterTOR'
+        readOnly: true
+        type: array
+      NodeEnclosures:
+        description: >-
+          All appropriate components with HMS type 'NodeEnclosure' given
+          Target component/partition and query type.
+        items:
+          $ref: '#/definitions/HWInvByLocNodeEnclosure'
+        readOnly: true
+        type: array
+      Nodes:
+        description: >-
+          All appropriate components with HMS type 'Node' given Target
+          component/partition and query type.
+        items:
+          $ref: '#/definitions/HWInvByLocNode'
+        readOnly: true
+        type: array
+      Processors:
+        description: >-
+          All appropriate components with HMS type 'Processor' given
+          Target component/partition and query type.
+        items:
+          $ref: '#/definitions/HWInvByLocProcessor'
+        readOnly: true
+        type: array
+      Memory:
+        description: >-
+          All appropriate components with HMS type 'Memory' given Target
+          component/partition and query type.
+        items:
+          $ref: '#/definitions/HWInvByLocMemory'
+        readOnly: true
+        type: array
+    type: object
+  #
+  #
+  # Hardware Inventory by location
+  #
+  #
+  HWInventory.1.0.0_HWInventoryByLocation:
+    description: >-
+      This is the basic entry in the hardware inventory for a particular
+      location/xname.  If the location is populated (e.g. if a slot for a
+      blade exists and the blade is present), then there will also be a
+      link to the FRU entry for the physical piece of hardware that occupies
+      it.
+    properties:
+      ID:
+        # The xname of the component location
+        $ref: '#/definitions/XNameCompOrPartition.1.0.0'
+      Type:
+        # The HMS Type of the location/xname
+        $ref: '#/definitions/HMSType.1.0.0'
+      Ordinal:
+        description: >-
+          This is the normalized (from zero) index of the component location
+          (e.g. slot number) when there are more than one.  This should
+          match the last number in the xname in most cases (e.g. Ordinal 0
+          for node x0c0s0b0n0).  Note that Redfish may use a different value
+          or naming scheme, but this is passed through via the *LocationInfo
+          for the type of component.
+        type: integer
+        format: int32
+        readOnly: true
+      Status:
+        description: Populated or Empty - whether location is populated.
+        enum:
+          - Populated
+          - Empty
+        type: string
+        readOnly: true
+      HWInventoryByLocationType:
+        description: >-
+          This is used as a discriminator to determine the additional HMS-type
+          specific subtype that is returned.
+        enum:
+          - HWInvByLocCabinet
+          - HWInvByLocChassis
+          - HWInvByLocRouterTOR
+          - HWInvByLocComputeModule
+          - HWInvByLocRouterModule
+          - HWInvByLocNodeEnclosure
+          - HWInvByLocNode
+          - HWInvByLocProcessor
+          - HWInvByLocMemory
+        type: string
+        readOnly: true
+      PopulatedFRU:
+        # If Status is 'Populated' then this will embed the FRU object.
+        $ref: '#/definitions/HWInventory.1.0.0_HWInventoryByFRU'
+    type: object
+    discriminator: HWInventoryByLocationType
+    # See example for appropriate subclass per HWInventoryByLocationType
+    # field.
+    example:
+  HWInvByLocCabinet:
+    description: >-
+      This is a subtype of HWInventoryByLocation for HMSType Cabinet.
+      It is selected via the 'discriminator: HWInventoryByLocationType'
+      of HWInventoryByLocation when HWInventoryByLocationType is
+      'HWInvByLocCabinet'.
+    allOf:
+      - $ref: '#/definitions/HWInventory.1.0.0_HWInventoryByLocation'
+      - type: object
+        properties:
+          CabinetLocationInfo:
+            $ref: '#/definitions/HWInventory.1.0.0_RedfishChassisLocationInfo'
+          Chassis:
+            description: >-
+               Embedded chassis HWInv object array representing subcomponents
+               (if query is hierarchical).
+            items:
+              $ref: '#/definitions/HWInvByLocChassis'
+            readOnly: true
+            type: array
+    type: object
+    example:
+      ID: x0
+      Type: Cabinet
+      Ordinal: 0
+      Status: Populated
+      HWInventoryByLocationType: HWInvByLocCabinet
+      CabinetLocationInfo:
+        Id: Cabinet
+        Name: Name describing cabinet or where it is located, per mgfr
+        Description: Description of cabinet, per mgfr
+        Hostname: if_defined_in_Redfish
+      PopulatedFRU:
+        FRUID: Cray-2345-1234556789
+        Type: Cabinet
+        Subtype: MountainCabinet (example)
+        HWInventoryByFRUType: HWInvByFRUCabinet
+        CabinetFRUInfo:
+          AssetTag: AdminAssignedAssetTag
+          Model: 123
+          Manufacturer: Cray
+          PartNumber: 2345
+          SerialNumber: 1234556789
+          SKU: as213234
+          ChassisType: Rack
+  HWInvByLocChassis:
+    description: >-
+      This is a subtype of HWInventoryByLocation for HMSType Chassis.
+      It is selected via the 'discriminator: HWInventoryByLocationType'
+      of HWInventoryByLocation when HWInventoryByLocationType is
+      'HWInvByLocChassis'.
+    allOf:
+      - $ref: '#/definitions/HWInventory.1.0.0_HWInventoryByLocation'
+      - type: object
+        properties:
+          ChassisLocationInfo:
+            $ref: '#/definitions/HWInventory.1.0.0_RedfishChassisLocationInfo'
+          ComputeModules:
+            description: >-
+               Embedded ComputeModule HWInv object array representing
+               subcomponents of that type (if query is hierarchical).
+            items:
+              $ref: '#/definitions/HWInvByLocComputeModule'
+            readOnly: true
+            type: array
+          RouterModules:
+            description: >-
+               Embedded RouterModule HWInv object array representing
+               subcomponents of that type (if query is hierarchical).
+            items:
+              $ref: '#/definitions/HWInvByLocRouterModule'
+            readOnly: true
+            type: array
+    type: object
+    example:
+      ID: x0c0
+      Type: Chassis
+      Ordinal: 0
+      Status: Populated
+      HWInventoryByLocationType: HWInvByLocChassis
+      ChassisLocationInfo:
+        Id: Chassis.1
+        Name: Name describing component or its location, per mgfr
+        Description: Description, per mgfr
+        Hostname: if_defined_in_Redfish
+      PopulatedFRU:
+        FRUID: Cray-ch01-23452345
+        Type: Chassis
+        Subtype: MountainChassis (example)
+        HWInventoryByFRUType: HWInvByFRUChassis
+        ChassisFRUInfo:
+          AssetTag: AdminAssignedAssetTag
+          Model: 3245
+          Manufacturer: Cray
+          PartNumber: ch01
+          SerialNumber: 23452345
+          SKU: as213234
+          ChassisType: Enclosure
+  HWInvByLocRouterTOR:
+    description: >-
+      This is a subtype of HWInventoryByLocation for HMSType RouterTOR.
+      It is selected via the 'discriminator: HWInventoryByLocationType'
+      of HWInventoryByLocation when HWInventoryByLocationType is
+      'HWInvByLocRouterTOR'.
+    allOf:
+      - $ref: '#/definitions/HWInventory.1.0.0_HWInventoryByLocation'
+      - type: object
+        properties:
+          RouterTORLocationInfo:
+            $ref: '#/definitions/HWInventory.1.0.0_RedfishChassisLocationInfo'
+    type: object
+  HWInvByLocComputeModule:
+    description: >-
+      This is a subtype of HWInventoryByLocation for HMSType ComputeModule.
+      It is selected via the 'discriminator: HWInventoryByLocationType'
+      of HWInventoryByLocation when HWInventoryByLocationType is
+      'HWInvByLocComputeModule'.
+    allOf:
+      - $ref: '#/definitions/HWInventory.1.0.0_HWInventoryByLocation'
+      - type: object
+        properties:
+          ComputeModuleLocationInfo:
+            $ref: '#/definitions/HWInventory.1.0.0_RedfishChassisLocationInfo'
+          NodeEnclosures:
+            description: >-
+               Embedded NodeEnclosure HWInv object array representing
+               subcomponents of that type (if query is hierarchical).
+            items:
+              $ref: '#/definitions/HWInvByLocNodeEnclosure'
+            readOnly: true
+            type: array
+    type: object
+  HWInvByLocRouterModule:
+    description: >-
+      This is a subtype of HWInventoryByLocation for HMSType RouterModule.
+      This is a Mountain switch module.
+      It is selected via the 'discriminator: HWInventoryByLocationType'
+      of HWInventoryByLocation when HWInventoryByLocationType is
+      'HWInvByLocRouterModule'.
+    allOf:
+      - $ref: '#/definitions/HWInventory.1.0.0_HWInventoryByLocation'
+      - type: object
+        properties:
+          RouterModuleLocationInfo:
+            $ref: '#/definitions/HWInventory.1.0.0_RedfishChassisLocationInfo'
+    type: object
+  HWInvByLocNodeEnclosure:
+    description: >-
+      This is a subtype of HWInventoryByLocation for HMSType NodeEnclosure.
+      It represents a Mountain node card or River rack enclosure.  It is
+      NOT the BMC, which is separate and corresponds to a Redfish Manager.
+      It is selected via the 'discriminator: HWInventoryByLocationType'
+      of HWInventoryByLocation when HWInventoryByLocationType is
+      'HWInvByLocNodeEnclosure'.
+    allOf:
+      - $ref: '#/definitions/HWInventory.1.0.0_HWInventoryByLocation'
+      - type: object
+        properties:
+          NodeEnclosureLocationInfo:
+            $ref: '#/definitions/HWInventory.1.0.0_RedfishChassisLocationInfo'
+    type: object
+  HWInvByLocNode:
+    description: >-
+      This is a subtype of HWInventoryByLocation for HMSType Node.
+      It represents a service, compute or system node.
+      It is selected via the 'discriminator: HWInventoryByLocationType'
+      of HWInventoryByLocation when HWInventoryByLocationType is
+      'HWInvByLocNode'.
+    allOf:
+      - $ref: '#/definitions/HWInventory.1.0.0_HWInventoryByLocation'
+      - type: object
+        properties:
+          NodeLocationInfo:
+            $ref: '#/definitions/HWInventory.1.0.0_RedfishSystemLocationInfo'
+          Processors:
+            description: >-
+               Embedded Processor HWInv object array representing
+               subcomponents of that type (this is default for Nodes).
+            items:
+              $ref: '#/definitions/HWInvByLocProcessor'
+            readOnly: true
+            type: array
+          Memory:
+            description: >-
+               Embedded Memory HWInv object array representing
+               subcomponents of that type (this is default for Nodes).
+            items:
+              $ref: '#/definitions/HWInvByLocMemory'
+            readOnly: true
+            type: array
+    type: object
+    example:
+      ID: x0c0s0b0n0
+      Type: Node
+      Ordinal: 0
+      Status: Populated
+      HWInventoryByLocationType: HWInvByLocNode
+      NodeLocationInfo:
+        Id: System.Embedded.1
+        Name: Name describing system or where it is located, per mgfr
+        Description: Description of system/node type, per mgfr
+        Hostname: if_defined_in_Redfish
+        ProcessorSummary:
+          Count: 2
+          Model: Multi-Core Intel(R) Xeon(R) processor E5-16xx Series
+        MemorySummary:
+          TotalSystemMemoryGiB: 64
+      PopulatedFRU:
+        FRUID: Dell-99999-1234.1234.2345
+        Type: Node
+        Subtype: River
+        HWInventoryByFRUType: HWInvByFRUNode
+        NodeFRUInfo:
+          AssetTag: AdminAssignedAssetTag
+          BiosVersion: v1.0.2.9999
+          Model: OKS0P2354
+          Manufacturer: Dell
+          PartNumber: 99999
+          SerialNumber: 1234.1234.2345
+          SKU: as213234
+          SystemType: Physical
+          UUID: 26276e2a-29dd-43eb-8ca6-8186bbc3d971
+      Processors: 
+        - ID: x0c0s0b0n0p0
+          Type: Processor
+          Ordinal: 0
+          Status: Populated
+          HWInventoryByLocationType: HWInvByLocProcessor
+          ProcessorLocationInfo:
+            Id: CPU1
+            Name: Processor
+            Description: Socket 1 Processor
+            Socket: CPU 1
+          PopulatedFRU:
+            FRUID: HOW-TO-ID-CPUS-FROM-REDFISH-IF-AT-ALL
+            Type: Processor
+            Subtype: SKL24
+            HWInventoryByFRUType: HWInvByFRUProcessor
+            ProcessorFRUInfo:
+              InstructionSet: x86-64
+              Manufacturer: Intel
+              MaxSpeedMHz: 2600
+              Model: Intel(R) Xeon(R) CPU E5-2623 v4 @ 2.60GHz
+              ProcessorArchitecture: x86
+              ProcessorId:
+                EffectiveFamily: 6
+                EffectiveModel: 79
+                IdentificationRegisters: 0x000406F1
+                MicrocodeInfo: 0xB000017
+                Step: 1
+                VendorID: GenuineIntel
+              ProcessorType: CPU
+              TotalCores: 24
+              TotalThreads: 48
+        - ID: x0c0s0b0n0p1
+          Type: Processor
+          Ordinal: 1
+          Status: Populated
+          HWInventoryByLocationType: HWInvByLocProcessor
+          ProcessorLocationInfo:
+            Id: CPU2
+            Name: Processor
+            Description: Socket 2 Processor
+            Socket: CPU 2
+          PopulatedFRU:
+            FRUID: HOW-TO-ID-CPUS-FROM-REDFISH-IF-AT-ALL
+            Type: Processor
+            Subtype: SKL24
+            HWInventoryByFRUType: HWInvByFRUProcessor
+            ProcessorFRUInfo:
+              InstructionSet: x86-64
+              Manufacturer: Intel
+              MaxSpeedMHz: 2600
+              Model: Intel(R) Xeon(R) CPU E5-2623 v4 @ 2.60GHz
+              ProcessorArchitecture: x86
+              ProcessorId:
+                EffectiveFamily: 6
+                EffectiveModel: 79
+                IdentificationRegisters: 0x000406F1
+                MicrocodeInfo: 0xB000017
+                Step: 1
+                VendorID: GenuineIntel
+              ProcessorType: CPU
+              TotalCores: 24
+              TotalThreads: 48
+      Memory:
+        - ID: x0c0s0b0n0d0
+          Type: Memory
+          Ordinal: 0
+          Status: Populated
+          HWInventoryByLocationType: HWInvByLocMemory
+          MemoryLocationInfo:
+            Id: DIMM1
+            Name: DIMM Slot 1
+            MemoryLocation:
+              Socket: 1
+              MemoryController: 1
+              Channel: 1
+              Slot: 1
+          PopulatedFRU:
+            FRUID: MFR-PARTNUMBER-SERIALNUMBER
+            Type: Memory
+            Subtype: DIMM2400G32
+            HWInventoryByFRUType: HWInvByFRUMemory
+            MemoryFRUInfo:
+              BaseModuleType: RDIMM
+              BusWidthBits: 72
+              CapacityMiB: 32768
+              DataWidthBits: 64
+              ErrorCorrection: MultiBitECC
+              Manufacturer: Micron
+              MemoryType: DRAM
+              MemoryDeviceType: DDR4
+              OperatingSpeedMhz: 2400
+              PartNumber: XYZ-123-1232
+              RankCount: 2
+              SerialNumber: 12344567689
+        - ID: x0c0s0b0n0d1
+          Type: Memory
+          Ordinal: 1
+          Status: Empty
+          HWInventoryByLocationType: HWInvByLocMemory
+          MemoryLocationInfo:
+            Id: DIMM2
+            Name: Socket 1 DIMM Slot 2
+            MemoryLocation:
+              Socket: 1
+              MemoryController: 1
+              Channel: 1
+              Slot: 2
+          PopulatedFRU:
+        - ID: x0c0s0b0n0d2
+          Type: Memory
+          Ordinal: 2
+          Status: Populated
+          HWInventoryByLocationType: HWInvByLocMemory
+          MemoryLocationInfo:
+            Id: DIMM3
+            Name: Socket 2 DIMM Slot 1
+            MemoryLocation:
+              Socket: 2
+              MemoryController: 2
+              Channel: 1
+              Slot: 1
+          PopulatedFRU:
+            FRUID: MFR-PARTNUMBER-SERIALNUMBER_2
+            Type: Memory
+            Subtype: DIMM2400G32
+            HWInventoryByFRUType: HWInvByFRUMemory
+            MemoryFRUInfo:
+              BaseModuleType: RDIMM
+              BusWidthBits: 72
+              CapacityMiB: 32768
+              DataWidthBits: 64
+              ErrorCorrection: MultiBitECC
+              Manufacturer: Micron
+              MemoryType: DRAM
+              MemoryDeviceType: DDR4
+              OperatingSpeedMhz: 2400
+              PartNumber: XYZ-123-1232
+              RankCount: 2
+              SerialNumber: 346456346346
+        - ID: x0c0s0b0n0d3
+          Type: Memory
+          Ordinal: 3
+          Status: Empty
+          HWInventoryByLocationType: HWInvByLocMemory
+          MemoryLocationInfo:
+            Id: DIMM3
+            Name: Socket 2 DIMM Slot 2
+            MemoryLocation:
+              Socket: 2
+              MemoryController: 2
+              Channel: 1
+              Slot: 2
+          PopulatedFRU:
+  HWInvByLocProcessor:
+    description: >-
+      This is a subtype of HWInventoryByLocation for HMSType Processor.
+      It represents a primary CPU type (e.g. non-accelerator).
+      It is selected via the 'discriminator: HWInventoryByLocationType'
+      of HWInventoryByLocation when HWInventoryByLocationType is
+      'HWInvByLocProcessor'.
+    allOf:
+      - $ref: '#/definitions/HWInventory.1.0.0_HWInventoryByLocation'
+      - type: object
+        properties:
+          ProcessorLocationInfo:
+            $ref: '#/definitions/HWInventory.1.0.0_RedfishProcessorLocationInfo'
+    type: object
+    example:
+      description: By default, listed as subcomponent of Node, see example there.
+  HWInvByLocMemory:
+    description: >-
+      This is a subtype of HWInventoryByLocation for HMSType Memory.
+      It represents a DIMM or other memory module type.
+      It is selected via the 'discriminator: HWInventoryByLocationType'
+      of HWInventoryByLocation when HWInventoryByLocationType is
+      'HWInvByLocMemory'.
+    allOf:
+      - $ref: '#/definitions/HWInventory.1.0.0_HWInventoryByLocation'
+      - type: object
+        properties:
+          MemoryLocationInfo:
+            $ref: '#/definitions/HWInventory.1.0.0_RedfishMemoryLocationInfo'
+    type: object
+    example:
+      description: By default, listed as subcomponent of Node, see example there.
+  HWInventory.1.0.0_RedfishChassisLocationInfo:
+    description: >-
+      These are pass-through properties of the Redfish Chassis object type
+      that are also used in HMS inventory data.  They will be mostly
+      informational as exactly how fields are set depends on how
+      the particular implementation does things, but will be useful for
+      servicing.
+    properties:
+      Id:
+        description: >-
+          This is a pass-through of the Redfish value of the same name.
+          The Id is included for informational purposes.  The RedfishEndpoint
+          objects are intended to help locate and interact with HMS components
+          via the Redfish endpoint, so this is mostly needed in case 
+          servicing the component requires its id/name according to a
+          particular COTS manufacturer's naming scheme within, for example,
+          a particular server enclosure.
+        type: string
+        readOnly: true
+      Name:
+        description: >-
+          This is a pass-through of the Redfish value of the same name.
+          This is included for informational purposes as the naming will
+          likely vary from manufacturer-to-manufacturer, but should help
+          match items up to manufacturer's documentation if the normalized
+          HMS naming scheme is too vague for some COTS systems. 
+        type: string
+        readOnly: true
+      Description:
+        description: >-
+          This is a pass-through of the Redfish value of the same name.
+          This is an informational description set by the BMC implementation.
+        type: string
+        readOnly: true
+      Hostname:
+        description: >-
+          This is a pass-through of the Redfish value of the same name.
+          Note this is simply what (if anything) Redfish has been told 
+          the hostname is.  It isn't necessarily its hostname on any particular
+          network interface (e.g. the HMS management network).
+        type: string
+        readOnly: true
+    type: object
+  HWInventory.1.0.0_RedfishSystemLocationInfo:
+    description: >-
+      These are pass-through properties of the Redfish ComputerSystem object
+      that are also used in HMS inventory data.  They will be mostly
+      informational as exactly how fields are set depends on how
+      the particular implementation does things, but will be useful for
+      servicing.
+    properties:
+      Id:
+        description: >-
+          This is a pass-through of the Redfish value of the same name.
+          The Id is included for informational purposes.  The RedfishEndpoint
+          objects are intended to help locate and interact with HMS components
+          via the Redfish endpoint, so this is mostly needed in case 
+          servicing the component requires its id/name according to a
+          particular COTS manufacturer's naming scheme within, for example,
+          a particular server enclosure.
+        type: string
+        readOnly: true
+      Name:
+        description: >-
+          This is a pass-through of the Redfish value of the same name.
+          This is included for informational purposes as the naming will
+          likely vary from manufacturer-to-manufacturer, but should help
+          match items up to manufacturer's documentation if the normalized
+          HMS naming scheme is too vague for some COTS systems. 
+        type: string
+        readOnly: true
+      Description:
+        description: >-
+          This is a pass-through of the Redfish value of the same name.
+          This is an informational description set by the BMC implementation.
+        type: string
+        readOnly: true
+      Hostname:
+        description: >-
+          This is a pass-through of the Redfish value of the same name.
+          Note this is simply what (if anything) Redfish has been told 
+          the hostname is.  It isn't necessarily its hostname on any particular
+          network interface (e.g. the HMS management network).
+        type: string
+        readOnly: true
+      ProcessorSummary:
+        description: >-
+          This is a summary of the installed processors, if any.
+          It is taken from ComputerSystem.1.0.0_ProcessorSummary.
+        properties:
+          Count:
+            description: The number of processors in the system.
+            minimum: 0
+            readOnly: true
+            type: number
+          Model:
+           description: >-
+             The processor model for the primary or majority of processors in
+             this system.
+           readOnly: true
+           type: string
+        type: object
+        readOnly: true
+      MemorySummary:
+        description: >-
+          This object describes the memory of the system in general detail.
+          It is taken from ComputerSystem.1.0.0_MemorySummary.
+        properties:
+          TotalSystemMemoryGiB:
+            description: >-
+              The total installed, operating system-accessible memory (RAM),
+              measured in GiB.
+            minimum: 0
+            readOnly: true
+            type: number
+        type: object
+        readOnly: true
+    type: object
+  HWInventory.1.0.0_RedfishProcessorLocationInfo:
+    description: >-
+      These are pass-through properties of the Redfish Processor object type
+      that are also used in HMS inventory data.  They will be mostly
+      informational as exactly how fields are set depends on how
+      the particular implementation does things, but will be useful for
+      servicing.
+    properties:
+      Id:
+        description: >-
+          This is a pass-through of the Redfish value of the same name.
+          The Id is included for informational purposes.  The RedfishEndpoint
+          objects are intended to help locate and interact with HMS components
+          via the Redfish endpoint, so this is mostly needed in case 
+          servicing the component requires its id/name according to a
+          particular COTS manufacturer's naming scheme within, for example,
+          a particular server enclosure.
+        type: string
+        readOnly: true
+      Name:
+        description: >-
+          This is a pass-through of the Redfish value of the same name.
+          This is included for informational purposes as the naming will
+          likely vary from manufacturer-to-manufacturer, but should help
+          match items up to manufacturer's documentation if the normalized
+          HMS naming scheme is too vague for some COTS systems. 
+        type: string
+        readOnly: true
+      Description:
+        description: >-
+          This is a pass-through of the Redfish value of the same name.
+          This is an informational description set by the BMC implementation.
+        type: string
+        readOnly: true
+      Socket:
+        description: >-
+          This is a pass-through of the Redfish value of the same name.
+          It represents the socket or location of the processor, and may
+          differ from the normalized HMS Ordinal value (or xname) that is
+          always indexed from 0.  Manufacturers may or may not use zero
+          indexing (or may have some other naming scheme for sockets) and
+          so we retain this information to resolve any ambiguity when
+          servicing the component.
+        readOnly: true
+        type: string
+    type: object
+  HWInventory.1.0.0_RedfishMemoryLocationInfo:
+    description: >-
+      These are pass-through properties of the Redfish Memory object type
+      that are also used in HMS inventory data.  They will be mostly
+      informational as exactly how fields are set depends on how
+      the particular implementation does things, but will be useful for
+      servicing.
+    properties:
+      Id:
+        description: >-
+          This is a pass-through of the Redfish value of the same name.
+          The Id is included for informational purposes.  The RedfishEndpoint
+          objects are intended to help locate and interact with HMS components
+          via the Redfish endpoint, so this is mostly needed in case 
+          servicing the component requires its id/name according to a
+          particular COTS manufacturer's naming scheme within, for example,
+          a particular server enclosure.
+        type: string
+        readOnly: true
+      Name:
+        description: >-
+          This is a pass-through of the Redfish value of the same name.
+          This is included for informational purposes as the naming will
+          likely vary from manufacturer-to-manufacturer, but should help
+          match items up to manufacturer's documentation if the normalized
+          HMS naming scheme is too vague for some COTS systems. 
+        type: string
+        readOnly: true
+      Description:
+        description: >-
+          This is a pass-through of the Redfish value of the same name.
+          This is an informational description set by the BMC implementation.
+        type: string
+        readOnly: true
+      MemoryLocation:
+        description: >-
+          Describes the location of the memory module.  Note that the
+          indexing of these fields are set by the manufacturer and may
+          not start at zero (or one for that matter) and therefore are
+          for informational/servicing purposes only.
+          This object and its fields are again a pass-through from Redfish.
+        properties:
+          Socket:
+            description: >-
+              Socket number (numbering may vary by manufacturer).
+            minimum: 0
+            readOnly: true
+            type: number
+          MemoryController:
+            description: >-
+              Memory controller number (numbering may vary by manufacturer).
+            minimum: 0
+            readOnly: true
+            type: number
+          Channel:
+            description: >-
+              Channel number (numbering may vary by manufacturer).
+            minimum: 0
+            readOnly: true
+            type: number
+          Slot:
+            description: >-
+              Slot number (numbering may vary by manufacturer).
+            minimum: 0
+            readOnly: true
+            type: number
+        type: object
+    type: object
+  #
+  # Harware Inventory by FRU - This is the device-specific attributes that
+  # are specific to an individual piece of hardware, regardless of its 
+  # current location, if any.
+  #
+  HWInventory.1.0.0_HWInventoryByFRU:
+    description: >-
+      This represents a physical piece of hardware with properties specific
+      to a unique component in the system.  It is the counterpart to
+      HWInventoryByLocation (which contains ONLY information specific to
+      a particular location in the system that may or may not be populated),
+      in that it contains only info about the component that is durably
+      consistent whereever the component is installed in the system (if it
+      is still installed at all).
+    properties:
+      ID:
+        # The FRU identifier 
+        $ref: '#/definitions/FRUId.1.0.0'
+      Type:
+        # The HMS Type of the FRU
+        $ref: '#/definitions/HMSType.1.0.0'
+      FRUSubtype:
+        description: TBD.
+        type: string
+      HWInventoryByFRUType:
+        description: >-
+          This is used as a discriminator to determine the additional HMS-type
+          specific subtype that is returned.
+        enum:
+          - HWInvByFRUCabinet
+          - HWInvByFRUChassis
+          - HWInvByFRURouterTOR
+          - HWInvByFRUComputeModule
+          - HWInvByFRURouterModule
+          - HWInvByFRUNodeEnclosure
+          - HWInvByFRUNode
+          - HWInvByFRUProcessor
+          - HWInvByFRUMemory
+        type: string
+        readOnly: true
+    type: object
+    discriminator: HWInventoryByFRUType
+    example:
+      FRUID: Dell-99999-1234-1234-2345
+      Type: Node
+      Subtype: River
+      HWInventoryByFRUType: HWInvByFRUNode
+      NodeFRUInfo:
+        AssetTag: AdminAssignedAssetTag
+        BiosVersion: v1.0.2.9999
+        Model: OKS0P2354
+        Manufacturer: Dell
+        PartNumber: 99999
+        SerialNumber: 1234-1234-2345
+        SKU: as213234
+        SystemType: Physical
+        UUID: 26276e2a-29dd-43eb-8ca6-8186bbc3d971
+  HWInvByFRUCabinet:
+    description: >-
+      This is a subtype of HWInventoryByFRU for HMSType Cabinet.
+      It is selected via the 'discriminator: HWInventoryByFRUType'
+      of HWInventoryByFRU when HWInventoryByFRUType is
+      'HWInvByFRUCabinet'.
+    allOf:
+      - $ref: '#/definitions/HWInventory.1.0.0_HWInventoryByFRU'
+      - type: object
+        properties:
+          CabinetFRUInfo:
+            $ref: '#/definitions/HWInventory.1.0.0_RedfishChassisFRUInfo'
+    type: object
+  HWInvByFRUChassis:
+    description: >-
+      This is a subtype of HWInventoryByFRU for HMSType Chassis.
+      It is selected via the 'discriminator: HWInventoryByFRUType'
+      of HWInventoryByFRU when HWInventoryByFRUType is
+      'HWInvByFRUChassis'.
+    allOf:
+      - $ref: '#/definitions/HWInventory.1.0.0_HWInventoryByFRU'
+      - type: object
+        properties:
+          ChassisFRUInfo:
+            $ref: '#/definitions/HWInventory.1.0.0_RedfishChassisFRUInfo'
+    type: object
+  HWInvByFRURouterTOR:
+    description: >-
+      This is a subtype of HWInventoryByFRU for HMSType RouterTOR.
+      It is selected via the 'discriminator: HWInventoryByFRUType'
+      of HWInventoryByFRU when HWInventoryByFRUType is
+      'HWInvByFRURouterTOR'.
+    allOf:
+      - $ref: '#/definitions/HWInventory.1.0.0_HWInventoryByFRU'
+      - type: object
+        properties:
+          RouterTORFRUInfo:
+            $ref: '#/definitions/HWInventory.1.0.0_RedfishChassisFRUInfo'
+    type: object
+  HWInvByFRUComputeModule:
+    description: >-
+      This is a subtype of HWInventoryByFRU for HMSType ComputeModule.
+      It is selected via the 'discriminator: HWInventoryByFRUType'
+      of HWInventoryByFRU when HWInventoryByFRUType is
+      'HWInvByFRUComputeModule'.
+    allOf:
+      - $ref: '#/definitions/HWInventory.1.0.0_HWInventoryByFRU'
+      - type: object
+        properties:
+          ComputeModuleFRUInfo:
+            $ref: '#/definitions/HWInventory.1.0.0_RedfishChassisFRUInfo'
+    type: object
+  HWInvByFRURouterModule:
+    description: >-
+      This is a subtype of HWInventoryByFRU for HMSType RouterModule.
+      This is a Mountain switch module.
+      It is selected via the 'discriminator: HWInventoryByFRUType'
+      of HWInventoryByFRU when HWInventoryByFRUType is
+      'HWInvByFRURouterModule'.
+    allOf:
+      - $ref: '#/definitions/HWInventory.1.0.0_HWInventoryByFRU'
+      - type: object
+        properties:
+          RouterModuleFRUInfo:
+            $ref: '#/definitions/HWInventory.1.0.0_RedfishChassisFRUInfo'
+    type: object
+  HWInvByFRUNodeEnclosure:
+    description: >-
+      This is a subtype of HWInventoryByFRU for HMSType NodeEnclosure.
+      It represents a Mountain node card or River rack enclosure.  It is
+      NOT the BMC, which is separate and corresponds to a Redfish Manager.
+      It is selected via the 'discriminator: HWInventoryByFRUType'
+      of HWInventoryByFRU when HWInventoryByFRUType is
+      'HWInvByFRUNodeEnclosure'.
+    allOf:
+      - $ref: '#/definitions/HWInventory.1.0.0_HWInventoryByFRU'
+      - type: object
+        properties:
+          NodeEnclosureFRUInfo:
+            $ref: '#/definitions/HWInventory.1.0.0_RedfishChassisFRUInfo'
+    type: object
+  HWInvByFRUNode:
+    description: >-
+      This is a subtype of HWInventoryByFRU for HMSType Node.
+      It represents a service, compute or system node.
+      It is selected via the 'discriminator: HWInventoryByFRUType'
+      of HWInventoryByFRU when HWInventoryByFRUType is
+      'HWInvByFRUNode'.
+    allOf:
+      - $ref: '#/definitions/HWInventory.1.0.0_HWInventoryByFRU'
+      - type: object
+        properties:
+          NodeFRUInfo:
+            $ref: '#/definitions/HWInventory.1.0.0_RedfishSystemFRUInfo'
+    type: object
+  HWInvByFRUProcessor:
+    description: >-
+      This is a subtype of HWInventoryByFRU for HMSType Processor.
+      It represents a primary CPU type (e.g. non-accelerator).
+      It is selected via the 'discriminator: HWInventoryByFRUType'
+      of HWInventoryByFRU when HWInventoryByFRUType is
+      'HWInvByFRUProcessor'.
+    allOf:
+      - $ref: '#/definitions/HWInventory.1.0.0_HWInventoryByFRU'
+      - type: object
+        properties:
+          ProcessorFRUInfo:
+            $ref: '#/definitions/HWInventory.1.0.0_RedfishProcessorFRUInfo'
+    type: object
+    example:
+      FRUID: HOW-TO-ID-CPUS-FROM-REDFISH-IF-AT-ALL
+      Type: Processor
+      Subtype: SKL24
+      HWInventoryByFRUType: HWInvByFRUProcessor
+      ProcessorFRUInfo:
+        InstructionSet: x86-64
+        Manufacturer: Intel
+        MaxSpeedMHz: 2600
+        Model: Intel(R) Xeon(R) CPU E5-2623 v4 @ 2.60GHz
+        ProcessorArchitecture: x86
+        ProcessorId:
+          EffectiveFamily: 6
+          EffectiveModel: 79
+          IdentificationRegisters: 0x000406F1
+          MicrocodeInfo: 0xB000017
+          Step: 1
+          VendorID: GenuineIntel
+        ProcessorType: CPU
+        TotalCores: 24
+        TotalThreads: 48
+  HWInvByFRUMemory:
+    description: >-
+      This is a subtype of HWInventoryByFRU for HMSType Memory.
+      It represents a DIMM or other memory module type.
+      It is selected via the 'discriminator: HWInventoryByFRUType'
+      of HWInventoryByFRU when HWInventoryByFRUType is
+      'HWInvByLocMemory'.
+    allOf:
+      - $ref: '#/definitions/HWInventory.1.0.0_HWInventoryByFRU'
+      - type: object
+        properties:
+          MemoryFRUInfo:
+            $ref: '#/definitions/HWInventory.1.0.0_RedfishMemoryFRUInfo'
+    type: object
+  HWInventory.1.0.0_RedfishChassisFRUInfo:
+    description: >-
+      These are pass-through properties of the Redfish Chassis object type
+      that are also used in HMS inventory data when this is the underlying
+      Redfish object type for a particular HMS component type.  These are
+      properties of a specific hardware instance/FRU that remain the same if
+      the component is relocated within the system.
+    properties:
+      AssetTag:
+        description: The administratively-assigned asset tag for this chassis.
+        type: string
+        readOnly: true
+      ChassisType:
+        description: >-
+          This property indicates the type of physical form factor of this
+          resource (from Redfish - not all of these will likely appear
+          in practice.  In any case, the HMS type and subtype will
+          identify the hardware type, this is for informational purposes
+          only).
+        enum:
+          - Rack
+          - Blade
+          - Enclosure
+          - StandAlone
+          - RackMount
+          - Card
+          - Cartridge
+          - Row
+          - Pod
+          - Expansion
+          - Sidecar
+          - Zone
+          - Sled
+          - Shelf
+          - Drawer
+          - Module
+          - Component
+          - Other
+        readOnly: true
+        type: string
+      Model:
+        description: Manufacturer-provided model number for part.
+        type: string
+        readOnly: true
+      Manufacturer:
+        description: Intended to provide the manufacturer of the part.
+        type: string
+        readOnly: true
+      PartNumber:
+        description: Manufacturer-provided part number for this component.
+        type: string
+        readOnly: true
+      SerialNumber:
+        description: Manufacturer-provided serial number for this component.
+        type: string
+        readOnly: true
+      SKU:
+        description: Manufacturer-provided SKU for this component.
+        type: string
+        readOnly: true
+    type: object
+  HWInventory.1.0.0_RedfishSystemFRUInfo:
+    description: >-
+      These are pass-through properties of the Redfish ComputerSystem object
+      that are also used in HMS inventory data.  These are properties
+      of a specific hardware instance that remain the same if the component
+      is relocated within the system.
+
+      Note that Redfish ComputerSystem objects are an abstract type that
+      represents a system, but not necessarily a specific piece of hardware.
+      Chassis objects represent things like the physical enclosure.  The
+      system links to chassis and also to subcomponents that have their
+      own object types like Processors, Memory, and Storage.
+
+      That said, they are a close fit to how we represent nodes in HMS and
+      so it makes sense to pass through their properties since that is 
+      how we will discover this information anyways.
+    properties:
+      AssetTag:
+        description: The administratively-assigned asset tag for this chassis.
+        type: string
+        readOnly: true
+      BiosVersion:
+        description: The version of the system BIOS or primary system firmware.
+        type: string
+        readOnly: true
+      Model:
+        description: Manufacturer-provided model number for part.
+        type: string
+        readOnly: true
+      Manufacturer:
+        description: Intended to provide the manufacturer of the part.
+        type: string
+        readOnly: true
+      PartNumber:
+        description: Manufacturer-provided part number for this component.
+        type: string
+        readOnly: true
+      SerialNumber:
+        description: Manufacturer-provided serial number for this component.
+        type: string
+        readOnly: true
+      SKU:
+        description: Manufacturer-provided SKU for this component.
+        type: string
+      SystemType:
+        description: Type of system.  Probably always physical for now.
+        enum:
+          - Physical
+          - Virtual
+          - OS
+          - PhysicallyPartitioned
+          - VirtuallyPartitioned
+        readOnly: true
+        type: string
+      UUID:
+        $ref: '#/definitions/UUID.1.0.0'
+    type: object
+  HWInventory.1.0.0_RedfishProcessorFRUInfo:
+    description: >-
+      These are pass-through properties of the Redfish Processor object type
+      that are also used in HMS inventory data.  These are properties
+      of a specific processor instance that remain the same if it is 
+      relocated within the system.
+    properties:
+      InstructionSet:
+        description: The instruction set of the processor (Redfish pass-through)
+        enum:
+          - x86
+          - x86-64
+          - IA-64
+          - ARM-A32
+          - ARM-A64
+          - MIPS32
+          - MIPS64
+          - OEM
+        readOnly: true
+        type: string
+      Manufacturer:
+        description: The processor manufacturer
+        readOnly: true
+        type: string
+      MaxSpeedMHz:
+        description: The maximum clock speed of the processor
+        readOnly: true
+        type: number
+      Model:
+        description: The product model number of this device
+        readOnly: true
+        type: string
+      ProcessorArchitecture:
+        description: The architecture of the processor
+        enum:
+          - x86
+          - IA-64
+          - ARM
+          - MIPS
+          - OEM
+        readOnly: true
+        type: string
+      ProcessorId:
+        description: >-
+          Identification information for this processor.  Pass-through
+          from Redfish.
+        properties:
+          EffectiveFamily:
+            description: The effective Family for this processor
+            readOnly: true
+            type: string
+          EffectiveModel:
+            description: The effective Model for this processor
+            readOnly: true
+            type: string
+          IdentificationRegisters:
+            description: >-
+              The contents of the Identification Registers (CPUID) for this
+              processor
+            readOnly: true
+            type: string
+          MicrocodeInfo:
+            description: The Microcode Information for this processor
+            readOnly: true
+            type: string
+          Step:
+            description: The Step value for this processor
+            readOnly: true
+            type: string
+          VendorId:
+            description: The Vendor Identification for this processor
+            readOnly: true
+            type: string
+        type: object
+      ProcessorType:
+        description: The type of processor
+        enum:
+          - CPU
+          - GPU
+          - FPGA
+          - DSP
+          - Accelerator
+          - OEM
+        readOnly: true
+        type: string
+      TotalCores:
+        description: The total number of cores contained in this processor
+        readOnly: true
+        type: number
+      TotalThreads:
+        description: The total number of execution threads supported by this processor
+        readOnly: true
+        type: number
+    type: object
+  HWInventory.1.0.0_RedfishMemoryFRUInfo:
+    description: >-
+      These are pass-through properties of the Redfish Memory object type
+      that are also used in HMS inventory data.  These are properties
+      of a specific memory module that remain the same if it the module is 
+      relocated within the system.
+    properties:
+      BaseModuleType:
+        description: The base module type of Memory.
+        enum:
+          - RDIMM
+          - UDIMM
+          - SO_DIMM
+          - LRDIMM
+          - Mini_RDIMM
+          - Mini_UDIMM
+          - SO_RDIMM_72b
+          - SO_UDIMM_72b
+          - SO_DIMM_16b
+          - SO_DIMM_32b
+        readOnly: true
+        type: number
+      BusWidthBits:
+        description: Bus width in bits.
+        readOnly: true
+        type: number
+      CapacityMiB:
+        description: Memory Capacity in MiB.
+        readOnly: true
+        type: number
+      DataWidthBits:
+        description: Data width in bits.
+        readOnly: true
+        type: number
+      ErrorCorrection:
+        description: >-
+          Whether single or multiple errors, or address parity errors can be
+          corrected.
+        enum:
+          - NoECC
+          - SingleBitECC
+          - MultiBitECC
+          - AddressParity
+        readOnly: true
+        type: string
+      Manufacturer:
+        description: The manufacturer of the memory module
+        readOnly: true
+        type: string
+      MemoryType:
+        description: Type of memory module.
+        enum:
+          - DRAM
+          - NVDIMM_N
+          - NVDIMM_F
+          - NVDIMM_P
+        readOnly: true
+        type: string
+      MemoryDeviceType:
+        description: Type details of the memory.
+        enum:
+          - DDR
+          - DDR2
+          - DDR3
+          - DDR4
+          - DDR4_SDRAM
+          - DDR4E_SDRAM
+          - LPDDR4_SDRAM
+          - DDR3_SDRAM
+          - LPDDR3_SDRAM
+          - DDR2_SDRAM
+          - DDR2_SDRAM_FB_DIMM
+          - DDR2_SDRAM_FB_DIMM_PROBE
+          - DDR_SGRAM
+          - DDR_SDRAM
+          - ROM
+          - SDRAM
+          - EDO
+          - FastPageMode
+          - PipelinedNibble
+        readOnly: true
+        type: string
+      OperatingSpeedMhz:
+        description: Operating speed of Memory in MHz.
+        readOnly: true
+        type: number
+      PartNumber:
+        description: Manufacturer-provided part number for this component.
+        type: string
+        readOnly: true
+      RankCount:
+        description: Number of ranks available in the memory.
+        minimum: 0
+        readOnly: true
+        type: number
+      SerialNumber:
+        description: Manufacturer-provided serial number for this component.
+        type: string
+        readOnly: true
+    type: object
+  ###########################################################################
+  #
+  # Publish/subscribe messaging service data structures
+  #
+  ###########################################################################
+  PubSubMessageService.1.0.0_PubSubMessageService:
+    description: >-
+      Publish/subscribe messaging service.  This is the root entry for the
+      service
+    properties:
+      Service:
+        type: string
+        example: PubSubService
+        readOnly: true
+      Name: 
+        type: string
+        example: Pub/Sub Message Service
+        readOnly: true
+      Description:
+        type: string
+        example: Represents the properties for the Pub/Sub Message Service
+      DeliveryRetryAttempts:
+        type: number
+        format: int32
+        example: 3
+      DeliveryRetryIntervalInSeconds:
+        type: number
+        format: int32
+        example: 30
+      MessageTypesForSubscription:
+        items:
+          $ref: '#/definitions/PubSubMessageService.1.0.0_EventTypes'
+        type: array
+        example:
+          - StateChange
+          - NodeStateChange
+          - RedfishEndpointChange
+          - HWInventoryChange
+      MessageTypesForPublishing:
+        items:
+          $ref: '#/definitions/PubSubMessageService.1.0.0_EventTypes'
+        type: array
+        example:
+          - NodeStateChange
+          - HWErrorLog
+      ServiceEnabled:
+        description: Whether the service is active and can service requests.
+        type: boolean
+        example: true
+    type: object
+  PubSubMessageService.1.0.0_EventTypes:
+    description: >-
+      Message types available for subscription and/or publishing.
+      Subscriptions for each will be some requested subset (or all) of the
+      following.
+    enum:
+      - StateChange
+      - NodeStateChange
+      - RedfishEndpointChange
+      - HWErrorLog
+    type: string
+  PubSubMessageService.1.0.0_EventSubtypes:
+    description: >-
+      Subtype of EventType.  Subscribers of EventType X get all its subtypes
+      which explain why and/or how the updated values changed in the associated
+      objects.
+    enum:
+      - StateTransitionOK       # StateChange - Successful state change
+      - StateTransitionAbnormal # StateChange - Change due to problem, warn/alert
+      - StateTransitionDisable  # StateChange
+      - StateTransitionEnable   # StateChange
+      - NodeAvailable           # NodeStateChange
+      - NodeUnavailable         # NodeStateChange
+      - NodeFailed              # NodeStateChange
+      - NodeStandby             # NodeStateChange
+      - NodeRoleChanged         # NodeStateChange
+      - NodeNIDChanged          # NodeStateChange
+      - RedfishEndpointAdded    # RedfishEndpointChange
+      - RedfishEndpointModified # RedfishEndpointChange
+      - RedfishEndpointEnabled  # RedfishEndpointChange
+      - RedfishEndpointDisabled # RedfishEndpointChange
+      - RedfishEndpointRemoved  # RedfishEndpointChange
+      - HardwareAdded           # HWInventoryChange
+      - HardwareModified        # HWInventoryChange
+      - HardwareRemoved         # HWInventoryChange
+    type: string
+  PubSubEvent.1.0.0_PubSubEvent:
+    description: >-
+      This is an individual event with a particular subtype that, depending
+      on the EventType will notify of changes to one or more object types;
+      Components (for state/role/nid changes), RedfishEndpoints (for discovery
+      changes or config changes to the endpoint properties) and HWInventory
+      changes (via inventory discovery only).  The latter cases will typically
+      involve individual pieces of hardware that are swapped into/out-of the
+      system once the main discovery operation is complete.
+    properties:
+      EventType:
+        $ref: '#/definitions/PubSubMessageService.1.0.0_EventTypes'
+      EventSubtype:
+        $ref: '#/definitions/PubSubMessageService.1.0.0_EventSubtypes'
+      ComponentArray:
+        $ref: '#/definitions/ComponentArray_ComponentArray'
+      HWInventory:
+        $ref: '#/definitions/HWInventory.1.0.0_HWInventory'
+      RedfishEndpointArray:
+        $ref: '#/definitions/RedfishEndpointArray_RedfishEndpointArray'
+    example:
+      EventType:
+        NodeStateChange
+      EventSubtype:
+        NodeUnavailable
+      ExtendedInfo:
+        # This is the message that should explain what triggered the change.
+        # it is optional and may be omitted.
+        $ref: '#/definitions/Message_1.0.0_ExtendedInfo'
+      ComponentTargets:
+        ComponentArray:
+          - ID: x0c0s0b0n0
+            Type: Node
+            State: On
+            Flag: OK
+            Subtype: Rome
+            Role: Compute
+            NID: 0
+            HSNType: Sling
+            Arch: x86_64
+          - ID: x0c0s0b0n1
+            Type: Node
+            State: On
+            Flag: OK
+            Subtype: Rome
+            Role: Compute
+            NID: 1
+            HSNType: Sling
+            Arch: x86_64
+        HWInventory:
+        RedfishEndpointArray:
+    type: object
+  PubSubEventArray.1.0.0_PubSubEventArray:
+    description: >-
+      Events will be delivered as EventArrays regardless of whether there
+      is a single event type or not.  This is to cover cases where the same
+      single change to the system results in multiple types (or subtypes) of
+      events.
+    properties:
+      Name:
+        description: >-
+          A short description of the EventArray.  May be purely descriptive.
+          If more than one service generates such events, it should indicate
+          which one.
+        type: string
+        example: "State Event Array"
+      Version:
+        description: >-
+          Version of the PubSub interface, should more than one need to be
+          supported at the same time.
+        type: string
+        example: 1.0.0
+      Timestamp:
+        description:
+          The time the event was generated.  There is only one because a
+          single system change will have triggered the enclosed event(s).
+          Multiple such changes will result in multiple EventArrays.
+        type: string
+        format: date-time
+      Events:
+        items:
+          $ref: '#/definitions/PubSubEvent.1.0.0_PubSubEvent'
+        type: array
+    type: object
+  #########################################################################
+  #
+  # RedfishEndpoint data structures - Represents component running 
+  #                                   Redfish service entry point.
+  #
+  #########################################################################
+  RedfishEndpoint.1.0.0_RedfishEndpoint:
+    description: >-
+      This describes a RedfishEndpoint that is interrogated in order to
+      perform discovery of the components below it.  It is a BMC or
+      card/blade controller or other device that operates a Redfish
+      entry point through which the components underneath it may be
+      discovered and managed.
+    properties:
+      ID:
+        $ref: '#/definitions/XNameRFEndpoint.1.0.0'
+      Type:
+        # HMS Logical component type e.g. NodeBMC, ChassisBMC.
+        # This may be left blank and will be detected from the ID/xname
+        # and/or by the discovery process.
+        $ref: '#/definitions/HMSType.1.0.0'
+      Name:
+        description: >-
+          This is an aribitrary, user-provided name for the endpoint.  It can
+          describe anything that is not captured by the ID/xname. 
+        type: string
+      Hostname:
+        description: >-
+          Hostname of the endpoint's FQDN, will always be the host portion of
+          the fully-qualified domain name.
+          Note that the hostname should normally always be the same as the ID
+          field (i.e. xname) of the endpoint.
+        type: string
+      Domain:
+        description: >-
+          Domain of the endpoint's FQDN.  Will always match remaining
+          non-hostname portion of fully-qualified domain name (FQDN).
+        type: string
+      FQDN:
+        description: >-
+          Fully-qualified domain name of RF endpoint on management network.
+          This is not writable because it is made up of the Hostname and
+          Domain.
+        type: string
+      Enabled:
+        description: >-
+          To disable a component without deleting its data from the database,
+          can be set to false
+        type: boolean
+        example: true
+      UUID:
+        # UUID of Redfish service root
+        $ref: '#/definitions/UUID.1.0.0'
+      User:
+        description: Username to use when interrogating endpoint
+        type: string
+      Password:
+        description: >-
+          Password to use when interrogating endpoint, normally
+          suppressed in output.
+        type: string
+      UseSSDP:
+        description: Whether to use SSDP for discovery if the EP supports it.
+        type: boolean
+      MacRequired:
+        description: >- 
+          Whether the MAC must be used (e.g. in River) in setting up
+          geolocation info so the endpoint's location in the system can be
+          determined.  The MAC does not need to be provided when creating the
+          endpoint if the endpoint type can arrive at a geolocated hostname
+          on its own.
+        type: boolean
+      MACAddr:
+        description: >-
+          This is the MAC on the of the Redfish Endpoint on the
+          management network, i.e. corresponding to the FQDN field's
+          ethernet interface where the root service is running.
+          Not the HSN MAC.
+          This is a MAC address in the standard colon-separated 12 byte hex
+          format.
+        pattern: '^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$'
+        type: string
+        example: ae:12:e2:ff:89:9d
+      RediscoverOnUpdate:
+        description: Trigger a rediscovery when endpoint info is updated.
+        type: boolean
+      TemplateID:
+        description: >- 
+          Links to a discovery template defining how the endpoint should
+          be discovered.
+        type: string
+      DiscoveryInfo:
+        description: >-
+          Contains info about the discovery status of the given endpoint.
+        properties:
+          LastAttempt: 
+            description: The time the last discovery attempt took place.
+            format: date-time
+            readOnly: true
+            type: string
+          LastStatus:
+            description: Describes the outcome of the last discovery attempt.
+            enum:
+              - EndpointInvalid
+              - EPResponseFailedDecode
+              - HTTPsGetFailed
+              - NotYetQueried
+              - VerificationFailed
+              - ChildVerificationFailed
+              - DiscoverOK
+            type: string
+            readOnly: true
+          RedfishVersion:
+            description: Version of Redfish as reported by the RF service root.
+            type: string
+            readOnly: true
+        type: object
+        readOnly: true
+      #ComponentEndpoints:
+      #  items:
+      #    $ref: '#/definitions/ComponentEndpoint.1.0.0_ComponentEndpoint'
+      #  type: array
+      #  readOnly: true
+      #ServiceEndpoints:
+      #  items:
+      #    $ref: '#/definitions/ServiceEndpoint.1.0.0_ServiceEndpoint'
+      #  type: array
+      #  readOnly: true
+    type: object
+  RedfishEndpoint.1.0.0_ResourceURICollection:
+    properties:
+      Name:
+        description: >-
+          Should describe the collection, though the type of resources
+          the links correspond to should also be inferred from the context
+          in which the collection was obtained.
+        type: string
+        readOnly: true
+        example: (Type of Object) Collection
+      Members:
+        description: An array of ResourceIds.
+        items:
+          $ref: '#/definitions/ResourceURI.1.0.0'
+        type: array
+        readOnly: true
+      MemberCount:
+        description: Number of ResourceURIs in the collection
+        type: number
+        format: int32
+        readOnly: true
+    type: object
+  #
+  # RedfishEndpointArray - Used for queries returning 0->n RedfishEndpoints
+  #
+  RedfishEndpointArray_RedfishEndpointArray:
+    description: >-
+      This is a collection of RedfishEndpoint objects returned whenever a
+      query is expected to result in 0 to n matches.
+    properties:
+      RedfishEndpoints:
+        description: Contains the HMS RedfishEndpoint objects in the array.
+        items:
+          $ref: '#/definitions/RedfishEndpoint.1.0.0_RedfishEndpoint'
+        type: array
+    type: object
+  #
+  # RedfishEndpoint POST query bodies
+  #
+  RedfishEndpointArray_PostQuery:
+    description: >-
+      There are limits to the length of an HTTP URL and query string.
+      Hence, if we wish to query an arbitrary list of XName/IDs, it
+      will need to be in the body of the request.  This object is
+      used for this purpose.  It is similar to the analagous GET operation.
+    properties:
+      RedfishEndpointIDs:
+        description: >-
+          An array of XName/ID values for the RedfishEndpoints to query.
+        items:
+          $ref: '#/definitions/XNameForQuery.1.0.0'
+        type: array
+      partition:
+        $ref: '#/definitions/XNamePartition.1.0.0'
+    required:
+      - RedfishEndpointIDs
+    type: object
+  #########################################################################
+  #
+  # ServiceEndpoint - Captures discovered data about service running on a
+  #                   particular RedfishEndpoint
+  #
+  #########################################################################
+  ServiceEndpoint.1.0.0_ServiceEndpoint:
+    description: >-
+      This describes a service running on a Redfish endpoint and is populated
+      when Redfish endpoint discovery occurs.  It is used by clients who
+      need to interact directly with the service via Redfish.
+      
+      There are also ComponentEndpoints, which represent Redfish components of
+      a physical type (i.e., we track their state as components), which are
+      also discovered when the Redfish Endpoint is discovered.
+      
+      The RedfishEndpointID is just the ID of the parent Redfish endpoint.
+      As there are many service types per endpoint, the RedfishType
+      must also be included to get a unique entry for a service.  Services
+      do not have their own xnames, and so they are identifed by thee
+      combination of the RedfishEndpointID they are running on, plus
+      the RedfishType value (e.g. AccountService, TaskService, etc.).
+      
+      NOTE: These records are discovered, not created, and therefore are not
+      writable (since any changes would be overwritten by a subsequent
+      discovery).
+    properties:
+      RedfishEndpointID:
+        # Unique identifier for the parent RedfishEndpoint by its location
+        # i.e. xname.  This is essentially a back-reference to the RF endpoint
+        # that was used to discover this service.
+        $ref: '#/definitions/XNameRFEndpoint.1.0.0'
+      RedfishType:
+        # This is the Redfish service type, not to be confused with the HMS 
+        # component type.  In this case, may be AccountService, TaskService, 
+        # or so on.
+        $ref: '#/definitions/RedfishType.1.0.0'
+      RedfishSubtype:
+        # This may not be relevant to RF services like it is for components,
+        # so it is likely to not be present or empty.
+        $ref: '#/definitions/RedfishSubtype.1.0.0'
+      UUID:
+        $ref: '#/definitions/UUID.1.0.0'
+      OdataID:
+        # This is the relative path to the component relative to the parent
+        # RedfishEndpoint's service root.
+        $ref: '#/definitions/OdataID.1.0.0'
+      RedfishEndpointFQDN:
+        description: >-
+          This is a back-reference to the fully-qualified domain name of the
+          parent Redfish endpoint that was used to discover the component.  It
+          is the RedfishEndpointID field i.e. the hostname/xname plus its
+          current domain.
+        type: string
+        readOnly: true
+      RedfishURL:
+        description: >-
+          This is the complete URL to the corresponding Redfish object,
+          combining the RedfishEndpoint's FQDN and the OdataID.
+        type: string
+        readOnly: true
+      ServiceInfo:
+        # This is any additional information for the service.
+        $ref: '#/definitions/ServiceEndpoint.1.0.0_ServiceInfo'
+    type: object
+  ServiceEndpoint.1.0.0_ServiceInfo:
+    description: >-
+      This is any additional information for the service.  It is mostly
+      a placeholder at the moment and it is where new information will be
+      added.
+    properties:
+      Name:
+        description:  The name of the service.
+        type: string
+        readOnly: true
+    type: object
+  ###########################################################################
+  #
+  # Discover payload and DiscoveryStatus object definitions
+  #
+  ###########################################################################
+  DiscoveryStatus.1.0.0_DiscoveryStatus:
+    description: >-
+      Returns info on the current status of a discovery operation with the
+      given ID returned when a Discover action is requested.
+    properties:
+      ID:
+        description: The ID number of the discover operation.
+        type: number
+        format: int32
+        readOnly: true
+        example: 0
+      Status:
+        description: Describes the status of the given Discover operation.
+        enum:
+          - NotStarted
+          - Pending
+          - InProgress
+          - Complete
+        type: string
+        readOnly: true
+        example: Complete
+      LastUpdateTime:
+        description: The time that the Status field was last updated.
+        readOnly: true
+        format: date-time
+        type: string
+        example: '2018-08-09 03:55:57.000000'
+      Details:
+        $ref: '#/definitions/DiscoveryStatus.1.0.0_Details'
+    type: object
+  DiscoveryStatus.1.0.0_Details:
+    description: >-
+      Details accompanying a DiscoveryStatus entry.  Optional. 
+      Reserved for future use.
+    type: object
+    example: null
+  Discover.1.0.0_DiscoverInput:
+    description: >-
+      The POST body for a Discover operation.  Note that these fields are
+      optional.  The default for the xnames field is to select all
+      RedfishEndpoints. The default for force is false.
+    properties:
+      xnames:
+        description: >-
+          An array of XName/ID values for the RedfishEndpoints to discover.
+          If zero-length or omitted, all RedfishEndpoints will be discovered.
+        items:
+          $ref: '#/definitions/XNameRFEndpoint.1.0.0'
+        type: array
+      force:
+        description: >-
+          Whether to force discovery if there is already a conflicting
+          DiscoveryStatus entry that is either Pending or InProgress.
+          default is false.
+        type: boolean
+        example: false
+    type: object
+  ###########################################################################
+  #
+  # System Information Block (SIB) object definitions
+  #
+  ###########################################################################
+  SystemInformationBlock.1.0.0_SystemInformationBlock:
+    description: >-
+      A packaging up of relevant Component, HWInventory, HSNType,
+      and HSNInfo structs matching a particular query and delivered as
+      a single data structure.  This provides commonly needed information
+      that may be needed by a large number of endpoints in a single,
+      self-contained object.  While the all of the individual sections,
+      (except for the HSNInfo, which is obtained from the fabric manager)
+      can be queried using the more general APIs for these structures, the
+      SIB offers one-stop-shopping to package up data needed by clients to,
+      for example, bootstrap their initial system state.
+    properties:
+      XName:
+        description: The component xname used to query the SIB
+        type: string
+        example: s0
+      ItemsQueried:
+        description: >-
+          The subsections of the SIB requested in the query that 
+          produced this SIB.  This is given by the 'items' query
+          parameter or POST body property.
+        properties:
+          NodeList:
+            type: boolean
+          HWInventory:
+            type: boolean
+          HSNType:
+            type: boolean
+          HSNInfo:
+            type: boolean
+        type: object
+      SIBItems:
+        properties:
+          NodeList:
+            $ref: '#/definitions/ComponentArray_ComponentArray'
+          HSNType:
+            $ref: '#/definitions/NetType.1.0.0'
+          HWInventory:
+            $ref: '#/definitions/HWInventory.1.0.0_HWInventory'
+          HSNInfo:
+            $ref: '#/definitions/HSNInfo.1.0.0'
+        type: object
+        readOnly: true
+    type: object
+    readOnly: true
+  #
+  # Queries via POST for SIB data
+  #
+  SystemInformationBlock.1.0.0_PostQuery:
+    description: >-
+      A POST query that can be used to select the SIB block instead of
+      a get. 
+    properties:
+      XName:
+        description: The component xname used to query the SIB
+        type: string
+        example: s0
+      UseMsgBus:
+        description: Deliver over message bus.  Default false.
+        type: boolean
+      Items:
+        description: >-
+          The subsections of the SIB to be requested in the query that 
+          produced this SIB.  These will be reflected in the ItemsQueried
+          field in the response.  This, plus the xname can be used to match up
+          a response with the query parameters.  
+        properties:
+          NodeList:
+            type: boolean
+          HWInventory:
+            type: boolean
+          HSNType:
+            type: boolean
+          HSNInfo:
+            type: boolean
+        type: object
+    type: object
+  ##########################################################################
+  #
+  # General definitions 
+  #
+  ##########################################################################
+  Actions_1.0.0_ChassisActions:
+    description: >-
+      This is a pass-through field from Redfish that lists the available
+      actions for a Chassis component (if any were found, else if it
+      be omitted entirely).
+    properties:
+      '#Chassis.Reset':
+        properties:
+          "ResetType@Redfish.AllowableValues":
+            description: List of allowable 'reset' Redfish Action types
+            items:
+              type: string
+            type: array
+            example: [ "On", "ForceOff" ]
+          target:
+            description: target URI for Redfish Action
+            type: string
+            example: /redfish/v1/Chassis/RackEnclosure/Actions/Chassis.Reset
+        type: object
+    type: object
+    readOnly: true
+  Actions_1.0.0_ComputerSystemActions:
+    description: >-
+      This is a pass-through field from Redfish that lists the available
+      actions for a System component (if any were found, else if it
+      be omitted entirely).
+    properties:
+      '#ComputerSystem.Reset':
+        properties:
+          "ResetType@Redfish.AllowableValues":
+            description: List of allowable 'reset' Redfish Action types
+            items:
+              type: string
+            type: array
+            example: [ "On", "ForceOff", "ForceRestart" ]
+          target:
+            description: target URI for Redfish Action
+            type: string
+            example: /redfish/v1/Systems/System.1/Actions/ComputerSystem.Reset
+        type: object
+    type: object
+    readOnly: true
+  Actions_1.0.0_ManagerActions:
+    description: >-
+      This is a pass-through field from Redfish that lists the available
+      actions for a Manager component (if any were found, else if it
+      be omitted entirely).
+    properties:
+      '#Manager.Reset':
+        properties:
+          "ResetType@Redfish.AllowableValues":
+            description: List of allowable 'reset' Redfish Action types
+            items:
+              type: string
+            type: array
+            example: [ "ForceRestart" ]
+          target:
+            description: target URI for Redfish Action
+            type: string
+            example: /redfish/v1/Managers/BMC/Actions/Manager.Reset
+        type: object
+    type: object
+    readOnly: true
+  Message_1.0.0_ExtendedInfo:
+    # TODO: Generalize this so we use the same messages/errors throughout
+    # HMS and via outside interfaces such as CMBus.  They should be ReSTy
+    # etc.
+    description: >-
+      TODO This is a general message scheme meant to replace and generalize
+      old HSS error codes.  Largely TBD placeholder.
+    properties:
+      ID:
+        description: Formal, machine readible, name for message.
+        type: string
+      Message:
+        description: Human readable description of message.
+        type: string
+      Flag:
+        # OK, Warning, or Alert - Indicates message, warning or error.
+        $ref: '#/definitions/HMSFlag.1.0.0'
+    type: object
+  Error:
+    # TODO: Should be RFC 7807 compliant
+    description: >-
+      Error reported to client.  Should be RFC 7807 compliant eventually
+      but for now a basic, TBD placeholder.  Should comply with RFC and
+      also allow ExtendedInfo messages to be put in user-defined payload
+      section to join both message types.  RFC 7807 is really for
+      communicating errors to HTTP clients so it isn't a general message
+      scheme.  RFC 7808 also involves including a URL to retrive message info
+      so that will need to be figured out before we can really provide
+      compliant errors in any event.  
+    type: object
+    required:
+      - code
+      - message
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+  EthernetNICInfo_1.0.0:
+    description: >-
+      This is a summary info for one ordinary Ethernet NIC (i.e. not on HSN).
+      These fields are all passed through from a Redfish EthernetInterface
+      object.
+    properties:
+      RedfishId:
+        description:  The Redfish 'Id' field for the interface.
+        type: string
+        readOnly: true
+        example: 1
+      "@odata.id":
+        description:  >-
+          This is the relative path to the EthernetInterface via the
+          Redfish entry point. (i.e. the @odata.id field).
+        type: string
+        readOnly: true
+        example: /redfish/v1/{Chassis/Managers/Systems}/{Id}/EthernetInterfaces/1
+      Description:
+        description: The Redfish 'Description' field for the interface.
+        type: string
+        readOnly: true
+        example: Integrated NIC 1
+      FQDN:
+        description: >-
+          The Redfish 'FQDN' of the interface.  This may or may not be set
+          and is not necessarily the same as the FQDN of the ComponentEndpoint.
+        type: string
+        readOnly: true
+      Hostname:
+        description: >-
+          The Redfish 'Hostname field' for the interface.  This may or may
+          not be set and is not necessarily the same as the Hostname of the
+          ComponentEndpoint.
+        type: string
+        readOnly: true
+      InterfaceEnabled:
+        description: >-
+          The Redfish 'InterfaceEnabled' field if provided by Redfish, else
+          it will be omitted.
+        type: boolean
+        readOnly: true
+      MACAddress:
+        description: >-
+          The Redfish 'MacAddress` field for the interface.  This should
+          normally be set but is not necessarily the same as the MacAddr of
+          the ComponentEndpoint (as there may be multiple interfaces).
+        pattern: '^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$'
+        type: string
+        example: ae:12:ce:7a:aa:99
+      PermanentMACAddress:
+        description: >-
+          The Redfish 'PermanentMacAddress` field for the interface. This may
+          or may not be set and is not necessarily the same as the MacAddr
+          of the ComponentEndpoint (as there may be multiple interfaces).
+        pattern: '^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$'
+        type: string
+        example: ae:12:ce:7a:aa:99
+    type: object
+  FRUId.1.0.0:
+    description: >-
+      Uniquely identifies a piece of hardware by a serial-number like
+      identifer that is globally unique within the hardware inventory,
+    type: string
+    readOnly: true
+  HMSArch.1.0.0:
+    description: >-
+      This is the basic architecture of the component so the proper software
+      can be selected and so on.
+    enum:
+      - X86
+      - ARM
+      - Other
+    type: string
+    example: X86
+  HMSFlag.1.0.0:
+    description: >-
+      This property indicates the state flag of the underlying component.
+    enum:
+      - OK
+      - Warning
+      - Alert
+    type: string
+    example: OK
+  HMSRole.1.0.0:
+    description: >-
+      This is a possibly reconfigurable role for a component, especially a node.
+    enum:
+      - Compute
+      - Service
+      - System
+    type: string
+    example: Compute
+  HMSState.1.0.0:
+    description: >-
+      This property indicates the state of the underlying component.
+    enum:
+      - Unknown
+      - Empty
+      - Disabled
+      - Populated
+      - Off
+      - On
+      - Active
+      - Standby
+      - Halt
+      - Ready
+      - Paused
+    type: string
+    example: Ready
+  HMSType.1.0.0:
+    description: >-
+      This is the HMS component type category.  It has a particular xname
+      format and represents the kind of component that can occupy that
+      location.  Not to be confused with RedfishType which is Redfish
+      specific and only used when providing Redfish endpoint data from
+      discovery.
+    enum:
+      - CDU
+      - CabinetCDU
+      - CabinetPDU
+      - Cabinet
+      - Chassis
+      - ChassisBMC
+      - RouterTOR
+      - RouterTORFpga
+      - CMMRectifier
+      - CMMFpga
+      - CEC
+      - ComputeModule
+      - RouterModule
+      - NodeBMC
+      - NodeEnclosure
+      - Node
+      - Processor
+      - NodeNIC
+      - Memory
+      - NodeAccel
+      - NodeFpga
+      - HSNAsic
+      - RouterFpga
+      - HSNLink
+      - HSNConnector
+      - INVALID
+    type: string
+    readOnly: true
+    example: Node
+  NetType.1.0.0:
+    description: >-
+      This is the type of high speed network the component is connected to,
+      if it is an applicable component type and the interface is present, or
+      the type of the system HSN.
+    enum:
+      - Sling
+      - Infiniband
+      - Ethernet
+      - OEM
+      - None
+    type: string
+    readOnly: true
+    example: Sling
+  NIDRange.1.0.0:
+    description: >-
+      NID range values to query matching components, e.g. "0-24".  Supply
+      only a single range, more can be given in an array of these values.
+    type: string
+    example: "0-24"
+  NICAddrs.1.0.0:
+    description: A collection of HSN NIC addresses in string form.
+    items:
+      type: string
+    type: array
+    example: [0x234e12, 0xaf3f12]
+  OdataID.1.0.0:
+    description: >-
+      This is the path (relative to a Redfish endpoint) of a particular
+      Redfish resource, e.g. /Redfish/v1/Systems/System.Embedded.1
+    type: string
+    readOnly: true
+    example: /redfish/v1/Systems/System.Embedded.1
+  RedfishType.1.0.0:
+    description: >-
+      This is the Redfish object type, not to be confused with the HMS 
+      component type.
+    enum:
+      - Chassis
+      - ComputerSystem
+      - EthernetInterface
+      - Manager
+      - Memory
+      - Processor
+      - AccountService
+      - EventService
+      - LogService
+      - SessionService
+      - TaskService
+      - UpdateService
+    type: string
+    readOnly: true
+    example: ComputerSystem
+  RedfishSubtype.1.0.0:
+    description: >-
+      This is the type corresponding to the redfish object type, i.e. the
+      ChassisType field, SystemType, ManagerType fields.  We only use
+      these three types to create ComponentEndpoints for now.
+    enum:
+      - Rack
+      - Blade
+      - Enclosure
+      - StandAlone
+      - RackMount
+      - Card
+      - Cartridge
+      - Row
+      - Pod
+      - Expansion
+      - Sidecar
+      - Zone
+      - Sled
+      - Shelf
+      - Drawer
+      - Module
+      - Component
+      - Other
+      - Physical
+      - Virtual
+      - OS
+      - PhysicallyPartitioned
+      - VirtuallyPartitioned
+      - ManagementController
+      - EnclosureManager
+      - BMC
+      - RackManager
+      - AuxiliaryController
+    type: string
+    readOnly: true
+    example: Physical
+  ResourceURI.1.0.0:
+    description: >-
+      A ResourceURI is like an odata.id, it provides a path to a resource
+      from the API root, such that when a GET is performed, the corresponding
+      object is returned.  It does not imply other odata functionality.
+    type: object
+    properties:
+      ResourceURI:
+        type: string
+        example: /hsm/v1/API_TYPE/OBJECT_TYPE/OBJECT_ID
+  ResourceURICollection_ResourceURICollection:
+    description: >-
+      A ResourceURI is like an odata.id, it provides a path to a resource
+      from the API root, such that when a GET is performed, the corresponding
+      object is returned.  It does not imply other odata functionality.  This
+      is a collection of such IDs, of a single base type, grouped together 
+      for some purpose.
+    properties:
+      Name:
+        description: >-
+          Should describe the collection, though the type of resources
+          the links correspond to should also be inferred from the context
+          in which the collection was obtained.
+        type: string
+        readOnly: true
+        example: (Type of Object) Collection
+      Members:
+        description: An array of ResourceIds.
+        items:
+          $ref: '#/definitions/ResourceURI.1.0.0'
+        type: array
+        readOnly: true
+      MemberCount:
+        description: Number of ResourceURIs in the collection
+        type: number
+        format: int32
+        readOnly: true
+    type: object
+  UUID.1.0.0:
+    description: >-
+      This is a universally unique identifier i.e. UUID in the canonical
+      format provided by Redfish to identify endpoints and services.
+      If this is the UUID of a RedfishEndpoint, it should be the UUID
+      broadcast by SSDP, if applicable.
+    pattern: '([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})'
+    type: string
+    readOnly: true
+    example: bf9362ad-b29c-40ed-9881-18a5dba3a26b
+  XName.1.0.0:
+    description: >-
+      Uniquely identifies the component by its physical location (xname).
+      There are formatting rules depending on the matching HMSType.
+    type: string
+    example: x0c0s0b0n0
+    readOnly: true
+  XNameRFEndpoint.1.0.0:
+    description: >-
+      Uniquely identifies the component by its physical location (xname).
+      This is identical to a normal XName, but specifies a case where
+      a BMC or other controller type is expected.
+    type: string
+    example: x0c0s0b0
+  XNameForQuery.1.0.0:
+    description: >-
+      Uniquely identifies the component by its physical location (xname).
+      There are formatting rules depending on the matching HMSType.
+      This is identical to XName except that it is not read-only which
+      would prevent it from being a required parameter in query
+      operations in Swagger 2.0.  These operations do not actually write
+      the XName, merely using at a selector to do bulk writes of multiple
+      records, so this is fine.
+    type: string
+    example: x0c0s0b0n0
+  XNamePartition.1.0.0:
+    description: >-
+      This is an ordinary xname, but one where only a partition (hard:soft)
+      or the system alias (s0) will be expected as valid input.
+    type: string
+    example: p1:2
+  XNameCompOrPartition.1.0.0:
+    description: >-
+      This is an ordinary xname, but one where only a partition (hard:soft)
+      or the system alias (s0) will be expected as valid input, or else
+      a parent component.
+    type: string
+    example: s0
