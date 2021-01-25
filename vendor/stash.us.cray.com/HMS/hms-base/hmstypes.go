@@ -135,7 +135,7 @@ var hmsCompRecognitionTable = map[string]hmsCompRecognitionEntry{
 	"partition": {
 		Partition,
 		HMSTypeInvalid,
-		regexp.MustCompile("^p([0-9]+).([0-9]+)$"),
+		regexp.MustCompile("^p([0-9]+)(.([0-9]+))?$"),
 		"p%d.%d",
 		2,
 	},

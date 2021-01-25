@@ -1,4 +1,24 @@
-// Copyright 2018-2020 Hewlett Packard Enterprise Development LP
+// MIT License
+//
+// (C) Copyright [2019-2021] Hewlett Packard Enterprise Development LP
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+// OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+// ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
 
 package rf
 
@@ -905,6 +925,9 @@ type EpSystem struct {
 	Processors EpProcessors `json:"processors"`
 	MemoryMods EpMemoryMods `json:"memoryMods"`
 
+	cpuCount   int
+	accelCount int
+
 	StorageGroups EpStorageCollections `json:"storageGroups"`
 	Drives        EpDrives             `json:"drives"`
 
@@ -936,6 +959,8 @@ func NewEpSystem(epRF *RedfishEP, odataID ResourceID, rawOrdinal int) *EpSystem 
 	s.Ordinal = -1
 	s.RawOrdinal = rawOrdinal
 	s.epRF = epRF
+	s.cpuCount = 0
+	s.accelCount = 0
 	return s
 }
 
@@ -1276,18 +1301,12 @@ func (s *EpSystem) discoverRemotePhase1() {
 		s.Processors.OIDs = make(map[string]*EpProcessor)
 
 		sort.Sort(ResourceIDSlice(procInfo.Members))
-		cpuOrd := 0
-		accelOrd := 0
-		for _, pOID := range procInfo.Members {
+		for procOrd, pOID := range procInfo.Members {
 			pID := pOID.Basename()
 			// Both CPUs and GPUs show up under /redfish/v1/Systems/{systemID}/Processors
-			if strings.HasPrefix(strings.ToLower(pID), "cpu") {
-				s.Processors.OIDs[pID] = NewEpProcessor(s, pOID, cpuOrd)
-				cpuOrd++
-			} else if strings.HasPrefix(strings.ToLower(pID), "gpu") {
-				s.Processors.OIDs[pID] = NewEpProcessor(s, pOID, accelOrd)
-				accelOrd++
-			}
+			// Need to update ordinal value of each processor based on value of its ProcessorType field (CPU or GPU)
+			// in EpProcessor.discoverPhase2
+			s.Processors.OIDs[pID] = NewEpProcessor(s, pOID, procOrd)
 		}
 		s.Processors.discoverRemotePhase1()
 	}
@@ -1960,12 +1979,14 @@ func (p *EpProcessor) discoverLocalPhase2() {
 	if (base.GetHMSType(p.ID) != base.Processor ||
 		p.Type != base.Processor.String()) &&
 		(base.GetHMSType(p.ID) != base.NodeAccel ||
-		p.Type != base.NodeAccel.String()) {
+			p.Type != base.NodeAccel.String()) {
 		errlog.Printf("Error: Bad xname ID ('%s') or Type ('%s') for: %s\n",
 			p.ID, p.Type, p.ProcessorURL)
 		p.LastStatus = VerificationFailed
 		return
 	}
+
+	errlog.Printf("Processor xname ID ('%s') and Type ('%s') for: %s\n", p.ID, p.Type, p.ProcessorURL)
 	p.LastStatus = DiscoverOK
 }
 
