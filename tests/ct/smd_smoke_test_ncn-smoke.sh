@@ -1,12 +1,32 @@
 #!/bin/bash -l
 #
-# Copyright 2020 Hewlett Packard Enterprise Development LP
+# MIT License
+#
+# (C) Copyright [2019-2021] Hewlett Packard Enterprise Development LP
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
 #
 ###############################################################
 #
 #     CASM Test - Cray Inc.
 #
-#     TEST IDENTIFIER   : hsm_smoke_test
+#     TEST IDENTIFIER   : smd_smoke_test
 #
 #     DESCRIPTION       : Automated test for verifying basic HSM/SMD API
 #                         infrastructure and installation on Cray Shasta
@@ -14,9 +34,9 @@
 #                         
 #     AUTHOR            : Mitch Schooler
 #
-#     DATE STARTED      : 09/22/2020
+#     DATE STARTED      : 04/29/2019
 #
-#     LAST MODIFIED     : 11/18/2020
+#     LAST MODIFIED     : 02/01/2021
 #
 #     SYNOPSIS
 #       This is a smoke test for the HMS HSM/SMD API that makes basic HTTP
@@ -24,7 +44,7 @@
 #       respond and function as expected after an installation.
 #
 #     INPUT SPECIFICATIONS
-#       Usage: hsm_smoke_test
+#       Usage: smd_smoke_test
 #       
 #       Arguments: None
 #
@@ -36,26 +56,35 @@
 #       This smoke test is based on the Shasta health check srv_check.sh
 #       script in the CrayTest repository that verifies the basic health of
 #       various microservices but instead focuses exclusively on the HSM/SMD
-#       API. It was implemented to run from the ct-pipelines container off
-#       of the NCN of the system under test within the DST group's Continuous
-#       Testing (CT) framework as part of the remote-smoke test suite.
+#       API. It was implemented to run on the NCN of the system under test
+#       within the DST group's Continuous Testing (CT) framework as part of
+#       the ncn-smoke test suite.
 #
 #     SPECIAL REQUIREMENTS
-#       Must be executed from the ct-pipelines container on a remote host
-#       (off of the NCNs of the test system) with the Continuous Test
-#       infrastructure installed.
+#       Must be executed from the NCN.
 #
 #     UPDATE HISTORY
 #       user       date         description
 #       -------------------------------------------------------
-#       schooler   09/22/2020   initial implementation
+#       schooler   04/29/2019   initial implementation
+#       schooler   07/10/2019   add AuthN support for API calls
+#       schooler   07/10/2019   update smoke test library location
+#                               from hms-services to hms-common
+#       schooler   08/19/2019   add initial check_pod_status test
+#       schooler   09/06/2019   add test case documentation
+#       schooler   09/09/2019   update smoke test library location
+#                               from hms-common to hms-test
+#       schooler   09/10/2019   update Cray copyright header
+#       schooler   10/07/2019   switch from SMS to NCN naming convention
+#       schooler   07/01/2020   add API test cases from updated swagger
+#       schooler   09/15/2020   use latest hms_smoke_test_lib
 #       schooler   11/18/2020   remove deprecated HSNInterfaces test
+#       schooler   02/01/2021   rename to smd_smoke_test
 #
 #     DEPENDENCIES
 #       - hms_smoke_test_lib_ncn-resources_remote-resources.sh which is
-#         expected to be packaged in
-#         /opt/cray/tests/remote-resources/hms/hms-test in the ct-pipelines
-#         container.
+#         expected to be packaged in /opt/cray/tests/ncn-resources/hms/hms-test
+#         on the NCN.
 #
 #     BUGS/LIMITATIONS
 #       None
@@ -98,9 +127,10 @@
 # initialize test variables
 TEST_RUN_TIMESTAMP=$(date +"%Y%m%dT%H%M%S")
 TEST_RUN_SEED=${RANDOM}
-OUTPUT_FILES_PATH="/tmp/hsm_smoke_test_out-${TEST_RUN_TIMESTAMP}.${TEST_RUN_SEED}"
-SMOKE_TEST_LIB="/opt/cray/tests/remote-resources/hms/hms-test/hms_smoke_test_lib_ncn-resources_remote-resources.sh"
-CURL_ARGS="-k -i -s -S"
+OUTPUT_FILES_PATH="/tmp/smd_smoke_test_out-${TEST_RUN_TIMESTAMP}.${TEST_RUN_SEED}"
+SMOKE_TEST_LIB="/opt/cray/tests/ncn-resources/hms/hms-test/hms_smoke_test_lib_ncn-resources_remote-resources.sh"
+TARGET="api-gw-service-nmn.local"
+CURL_ARGS="-i -s -S"
 MAIN_ERRORS=0
 CURL_COUNT=0
 
@@ -114,6 +144,13 @@ function cleanup()
 # main
 function main()
 {
+    # retrieve Keycloak authentication token for session
+    TOKEN=$(get_auth_access_token)
+    TOKEN_RET=$?
+    if [[ ${TOKEN_RET} -ne 0 ]] ; then
+        cleanup
+        exit 1
+    fi
     AUTH_ARG="-H \"Authorization: Bearer $TOKEN\""
 
     # GET tests
@@ -172,26 +209,6 @@ function check_pod_status()
     return $?
 }
 
-# TARGET_SYSTEM is expected to be set in the ct-pipelines container
-if [[ -z ${TARGET_SYSTEM} ]] ; then
-    >&2 echo "ERROR: TARGET_SYSTEM environment variable is not set"
-    cleanup
-    exit 1
-else
-    echo "TARGET_SYSTEM=${TARGET_SYSTEM}"
-    TARGET="auth.${TARGET_SYSTEM}"
-    echo "TARGET=${TARGET}"
-fi
-
-# TOKEN is expected to be set in the ct-pipelines container
-if [[ -z ${TOKEN} ]] ; then
-    >&2 echo "ERROR: TOKEN environment variable is not set"
-    cleanup
-    exit 1
-else
-    echo "TOKEN=${TOKEN}"
-fi
-
 trap ">&2 echo \"recieved kill signal, exiting with status of '1'...\" ; \
     cleanup ; \
     exit 1" SIGHUP SIGINT SIGTERM
@@ -212,12 +229,12 @@ if [[ $? -ne 0 ]] ; then
     exit 1
 fi
 
-echo "Running hsm_smoke_test..."
+echo "Running smd_smoke_test..."
 
 # run initial pod status test
 check_pod_status
 if [[ $? -ne 0 ]] ; then
-    echo "FAIL: hsm_smoke_test ran with failures"
+    echo "FAIL: smd_smoke_test ran with failures"
     cleanup
     exit 1
 fi
@@ -225,11 +242,11 @@ fi
 # run main API tests
 main
 if [[ $? -ne 0 ]] ; then
-    echo "FAIL: hsm_smoke_test ran with failures"
+    echo "FAIL: smd_smoke_test ran with failures"
     cleanup
     exit 1
 else
-    echo "PASS: hsm_smoke_test passed!"
+    echo "PASS: smd_smoke_test passed!"
     cleanup
     exit 0
 fi

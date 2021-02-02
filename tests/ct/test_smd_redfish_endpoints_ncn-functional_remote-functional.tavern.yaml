@@ -1,0 +1,598 @@
+# MIT License
+
+# (C) Copyright [2019-2021] Hewlett Packard Enterprise Development LP
+
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
+
+# Tavern test cases for the Hardware State Manager (HSM) Redfish endpoints API.
+# Author: Mitch Schooler, Isa Wazirzada
+# Service: Hardware State Manager
+
+# HMS test metrics test cases: 12
+# 1. GET /RedfishEndpoints API response code
+# 2. GET /RedfishEndpoints API response body
+# 3. GET /RedfishEndpoints?type=NodeBMC API response code
+# 4. GET /RedfishEndpoints?type=NodeBMC API response body
+# 5. GET /RedfishEndpoints/{xname} nodeBMC API response code
+# 6. GET /RedfishEndpoints/{xname} nodeBMC API response body
+# 7. GET /RedfishEndpoints?id={xname} nodeBMC API response code
+# 8. GET /RedfishEndpoints?id={xname} nodeBMC API response body
+# 9. GET /RedfishEndpoints?fqdn={fqdn} API response code
+# 10. GET /RedfishEndpoints?fqdn={fqdn} API response body
+# 11. Disabled (CAN NCNs in HSM issue CASMHMS-2913) - GET /RedfishEndpoints?uuid={uuid} API response code
+# 12. Disabled (CAN NCNs in HSM issue CASMHMS-2913) - GET /RedfishEndpoints?uuid={uuid} API response body
+# 13. GET /RedfishEndpoints/Query/{xname} nodeBMC API response code
+# 14. GET /RedfishEndpoints/Query/{xname} nodeBMC API response body
+---
+test_name: Ensure that we can gather information from the RedfishEndpoints collection
+
+stages:
+  # 1. GET /RedfishEndpoints API response code
+  # 2. GET /RedfishEndpoints API response body
+  - name: Ensure that we can conduct a query on the RedfishEndpoints collection
+    request:
+      url: "{base_url}/smd/hsm/v1/Inventory/RedfishEndpoints"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            mapping:
+              RedfishEndpoints:
+                type: seq
+                required: True
+                matching: all
+                sequence:
+                  - type: map
+                    mapping:
+                      DiscoveryInfo:
+                        type: map
+                        mapping:
+                          LastDiscoveryAttempt:
+                            type: timestamp
+                            required: True
+                          LastDiscoveryStatus:
+                            type: str
+                            required: True
+                            enum:
+                              - "DiscoverOK"
+                              #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                              - "HTTPsGetFailed"
+                          RedfishVersion:
+                            type: str
+                            #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                            #required: True
+                            required: False
+                      Domain:
+                        type: str
+                        required: True
+                      Enabled:
+                        type: bool
+                        required: True
+                      FQDN:
+                        type: str
+                        required: True
+                      Hostname:
+                        type: str
+                        required: True
+                      ID:
+                        type: str
+                        required: True
+                      MACAddr:
+                        type: str
+                        #TODO: break out management and compute node test cases for MACAddr CASMHMS-3162
+                        #required: True
+                        required: False
+                      Password:
+                        type: str
+                        required: True
+                      IPAddress:
+                        type: str
+                        # introduced in v1.3, optional field
+                        required: False
+                      RediscoverOnUpdate:
+                        type: bool
+                        required: True
+                      Type:
+                        type: str
+                        required: True
+                        enum:
+                          - "NodeBMC"
+                          - "ChassisBMC"
+                          - "RouterBMC"
+                      UUID:
+                        type: str
+                        #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                        #required: True
+                        required: False
+                      User:
+                        type: str
+                        required: True
+
+  # 3. GET /RedfishEndpoints?type=NodeBMC API response code
+  # 4. GET /RedfishEndpoints?type=NodeBMC API response body
+  - name: Ensure that we can conduct a query on the RedfishEndpoints collection using the type parameter
+    request:
+      url: "{base_url}/smd/hsm/v1/Inventory/RedfishEndpoints?type=NodeBMC"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            mapping:
+              RedfishEndpoints:
+                type: seq
+                required: True
+                matching: all
+                sequence:
+                  - type: map
+                    mapping:
+                      DiscoveryInfo:
+                        type: map
+                        mapping:
+                          LastDiscoveryAttempt:
+                            type: timestamp
+                            required: True
+                          LastDiscoveryStatus:
+                            type: str
+                            required: True
+                            enum:
+                              - "DiscoverOK"
+                              #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                              - "HTTPsGetFailed"
+                          RedfishVersion:
+                            type: str
+                            #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                            #required: True
+                            required: False
+                      Domain:
+                        type: str
+                        required: True
+                      Enabled:
+                        type: bool
+                        required: True
+                      FQDN:
+                        type: str
+                        required: True
+                      Hostname:
+                        type: str
+                        required: True
+                      ID:
+                        type: str
+                        required: True
+                      MACAddr:
+                        type: str
+                        #TODO: break out management and compute node test cases for MACAddr CASMHMS-3162
+                        #required: True
+                        required: False
+                      Password:
+                        type: str
+                        required: True
+                      IPAddress:
+                        type: str
+                        # introduced in v1.3, optional field
+                        required: False
+                      RediscoverOnUpdate:
+                        type: bool
+                        required: True
+                      Type:
+                        type: str
+                        required: True
+                        enum:
+                          - "NodeBMC"
+                      UUID:
+                        type: str
+                        #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                        #required: True
+                        required: False
+                      User:
+                        type: str
+                        required: True
+
+  - name: Get a NodeBMC xname from the Components collection to use in the next stage
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components?type=NodeBMC"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      save:
+        json:
+          xname: Components[0].ID
+
+  # 5. GET /RedfishEndpoints/{xname} nodeBMC API response code
+  # 6. GET /RedfishEndpoints/{xname} nodeBMC API response body
+  - name: Get Redfish endpoint data for a given NodeBMC xname
+    request:
+      url: "{base_url}/smd/hsm/v1/Inventory/RedfishEndpoints/{xname}"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            mapping:
+              DiscoveryInfo:
+                type: map
+                mapping:
+                  LastDiscoveryAttempt:
+                    type: timestamp
+                    required: True
+                  LastDiscoveryStatus:
+                    type: str
+                    required: True
+                    enum:
+                      - "DiscoverOK"
+                      #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                      - "HTTPsGetFailed"
+                  RedfishVersion:
+                    type: str
+                    #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                    #required: True
+                    required: False
+              Domain:
+                type: str
+                required: True
+              Enabled:
+                type: bool
+                required: True
+              FQDN:
+                type: str
+                required: True
+              Hostname:
+                type: str
+                required: True
+              ID:
+                type: str
+                required: True
+                enum:
+                  - "{xname}"
+              MACAddr:
+                type: str
+                #TODO: break out management and compute node test cases for MACAddr CASMHMS-3162
+                #required: True
+                required: False
+              Password:
+                type: str
+                required: True
+              IPAddress:
+                type: str
+                # introduced in v1.3, optional field
+                required: False
+              RediscoverOnUpdate:
+                type: bool
+                required: True
+              Type:
+                type: str
+                required: True
+                enum:
+                  - "NodeBMC"
+              UUID:
+                type: str
+                #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                #required: True
+                required: False
+              User:
+                type: str
+                required: True
+      save:
+        json:
+          fqdn: FQDN
+          #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+          #uuid: UUID
+
+  # 7. GET /RedfishEndpoints?id={xname} nodeBMC API response code
+  # 8. GET /RedfishEndpoints?id={xname} nodeBMC API response body
+  - name: Ensure that we can conduct a query on the RedfishEndpoints collection using the id parameter
+    request:
+      url: "{base_url}/smd/hsm/v1/Inventory/RedfishEndpoints?id={xname}"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            mapping:
+              RedfishEndpoints:
+                type: seq
+                required: True
+                matching: all
+                sequence:
+                  - type: map
+                    mapping:
+                      DiscoveryInfo:
+                        type: map
+                        mapping:
+                          LastDiscoveryAttempt:
+                            type: timestamp
+                            required: True
+                          LastDiscoveryStatus:
+                            type: str
+                            required: True
+                            enum:
+                              - "DiscoverOK"
+                              #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                              - "HTTPsGetFailed"
+                          RedfishVersion:
+                            type: str
+                            #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                            #required: True
+                            required: False
+                      Domain:
+                        type: str
+                        required: True
+                      Enabled:
+                        type: bool
+                        required: True
+                      FQDN:
+                        type: str
+                        required: True
+                      Hostname:
+                        type: str
+                        required: True
+                      ID:
+                        type: str
+                        required: True
+                        enum:
+                          - "{xname}"
+                      MACAddr:
+                        type: str
+                        #TODO: break out management and compute node test cases for MACAddr CASMHMS-3162
+                        #required: True
+                        required: False
+                      Password:
+                        type: str
+                        required: True
+                      IPAddress:
+                        type: str
+                        # introduced in v1.3, optional field
+                        required: False
+                      RediscoverOnUpdate:
+                        type: bool
+                        required: True
+                      Type:
+                        type: str
+                        required: True
+                        enum:
+                          - "NodeBMC"
+                      UUID:
+                        type: str
+                        #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                        #required: True
+                        required: False
+                      User:
+                        type: str
+                        required: True
+
+  # 9. GET /RedfishEndpoints?fqdn={fqdn} API response code
+  # 10. GET /RedfishEndpoints?fqdn={fqdn} API response body
+  - name: Ensure that we can conduct a query on the RedfishEndpoints collection using the fqdn parameter
+    request:
+      url: "{base_url}/smd/hsm/v1/Inventory/RedfishEndpoints?fqdn={fqdn}"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            mapping:
+              RedfishEndpoints:
+                type: seq
+                required: True
+                matching: all
+                sequence:
+                  - type: map
+                    mapping:
+                      DiscoveryInfo:
+                        type: map
+                        mapping:
+                          LastDiscoveryAttempt:
+                            type: timestamp
+                            required: True
+                          LastDiscoveryStatus:
+                            type: str
+                            required: True
+                            enum:
+                              - "DiscoverOK"
+                              #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                              - "HTTPsGetFailed"
+                          RedfishVersion:
+                            type: str
+                            #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                            #required: True
+                            required: False
+                      Domain:
+                        type: str
+                        required: True
+                      Enabled:
+                        type: bool
+                        required: True
+                      FQDN:
+                        type: str
+                        required: True
+                        enum:
+                          - "{fqdn}"
+                      Hostname:
+                        type: str
+                        required: True
+                      ID:
+                        type: str
+                        required: True
+                      MACAddr:
+                        type: str
+                        #TODO: break out management and compute node test cases for MACAddr CASMHMS-3162
+                        #required: True
+                        required: False
+                      Password:
+                        type: str
+                        required: True
+                      IPAddress:
+                        type: str
+                        # introduced in v1.3, optional field
+                        required: False
+                      RediscoverOnUpdate:
+                        type: bool
+                        required: True
+                      Type:
+                        type: str
+                        required: True
+                        enum:
+                          - "NodeBMC"
+                      UUID:
+                        type: str
+                        #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                        #required: True
+                        required: False
+                      User:
+                        type: str
+                        required: True
+
+  ## 11. Disabled (CAN NCNs in HSM issue CASMHMS-2913) - GET /RedfishEndpoints?uuid={uuid} API response code
+  ## 12. Disabled (CAN NCNs in HSM issue CASMHMS-2913) - GET /RedfishEndpoints?uuid={uuid} API response body
+  #- name: Ensure that we can conduct a query on the RedfishEndpoints collection using the uuid parameter
+  #  request:
+  #    url: "{base_url}/smd/hsm/v1/Inventory/RedfishEndpoints?uuid={uuid}"
+  #    method: GET
+  #    headers:
+  #      Authorization: "Bearer {access_token}"
+  #    verify: !bool "{verify}"
+  #  response:
+  #    status_code: 200
+  #    verify_response_with:
+  #      function: tavern.testutils.helpers:validate_pykwalify
+  #      extra_kwargs:
+  #        schema:
+  #          type: map
+  #          mapping:
+  #            RedfishEndpoints:
+  #              type: seq
+  #              required: True
+  #              matching: all
+  #              sequence:
+  #                - type: map
+  #                  mapping:
+  #                    DiscoveryInfo:
+  #                      type: map
+  #                      mapping:
+  #                        LastDiscoveryAttempt:
+  #                          type: timestamp
+  #                          required: True
+  #                        LastDiscoveryStatus:
+  #                          type: str
+  #                          required: True
+  #                          enum:
+  #                            - "DiscoverOK"
+  #                            #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+  #                            - "HTTPsGetFailed"
+  #                        RedfishVersion:
+  #                          type: str
+  #                          #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+  #                          #required: True
+  #                          required: False
+  #                    Domain:
+  #                      type: str
+  #                      required: True
+  #                    Enabled:
+  #                      type: bool
+  #                      required: True
+  #                    FQDN:
+  #                      type: str
+  #                      required: True
+  #                    Hostname:
+  #                      type: str
+  #                      required: True
+  #                    ID:
+  #                      type: str
+  #                      required: True
+  #                    MACAddr:
+  #                      type: str
+  #                      #TODO: break out management and compute node test cases for MACAddr CASMHMS-3162
+  #                      #required: True
+  #                      required: False
+  #                    Password:
+  #                      type: str
+  #                      required: True
+  #                    IPAddress:
+  #                      type: str
+  #                      # introduced in v1.3, optional field
+  #                      required: False
+  #                    RediscoverOnUpdate:
+  #                      type: bool
+  #                      required: True
+  #                    Type:
+  #                      type: str
+  #                      required: True
+  #                      enum:
+  #                        - "NodeBMC"
+  #                    UUID:
+  #                      type: str
+  #                      #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+  #                      #required: True
+  #                      required: False
+  #                      enum:
+  #                        - "{uuid}"
+  #                    User:
+  #                      type: str
+  #                      required: True
+
+  # 13. GET /RedfishEndpoints/Query/{xname} nodeBMC API response code
+  # 14. GET /RedfishEndpoints/Query/{xname} nodeBMC API response body
+  - name: Call the RedfishEndpoints Query API with a NodeBMC xname
+    request:
+      url: "{base_url}/smd/hsm/v1/Inventory/RedfishEndpoints/Query/{xname}"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 400
+      json:
+        detail: "not yet implemented"
+        status: 400
+        title: "Bad Request"
+        type: "about:blank"

@@ -1,0 +1,605 @@
+# MIT License
+
+# (C) Copyright [2019-2021] Hewlett Packard Enterprise Development LP
+
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
+
+# Tavern test cases for the Hardware State Manager (HSM) partitions API.
+# Author: Mitch Schooler
+# Service: Hardware State Manager
+
+# HMS test metrics test cases: 30
+# 1. POST /partitions partition1 API response code
+# 2. GET /partitions/{partition1} API response code
+# 3. GET /partitions/{partition1} API response body
+# 4. GET /partitions?partition=<partition1> API response code
+# 5. GET /partitions?partition=<partition1> API response body
+# 6. GET /partitions?tag=<tag1> API response code
+# 7. GET /partitions?tag=<tag1> API response body
+# 8. GET /partitions?tag=<tag2> API response code
+# 9. GET /partitions?tag=<tag2> API response body
+# 10. PATCH /partitions/{partition1} API response code
+# 11. GET /partitions/{partition1} updated description tag API response code
+# 12. GET /partitions/{partition1} updated description tag API response body
+# 13. POST /partitions partition2 API response code
+# 14. GET /partitions/{partition2} API response code
+# 15. GET /partitions/{partition2} API response body
+# 16. GET /partitions/names API response code
+# 17. GET /partitions/names API response body
+# 18. GET /partitions/{partition1}/members API response code
+# 19. GET /partitions/{partition1}/members API response body
+# 20. POST /partitions/{partition1}/members API response code
+# 21. GET /partitions/{partition1}/members new member API response code
+# 22. GET /partitions/{partition1}/members new member API response body
+# 23. DELETE /partitions/{partition1}/members/{xname} API response code
+# 24. DELETE /partitions/{partition1}/members/{xname} API response body
+# 25. GET /partitions/{partition1}/members deleted member API response code
+# 26. GET /partitions/{partition1}/members deleted member API response body
+# 27. DELETE /partitions/{partition1} API response code
+# 28. DELETE /partitions/{partition1} API response body
+# 29. DELETE /partitions/{partition2} API response code
+# 30. DELETE /partitions/{partition2} API response body
+---
+test_name: Verify POST, GET, PATCH, and DELETE methods for various /partitions APIs
+
+stages:
+  - name: Get four Node xnames from the HSM Components collection to use in upcoming stages
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components?type=Node"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      save:
+        json:
+          xname1: Components[0].ID
+          xname2: Components[1].ID
+          xname3: Components[2].ID
+          xname4: Components[3].ID
+
+  - name: Delete existing test partition1 in HSM (if present) to prevent conflict
+    request:
+      url: "{base_url}/smd/hsm/v1/partitions/hsmtestpartition1"
+      method: DELETE
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+
+  # 1. POST /partitions partition1 API response code
+  - name: Verify /partitions POST method
+    request:
+      url: "{base_url}/smd/hsm/v1/partitions"
+      json: {"name":"hsmtestpartition1","description":"Test partition 1 for HSM API testing in CT framework.","tags":["hsmtestpartition1_tag1","hsmtestpartition1_tag2"],"members":{"ids":["{xname1}","{xname2}"]}}
+      method: POST
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 201
+
+  # 2. GET /partitions/{partition1} API response code
+  # 3. GET /partitions/{partition1} API response body
+  - name: Verify /partitions/{partition} GET method
+    request:
+      url: "{base_url}/smd/hsm/v1/partitions/hsmtestpartition1"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              name:
+                type: str
+                required: True
+                enum:
+                  - "hsmtestpartition1"
+              description:
+                type: str
+                required: True
+                enum:
+                  - "Test partition 1 for HSM API testing in CT framework."
+              tags:
+                type: seq
+                required: True
+                matching: all
+                sequence:
+                  - type: str
+                    required: True
+                    enum:
+                      - "hsmtestpartition1_tag1"
+                      - "hsmtestpartition1_tag2"
+              members:
+                type: map
+                required: True
+                mapping:
+                  ids:
+                    type: seq
+                    required: True
+                    matching: all
+                    sequence:
+                      - type: str
+                        required: True
+                        enum:
+                          - "{xname1}"
+                          - "{xname2}"
+
+  # 4. GET /partitions?partition=<partition1> API response code
+  # 5. GET /partitions?partition=<partition1> API response body
+  - name: Verify /partitions GET method with partition parameter
+    request:
+      url: "{base_url}/smd/hsm/v1/partitions?partition=hsmtestpartition1"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      save:
+        json:
+          name: "[0].name"
+          description: "[0].description"
+          tag1: "[0].tags[0]"
+          tag2: "[0].tags[1]"
+          member1: "[0].members.ids[0]"
+          member2: "[0].members.ids[1]"
+
+  # 6. GET /partitions?tag=<tag1> API response code
+  # 7. GET /partitions?tag=<tag1> API response body
+  - name: Verify /partitions GET method with tag parameter (1)
+    request:
+      url: "{base_url}/smd/hsm/v1/partitions?tag=hsmtestpartition1_tag1"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      save:
+        json:
+          name: "[0].name"
+          description: "[0].description"
+          tag1: "[0].tags[0]"
+          tag2: "[0].tags[1]"
+          member1: "[0].members.ids[0]"
+          member2: "[0].members.ids[1]"
+
+  # 8. GET /partitions?tag=<tag2> API response code
+  # 9. GET /partitions?tag=<tag2> API response body
+  - name: Verify /partitions GET method with tag parameter (2)
+    request:
+      url: "{base_url}/smd/hsm/v1/partitions?tag=hsmtestpartition1_tag2"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      save:
+        json:
+          name: "[0].name"
+          description: "[0].description"
+          tag1: "[0].tags[0]"
+          tag2: "[0].tags[1]"
+          member1: "[0].members.ids[0]"
+          member2: "[0].members.ids[1]"
+
+  # 10. PATCH /partitions/{partition1} API response code
+  - name: Verify /partitions/{partition} PATCH method
+    request:
+      url: "{base_url}/smd/hsm/v1/partitions/hsmtestpartition1"
+      json: {"description":"Test partition 1 for HSM API testing in CT framework (UPDATED).","tags":["hsmtestpartition1_tag3","hsmtestpartition1_tag4"]}
+      method: PATCH
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 204
+
+  # 11. GET /partitions/{partition1} updated description tag API response code
+  # 12. GET /partitions/{partition1} updated description tag API response body
+  - name: Verify /partitions/{partition} GET method
+    request:
+      url: "{base_url}/smd/hsm/v1/partitions/hsmtestpartition1"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              name:
+                type: str
+                required: True
+                enum:
+                  - "hsmtestpartition1"
+              description:
+                type: str
+                required: True
+                enum:
+                  - "Test partition 1 for HSM API testing in CT framework (UPDATED)."
+              tags:
+                type: seq
+                required: True
+                matching: all
+                sequence:
+                  - type: str
+                    required: True
+                    enum:
+                      - "hsmtestpartition1_tag3"
+                      - "hsmtestpartition1_tag4"
+              members:
+                type: map
+                required: True
+                mapping:
+                  ids:
+                    type: seq
+                    required: True
+                    matching: all
+                    sequence:
+                      - type: str
+                        required: True
+                        enum:
+                          - "{xname1}"
+                          - "{xname2}"
+
+  - name: Delete existing test partition2 in HSM (if present) to prevent conflict
+    request:
+      url: "{base_url}/smd/hsm/v1/partitions/hsmtestpartition2"
+      method: DELETE
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+
+  # 13. POST /partitions partition2 API response code
+  - name: Verify /partitions POST method
+    request:
+      url: "{base_url}/smd/hsm/v1/partitions"
+      json: {"name":"hsmtestpartition2","description":"Test partition 2 for HSM API testing in CT framework.","tags":["hsmtestpartition2_tag1","hsmtestpartition2_tag2"],"members":{"ids":["{xname3}"]}}
+      method: POST
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 201
+
+  # 14. GET /partitions/{partition2} API response code
+  # 15. GET /partitions/{partition2} API response body
+  - name: Verify /partitions/{partition} GET method
+    request:
+      url: "{base_url}/smd/hsm/v1/partitions/hsmtestpartition2"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              name:
+                type: str
+                required: True
+                enum:
+                  - "hsmtestpartition2"
+              description:
+                type: str
+                required: True
+                enum:
+                  - "Test partition 2 for HSM API testing in CT framework."
+              tags:
+                type: seq
+                required: True
+                matching: all
+                sequence:
+                  - type: str
+                    required: True
+                    enum:
+                      - "hsmtestpartition2_tag1"
+                      - "hsmtestpartition2_tag2"
+              members:
+                type: map
+                required: True
+                mapping:
+                  ids:
+                    type: seq
+                    required: True
+                    matching: all
+                    sequence:
+                      - type: str
+                        required: True
+                        enum:
+                          - "{xname3}"
+
+  # 16. GET /partitions/names API response code
+  # 17. GET /partitions/names API response body
+  - name: Verify /partitions/names GET method
+    request:
+      url: "{base_url}/smd/hsm/v1/partitions/names"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: seq
+            required: True
+            matching: all
+            sequence:
+              - type: str
+                enum:
+                  - "hsmtestpartition1"
+                  - "hsmtestpartition2"
+        function: tavern.testutils.helpers:validate_content
+        extra_kwargs:
+          comparisons:
+            - jmespath: "length(@)"
+              operator: "gt"
+              expected: 1
+
+  # 18. GET /partitions/{partition1}/members API response code
+  # 19. GET /partitions/{partition1}/members API response body
+  - name: Verify /partitions/{partition}/members GET method
+    request:
+      url: "{base_url}/smd/hsm/v1/partitions/hsmtestpartition1/members"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              ids:
+                type: seq
+                required: True
+                uniq: True
+                matching: all
+                sequence:
+                  - type: str
+                    enum:
+                      - "{xname1}"
+                      - "{xname2}"
+        function: tavern.testutils.helpers:validate_content
+        extra_kwargs:
+          comparisons:
+            - jmespath: "length(values(@)[0])"
+              operator: "eq"
+              expected: 2
+            - jmespath: "contains(values(@)[0], '{xname1}')"
+              operator: "eq"
+              expected: True
+            - jmespath: "contains(values(@)[0], '{xname2}')"
+              operator: "eq"
+              expected: True
+
+  # 20. POST /partitions/{partition1}/members API response code
+  - name: Verify /partitions/{partition}/members POST method
+    request:
+      url: "{base_url}/smd/hsm/v1/partitions/hsmtestpartition1/members"
+      json: {"id":"{xname4}"}
+      method: POST
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 201
+
+  # 21. GET /partitions/{partition1}/members new member API response code
+  # 22. GET /partitions/{partition1}/members new member API response body
+  - name: Verify /partitions/{partition}/members GET method
+    request:
+      url: "{base_url}/smd/hsm/v1/partitions/hsmtestpartition1/members"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              ids:
+                type: seq
+                required: True
+                unique: True
+                matching: all
+                sequence:
+                  - type: str
+                    enum:
+                      - "{xname1}"
+                      - "{xname2}"
+                      - "{xname4}"
+        function: tavern.testutils.helpers:validate_content
+        extra_kwargs:
+          comparisons:
+            - jmespath: "length(values(@)[0])"
+              operator: "eq"
+              expected: 3
+            - jmespath: "contains(values(@)[0], '{xname1}')"
+              operator: "eq"
+              expected: True
+            - jmespath: "contains(values(@)[0], '{xname2}')"
+              operator: "eq"
+              expected: True
+            - jmespath: "contains(values(@)[0], '{xname4}')"
+              operator: "eq"
+              expected: True
+
+  # 23. DELETE /partitions/{partition1}/members/{xname} API response code
+  # 24. DELETE /partitions/{partition1}/members/{xname} API response body
+  - name: Verify /partitions/{partition}/members/{xname} DELETE method
+    request:
+      url: "{base_url}/smd/hsm/v1/partitions/hsmtestpartition1/members/{xname1}"
+      method: DELETE
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              code:
+                type: int
+                required: True
+                enum:
+                  - 0
+              message:
+                type: str
+                required: True
+                enum:
+                  - "deleted 1 entry"
+
+  # 25. GET /partitions/{partition1}/members deleted member API response code
+  # 26. GET /partitions/{partition1}/members deleted member API response body
+  - name: Verify /partitions/{partition}/members GET method
+    request:
+      url: "{base_url}/smd/hsm/v1/partitions/hsmtestpartition1/members"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              ids:
+                type: seq
+                required: True
+                unique: True
+                matching: all
+                sequence:
+                  - type: str
+                    enum:
+                      - "{xname2}"
+                      - "{xname4}"
+        function: tavern.testutils.helpers:validate_content
+        extra_kwargs:
+          comparisons:
+            - jmespath: "length(values(@)[0])"
+              operator: "eq"
+              expected: 2
+            - jmespath: "contains(values(@)[0], '{xname1}')"
+              operator: "eq"
+              expected: False
+            - jmespath: "contains(values(@)[0], '{xname2}')"
+              operator: "eq"
+              expected: True
+            - jmespath: "contains(values(@)[0], '{xname4}')"
+              operator: "eq"
+              expected: True
+
+  # 27. DELETE /partitions/{partition1} API response code
+  # 28. DELETE /partitions/{partition1} API response body
+  - name: Verify /partitions/{partition} DELETE method
+    request:
+      url: "{base_url}/smd/hsm/v1/partitions/hsmtestpartition1"
+      method: DELETE
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              code:
+                type: int
+                required: True
+                enum:
+                  - 0
+              message:
+                type: str
+                required: True
+                enum:
+                  - "deleted 1 entry"
+
+  # 29. DELETE /partitions/{partition2} API response code
+  # 30. DELETE /partitions/{partition2} API response body
+  - name: Verify /partitions/partition DELETE method
+    request:
+      url: "{base_url}/smd/hsm/v1/partitions/hsmtestpartition2"
+      method: DELETE
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              code:
+                type: int
+                required: True
+                enum:
+                  - 0
+              message:
+                type: str
+                required: True
+                enum:
+                  - "deleted 1 entry"

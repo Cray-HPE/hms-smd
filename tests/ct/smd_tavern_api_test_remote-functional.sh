@@ -1,21 +1,41 @@
 #!/bin/bash -l
 #
-# Copyright 2019-2020 Hewlett Packard Enterprise Development LP
+# MIT License
+#
+# (C) Copyright [2020-2021] Hewlett Packard Enterprise Development LP
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
 #
 ###############################################################
 #
 #     CASM Test - Cray Inc.
 #
-#     TEST IDENTIFIER   : hsm_tavern_api_test
+#     TEST IDENTIFIER   : smd_tavern_api_test
 #
 #     DESCRIPTION       : Automated test for verifying the HMS Hardware 
 #                         State Manager (HSM) API on Cray Shasta systems.
 #                         
 #     AUTHOR            : Mitch Schooler
 #
-#     DATE STARTED      : 11/08/2019
+#     DATE STARTED      : 09/15/2020
 #
-#     LAST MODIFIED     : 09/15/2020
+#     LAST MODIFIED     : 02/01/2021
 #
 #     SYNOPSIS
 #       This is a test wrapper for HMS Hardware State Manager (HSM) API
@@ -24,7 +44,7 @@
 #       the target CT test directory for HSM are executed.
 #
 #     INPUT SPECIFICATIONS
-#       Usage: hsm_tavern_api_test
+#       Usage: smd_tavern_api_test
 #       
 #       Arguments: None
 #
@@ -34,41 +54,47 @@
 #
 #     DESIGN DESCRIPTION
 #       This test wrapper generates a Tavern configuration file based
-#       on the target test system it is running on and then executes all
-#       HSM Tavern API CT tests using HMS's hms-pytest container which
-#       includes pytest and other dependencies required to run Tavern.
+#       on the target test system it is running against and then executes
+#       all HSM Tavern API CT tests using DST's ct-pipelines container
+#       which includes pytest and other dependencies required to run Tavern.
 #
 #     SPECIAL REQUIREMENTS
-#       Must be executed on the target test system on a fully-installed
-#       NCN with the Continuous Test infrastructure in place.
+#       Must be executed from the ct-pipelines container on a remote host
+#       (off of the NCNs of the test system) with the Continuous Test
+#       infrastructure installed.
 #
 #     UPDATE HISTORY
 #       user       date         description
 #       -------------------------------------------------------
-#       schooler   11/08/2019   initial implementation
-#       schooler   12/17/2019   use hms-pytest instead of cray-pytest
-#       schooler   09/15/2020   use latest hms_common_file_generator
+#       schooler   09/15/2020   initial implementation
+#       schooler   02/01/2021   rename to smd_tavern_api_test
 #
 #     DEPENDENCIES
-#       - hms-pytest wrapper script which is expected to be packaged
-#         in /usr/bin on the NCN.
-#       - hms_smoke_test_lib_ncn-resources_remote-resources.sh which
-#         is expected to be packaged in
-#         /opt/cray/tests/ncn-resources/hms/hms-test on the NCN.
+#       - pytest utility which is expected to be packaged in
+#         /usr/bin in the ct-pipelines container.
 #       - hms_pytest_ini_file_generator_ncn-resources_remote-resources.py
 #         which is expected to be packaged in
-#         /opt/cray/tests/ncn-resources/hms/hms-test on the NCN.
+#         /opt/cray/tests/remote-resources/hms/hms-test in the
+#         ct-pipelines container.
 #       - hms_common_file_generator_ncn-resources_remote-resources.py
 #         which is expected to be packaged in
-#         /opt/cray/tests/ncn-resources/hms/hms-test on the NCN.
+#         /opt/cray/tests/remote-resources/hms/hms-test in the
+#         ct-pipelines container.
 #       - HSM Tavern API tests with names of the form test_*.tavern.yaml
 #         which are expected to be packaged in
-#         /opt/cray/tests/ncn-functional/hms/hms-smd on the NCN.
+#         /opt/cray/tests/remote-functional/hms/hms-smd in the
+#         ct-pipelines container.
 #
 #     BUGS/LIMITATIONS
 #       None
 #
 ###############################################################
+
+# timestamp_print <message>
+function timestamp_print()
+{
+    echo "($(date +"%H:%M:%S")) $1"
+}
 
 # cleanup
 function cleanup()
@@ -81,17 +107,38 @@ function cleanup()
     rm -f ${COMMON_FILE_PATH}
 }
 
-# HMS path declarations
-HMS_TEST_LIB="/opt/cray/tests/ncn-resources/hms/hms-test/hms_smoke_test_lib_ncn-resources_remote-resources.sh"
-PYTEST_INI_GENERATOR="/opt/cray/tests/ncn-resources/hms/hms-test/hms_pytest_ini_file_generator_ncn-resources_remote-resources.py"
-PYTEST_INI_PATH="/opt/cray/tests/ncn-functional/hms/hms-smd/pytest.ini"
-COMMON_FILE_GENERATOR="/opt/cray/tests/ncn-resources/hms/hms-test/hms_common_file_generator_ncn-resources_remote-resources.py"
-COMMON_FILE_PATH="/opt/cray/tests/ncn-functional/hms/hms-smd/common.yaml"
-HSM_TEST_DIR="/opt/cray/tests/ncn-functional/hms/hms-smd"
-API_TARGET="https://api-gw-service-nmn.local/apis"
+# hms-test CT library directory containing shared python functions
+HMS_TEST_REPO_DIR="/opt/cray/tests/remote-resources/hms/hms-test"
 
-# set SSL certificate checking to True for test execution from the NCN
-VERIFY="True"
+# HMS path declarations
+PYTEST_INI_GENERATOR="/opt/cray/tests/remote-resources/hms/hms-test/hms_pytest_ini_file_generator_ncn-resources_remote-resources.py"
+PYTEST_INI_PATH="/opt/cray/tests/remote-functional/hms/hms-smd/pytest.ini"
+COMMON_FILE_GENERATOR="/opt/cray/tests/remote-resources/hms/hms-test/hms_common_file_generator_ncn-resources_remote-resources.py"
+COMMON_FILE_PATH="/opt/cray/tests/remote-functional/hms/hms-smd/common.yaml"
+HSM_TEST_DIR="/opt/cray/tests/remote-functional/hms/hms-smd"
+
+# TARGET_SYSTEM is expected to be set in the ct-pipelines container
+if [[ -z ${TARGET_SYSTEM} ]] ; then
+    >&2 echo "ERROR: TARGET_SYSTEM environment variable is not set"
+    cleanup
+    exit 1
+else
+    echo "TARGET_SYSTEM=${TARGET_SYSTEM}"
+    API_TARGET="https://auth.${TARGET_SYSTEM}/apis"
+    echo "API_TARGET=${API_TARGET}"
+fi
+
+# TOKEN is expected to be set in the ct-pipelines container
+if [[ -z ${TOKEN} ]] ; then
+    >&2 echo "ERROR: TOKEN environment variable is not set"
+    cleanup
+    exit 1
+else
+    echo "TOKEN=${TOKEN}"
+fi
+
+# set SSL certificate checking to False for remote test execution from ct-pipelines container
+VERIFY="False"
 echo "VERIFY=${VERIFY}"
 
 # set up signal handling
@@ -99,19 +146,10 @@ trap ">&2 echo \"recieved kill signal, exiting with status of '1'...\" ; \
     cleanup ; \
     exit 1" SIGHUP SIGINT SIGTERM
 
-# verify that the hms-pytest wrapper script exists
-PYTEST_PATH=$(which hms-pytest)
+# verify that the pytest path is set
+PYTEST_PATH=$(which pytest)
 if [[ -z ${PYTEST_PATH} ]] ; then
-    >&2 echo "ERROR: failed to locate command: hms-pytest"
-    cleanup
-    exit 1
-fi
-
-# source the HMS smoke test library file
-if [[ -r ${HMS_TEST_LIB} ]] ; then
-    . ${HMS_TEST_LIB}
-else
-    >&2 echo "ERROR: failed to source HMS smoke test library: ${HMS_TEST_LIB}"
+    >&2 echo "ERROR: failed to locate command: pytest"
     cleanup
     exit 1
 fi
@@ -146,15 +184,7 @@ if [[ ! -x ${COMMON_FILE_GENERATOR} ]] ; then
     exit 1
 fi
 
-echo "Running hsm_tavern_api_test..."
-
-# retrieve Keycloak authentication token for session
-TOKEN=$(get_auth_access_token)
-TOKEN_RET=$?
-if [[ ${TOKEN_RET} -ne 0 ]] ; then
-    cleanup
-    exit 1
-fi
+echo "Running smd_tavern_api_test..."
 
 # generate pytest.ini configuration file
 GENERATE_PYTEST_INI_CMD="${PYTEST_INI_GENERATOR} --file ${PYTEST_INI_PATH}"
@@ -190,17 +220,17 @@ else
     fi
 fi
 
-# execute Tavern tests in the hms-pytest container with pytest
-PYTEST_CMD="${PYTEST_PATH} --tavern-global-cfg=${COMMON_FILE_PATH} ${HSM_TEST_DIR}"
+# execute Tavern tests with pytest
+PYTEST_CMD="PYTHONPATH=\"${PYTHONPATH}:${HMS_TEST_REPO_DIR}\" ${PYTEST_PATH} --tavern-global-cfg=${COMMON_FILE_PATH} ${HSM_TEST_DIR}"
 timestamp_print "Running '${PYTEST_CMD}'..."
 eval "${PYTEST_CMD}"
 TAVERN_RET=$?
 if [[ ${TAVERN_RET} -ne 0 ]] ; then
-    echo "FAIL: hsm_tavern_api_test ran with failures"
+    echo "FAIL: smd_tavern_api_test ran with failures"
     cleanup
     exit 1
 else
-    echo "PASS: hsm_tavern_api_test passed!"
+    echo "PASS: smd_tavern_api_test passed!"
     cleanup
     exit 0
 fi

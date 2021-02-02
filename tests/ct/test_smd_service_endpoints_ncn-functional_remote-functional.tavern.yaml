@@ -1,4 +1,24 @@
-# Copyright 2019-2020 Hewlett Packard Enterprise Development LP
+# MIT License
+
+# (C) Copyright [2019-2021] Hewlett Packard Enterprise Development LP
+
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
 
 # Tavern test cases for the Hardware State Manager (HSM) service endpoints API.
 # Author: Mitch Schooler
@@ -46,11 +66,11 @@ stages:
       verify: !bool "{verify}"
     response:
       status_code: 200
-      body:
+      json:
         ServiceEndpoints: !anything
       save:
-        body:
-          ID: ServiceEndpoints.0.RedfishEndpointID
+        json:
+          ID: ServiceEndpoints[0].RedfishEndpointID
 
 ---
 test_name: Query the ServiceEndpoints collection for the AccountService
@@ -68,8 +88,8 @@ stages:
     response:
       status_code: 200
       save:
-        body:
-          id: ServiceEndpoints.0.RedfishEndpointID
+        json:
+          id: ServiceEndpoints[0].RedfishEndpointID
 
   # 5. GET /ServiceEndpoints?service=AccountService API response code
   - name: Ensure that we can conduct a query on the ServiceEndpoints collection for the AccountService using the service query parameter
@@ -109,8 +129,8 @@ stages:
     response:
       status_code: 200
       save:
-        body:
-          id: ServiceEndpoints.0.RedfishEndpointID
+        json:
+          id: ServiceEndpoints[0].RedfishEndpointID
 
   # 9. GET /ServiceEndpoints?service=EventService API response code
   - name: Ensure that we can conduct a query on the ServiceEndpoints collection for the EventService using the service query parameter
@@ -150,8 +170,8 @@ stages:
     response:
       status_code: 200
       save:
-        body:
-          id: ServiceEndpoints.0.RedfishEndpointID
+        json:
+          id: ServiceEndpoints[0].RedfishEndpointID
 
   # 13. GET /ServiceEndpoints?service=SessionService API response code
   - name: Ensure that we can conduct a query on the ServiceEndpoints collection for the SessionService using the service query parameter
@@ -191,8 +211,8 @@ stages:
     response:
       status_code: 200
       save:
-        body:
-          id: ServiceEndpoints.0.RedfishEndpointID
+        json:
+          id: ServiceEndpoints[0].RedfishEndpointID
 
   # 17. GET /ServiceEndpoints?service=UpdateService API response code
   - name: Ensure that we can conduct a query on the ServiceEndpoints collection for the UpdateService using the service query parameter
