@@ -1,12 +1,32 @@
 #!/bin/bash -l
 #
-# Copyright 2019-2020 Hewlett Packard Enterprise Development LP
+# MIT License
+#
+# (C) Copyright [2019-2021] Hewlett Packard Enterprise Development LP
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
 #
 ###############################################################
 #
 #     CASM Test - Cray Inc.
 #
-#     TEST IDENTIFIER   : hsm_tavern_api_test
+#     TEST IDENTIFIER   : smd_tavern_api_test
 #
 #     DESCRIPTION       : Automated test for verifying the HMS Hardware 
 #                         State Manager (HSM) API on Cray Shasta systems.
@@ -15,7 +35,7 @@
 #
 #     DATE STARTED      : 11/08/2019
 #
-#     LAST MODIFIED     : 09/15/2020
+#     LAST MODIFIED     : 02/01/2021
 #
 #     SYNOPSIS
 #       This is a test wrapper for HMS Hardware State Manager (HSM) API
@@ -24,7 +44,7 @@
 #       the target CT test directory for HSM are executed.
 #
 #     INPUT SPECIFICATIONS
-#       Usage: hsm_tavern_api_test
+#       Usage: smd_tavern_api_test
 #       
 #       Arguments: None
 #
@@ -48,6 +68,8 @@
 #       schooler   11/08/2019   initial implementation
 #       schooler   12/17/2019   use hms-pytest instead of cray-pytest
 #       schooler   09/15/2020   use latest hms_common_file_generator
+#       schooler   02/01/2021   set VERIFY=False for running on PIT nodes
+#       schooler   02/01/2021   rename to smd_tavern_api_test
 #
 #     DEPENDENCIES
 #       - hms-pytest wrapper script which is expected to be packaged
@@ -90,8 +112,8 @@ COMMON_FILE_PATH="/opt/cray/tests/ncn-functional/hms/hms-smd/common.yaml"
 HSM_TEST_DIR="/opt/cray/tests/ncn-functional/hms/hms-smd"
 API_TARGET="https://api-gw-service-nmn.local/apis"
 
-# set SSL certificate checking to True for test execution from the NCN
-VERIFY="True"
+# set SSL certificate checking to False for test execution from PIT nodes
+VERIFY="False"
 echo "VERIFY=${VERIFY}"
 
 # set up signal handling
@@ -146,7 +168,7 @@ if [[ ! -x ${COMMON_FILE_GENERATOR} ]] ; then
     exit 1
 fi
 
-echo "Running hsm_tavern_api_test..."
+echo "Running smd_tavern_api_test..."
 
 # retrieve Keycloak authentication token for session
 TOKEN=$(get_auth_access_token)
@@ -196,11 +218,11 @@ timestamp_print "Running '${PYTEST_CMD}'..."
 eval "${PYTEST_CMD}"
 TAVERN_RET=$?
 if [[ ${TAVERN_RET} -ne 0 ]] ; then
-    echo "FAIL: hsm_tavern_api_test ran with failures"
+    echo "FAIL: smd_tavern_api_test ran with failures"
     cleanup
     exit 1
 else
-    echo "PASS: hsm_tavern_api_test passed!"
+    echo "PASS: smd_tavern_api_test passed!"
     cleanup
     exit 0
 fi

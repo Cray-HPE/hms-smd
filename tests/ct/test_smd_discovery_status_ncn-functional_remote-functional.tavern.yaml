@@ -1,4 +1,24 @@
-# Copyright 2019-2020 Hewlett Packard Enterprise Development LP
+# MIT License
+
+# (C) Copyright [2019-2021] Hewlett Packard Enterprise Development LP
+
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
 
 # Tavern test cases for the Hardware State Manager (HSM) discovery status API.
 # Author: Mitch Schooler
@@ -11,14 +31,6 @@
 # 4. GET /DiscoveryStatus/{xname} API response body
 ---
 test_name: Ensure that we can gather the system discovery status information
-# C02VF3KDHTD8:~ schooler$ curl -k https://squirt-sms.us.cray.com:30443/apis/smd/hsm/v1/Inventory/DiscoveryStatus 2> /dev/null | python -m json.tool
-# [
-#     {
-#         "ID": 0,
-#         "LastUpdateTime": "2019-06-26 03:07:06.000000",
-#         "Status": "Complete"
-#     }
-# ]
 
 stages:
   # 1. GET /DiscoveryStatus API response code
@@ -32,27 +44,26 @@ stages:
       verify: !bool "{verify}"
     response:
       status_code: 200
-      body:
-        $ext:
-          function: tavern.testutils.helpers:validate_pykwalify
-          extra_kwargs:
-            schema:
-              type: seq
-              matching: all
-              sequence:
-                - type: map
-                  matching: all
-                  mapping:
-                    ID:
-                      type: int
-                    LastUpdateTime:
-                      type: timestamp
-                    Status:
-                      type: str
-                      pattern: "Complete"
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: seq
+            matching: all
+            sequence:
+              - type: map
+                matching: all
+                mapping:
+                  ID:
+                    type: int
+                  LastUpdateTime:
+                    type: timestamp
+                  Status:
+                    type: str
+                    pattern: "Complete"
       save:
-        body:
-          id: 0.ID
+        json:
+          id: "[0].ID"
 
   # 3. GET /DiscoveryStatus/{xname} API response code
   # 4. GET /DiscoveryStatus/{xname} API response body
@@ -65,19 +76,18 @@ stages:
       verify: !bool "{verify}"
     response:
       status_code: 200
-      body:
-        $ext:
-          function: tavern.testutils.helpers:validate_pykwalify
-          extra_kwargs:
-            schema:
-              type: map
-              mapping:
-                ID:
-                  type: int
-                  enum:
-                    - !int "{id:d}"
-                LastUpdateTime:
-                  type: timestamp
-                Status:
-                  type: str
-                  pattern: "Complete"
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            mapping:
+              ID:
+                type: int
+                enum:
+                  - !int "{id:d}"
+              LastUpdateTime:
+                type: timestamp
+              Status:
+                type: str
+                pattern: "Complete"

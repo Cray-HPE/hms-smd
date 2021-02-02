@@ -1,4 +1,24 @@
-# Copyright 2019-2020 Hewlett Packard Enterprise Development LP
+# MIT License
+
+# (C) Copyright [2019-2021] Hewlett Packard Enterprise Development LP
+
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
 
 # Tavern test cases for the Hardware State Manager (HSM) hardware API.
 # Author: Mitch Schooler, Isa Wazirzada
@@ -69,8 +89,8 @@ stages:
     response:
       status_code: 200
       save:
-        body:
-          node_xname: Components.0.ID
+        json:
+          node_xname: Components[0].ID
 
   # 3. GET /Hardware/{xname} node API response code
   # 4. GET /Hardware/{xname} node API response body
@@ -83,7 +103,7 @@ stages:
       verify: !bool "{verify}"
     response:
       status_code: 200
-      body:
+      json:
         HWInventoryByLocationType: "HWInvByLocNode"
         ID: "{node_xname}"
         NodeLocationInfo:
@@ -115,7 +135,7 @@ stages:
         Status: !anystr
         Type: "Node"
       save:
-        body:
+        json:
           FRUID: PopulatedFRU.FRUID
 
   # 5. GET /HardwareByFRU/{fruid} node API response code
@@ -129,7 +149,7 @@ stages:
       verify: !bool "{verify}"
     response:
       status_code: 200
-      body:
+      json:
         FRUID: "{FRUID}"
         HWInventoryByFRUType: "HWInvByFRUNode"
         NodeFRUInfo:
@@ -159,8 +179,8 @@ stages:
     response:
       status_code: 200
       save:
-        body:
-          node_enclosure_xname: Components.0.ID
+        json:
+          node_enclosure_xname: Components[0].ID
 
   # 7. GET /Hardware/{xname} node enclosure API response code
   # 8. GET /Hardware/{xname} node enclosure API response body
@@ -173,7 +193,7 @@ stages:
       verify: !bool "{verify}"
     response:
       status_code: 200
-      body:
+      json:
         HWInventoryByLocationType: "HWInvByLocNodeEnclosure"
         ID: "{node_enclosure_xname}"
         NodeEnclosureLocationInfo:
@@ -198,7 +218,7 @@ stages:
         Status: !anystr
         Type: "NodeEnclosure"
       save:
-        body:
+        json:
           FRUID: PopulatedFRU.FRUID
 
   # 9. GET /HardwareByFRU/{fruid} node enclosure API response code
@@ -212,7 +232,7 @@ stages:
       verify: !bool "{verify}"
     response:
       status_code: 200
-      body:
+      json:
         FRUID: "{FRUID}"
         HWInventoryByFRUType: "HWInvByFRUNodeEnclosure"
         NodeEnclosureFRUInfo:
@@ -243,8 +263,8 @@ stages:
 #    response:
 #      status_code: 200
 #      save:
-#        body:
-#          node_xname: Components.0.ID
+#        json:
+#          node_xname: Components[0].ID
 #
 #  # 11. Disabled (CASMHMS-2809) - GET /Hardware/{xname}p0 processor API response code
 #  # 12. Disabled (CASMHMS-2809) - GET /Hardware/{xname}p0 processor API response body
@@ -257,7 +277,7 @@ stages:
 #      verify: !bool "{verify}"
 #    response:
 #      status_code: 200
-#      body:
+#      json:
 #        HWInventoryByLocationType: "HWInvByLocProcessor"
 #        ID: "{node_xname}p0"
 #        Ordinal: !anyint
@@ -290,7 +310,7 @@ stages:
 #        Status: !anystr
 #        Type: "Processor"
 #      save:
-#        body:
+#        json:
 #          FRUID: PopulatedFRU.FRUID
 #
 #  # 13. Disabled (CASMHMS-2809) - GET /HardwareByFRU/{fruid} processor API response code
@@ -304,7 +324,7 @@ stages:
 #      verify: !bool "{verify}"
 #    response:
 #      status_code: 200
-#      body:
+#      json:
 #        FRUID: "{FRUID}"
 #        HWInventoryByFRUType: "HWInvByFRUProcessor"
 #        ProcessorFRUInfo:
@@ -343,8 +363,8 @@ stages:
 #    response:
 #      status_code: 200
 #      save:
-#        body:
-#          node_xname: Components.0.ID
+#        json:
+#          node_xname: Components[0].ID
 #
 #  # 15. Disabled (CASMHMS-2809) - GET /Hardware/{xname}d0 dimm API response code
 #  # 16. Disabled (CASMHMS-2809) - GET /Hardware/{xname}d0 dimm API response body
@@ -357,7 +377,7 @@ stages:
 #      verify: !bool "{verify}"
 #    response:
 #      status_code: 200
-#      body:
+#      json:
 #        HWInventoryByLocationType: "HWInvByLocMemory"
 #        ID: "{node_xname}d0"
 #        MemoryLocationInfo:
@@ -391,7 +411,7 @@ stages:
 #        Status: !anystr
 #        Type: "Memory"
 #      save:
-#        body:
+#        json:
 #          FRUID: PopulatedFRU.FRUID
 #
 #  # 17. Disabled (CASMHMS-2809) - GET /HardwareByFRU/{fruid} dimm API response code
@@ -405,7 +425,7 @@ stages:
 #      verify: !bool "{verify}"
 #    response:
 #      status_code: 200
-#      body:
+#      json:
 #        FRUID: "{FRUID}"
 #        HWInventoryByFRUType: "HWInvByFRUMemory"
 #        MemoryFRUInfo:
@@ -438,8 +458,8 @@ stages:
     response:
       status_code: 200
       save:
-        body:
-          node_xname: Components.0.ID
+        json:
+          node_xname: Components[0].ID
 
   # 19. GET /Hardware/Query/{xname} node API response code
   # 20. GET /Hardware/Query/{xname} node API response body
@@ -452,38 +472,379 @@ stages:
       verify: !bool "{verify}"
     response:
       status_code: 200
-      body:
-        Format: "NestNodesOnly"
-        Nodes:
-          -
-            HWInventoryByLocationType: "HWInvByLocNode"
-            ID: "{node_xname}"
-            NodeLocationInfo:
-              Description: !anystr
-              HostName: !anystr
-              Id: !anystr
-              MemorySummary:
-                TotalSystemMemoryGiB: !anyint
-              Name: !anystr
-              ProcessorSummary:
-                Count: !anyint
-                Model: !anystr
-            Ordinal: !anyint
-            PopulatedFRU:
-              FRUID: !anystr
-              HWInventoryByFRUType: "HWInvByFRUNode"
-              NodeFRUInfo:
-                AssetTag: !anystr
-                BiosVersion: !anystr
-                Manufacturer: !anystr
-                Model: !anystr
-                PartNumber: !anystr
-                SKU: !anystr
-                SerialNumber: !anystr
-                SystemType: !anystr
-                UUID: !anystr
-              Subtype: !anystr
-              Type: "Node"
-            Status: "Populated"
-            Type: "Node"
-        XName: "{node_xname}"
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              XName:
+                type: str
+                required: True
+                enum:
+                  - "{node_xname}"
+              Format:
+                type: str
+                required: True
+                enum:
+                  - "NestNodesOnly"
+              Nodes:
+                type: seq
+                matching: all
+                sequence:
+                  - type: map
+                    mapping:
+                      ID:
+                        type: str
+                        required: True
+                        enum:
+                          - "{node_xname}"
+                      Type:
+                        type: str
+                        required: True
+                        enum:
+                          - "Node"
+                      Ordinal:
+                        type: int
+                        required: True
+                      Status:
+                        type: str
+                        required: True
+                        enum:
+                          - "Populated"
+                      HWInventoryByLocationType:
+                        type: str
+                        required: True
+                        enum:
+                          - "HWInvByLocNode"
+                      NodeLocationInfo:
+                        type: map
+                        required: True
+                        mapping:
+                          Id:
+                            type: str
+                            required: True
+                          Name:
+                            type: str
+                            required: True
+                          Description:
+                            type: str
+                            required: True
+                          HostName:
+                            type: str
+                            required: True
+                          ProcessorSummary:
+                            type: map
+                            required: True
+                            mapping:
+                              Count:
+                                type: int
+                                required: True
+                              Model:
+                                type: str
+                                required: True
+                          MemorySummary:
+                            type: map
+                            required: True
+                            mapping:
+                              TotalSystemMemoryGiB:
+                                type: int
+                                required: True
+                      PopulatedFRU:
+                        type: map
+                        required: True
+                        mapping:
+                          FRUID:
+                            type: str
+                            required: True
+                          Type:
+                            type: str
+                            required: True
+                            enum:
+                              - "Node"
+                          Subtype:
+                            type: str
+                            required: True
+                          HWInventoryByFRUType:
+                            type: str
+                            required: True
+                            enum:
+                              - "HWInvByFRUNode"
+                          NodeFRUInfo:
+                            type: map
+                            required: True
+                            mapping:
+                              AssetTag:
+                                type: str
+                                required: True
+                              BiosVersion:
+                                type: str
+                                required: True
+                              Model:
+                                type: str
+                                required: True
+                              Manufacturer:
+                                type: str
+                                required: True
+                              PartNumber:
+                                type: str
+                                required: True
+                              SerialNumber:
+                                type: str
+                                required: True
+                              SKU:
+                                type: str
+                                required: True
+                              SystemType:
+                                type: str
+                                required: True
+                              UUID:
+                                type: str
+                                required: True
+                      Processors:
+                        type: seq
+                        matching: all
+                        sequence:
+                          - type: map
+                            mapping:
+                              ID:
+                                type: str
+                                required: True
+                                pattern: "{node_xname}p[0-9]+"
+                              Type:
+                                type: str
+                                required: True
+                                enum:
+                                  - "Processor"
+                              Ordinal:
+                                type: int
+                                required: True
+                              Status:
+                                type: str
+                                required: True
+                              HWInventoryByLocationType:
+                                type: str
+                                required: True
+                                enum:
+                                  - "HWInvByLocProcessor"
+                              ProcessorLocationInfo:
+                                type: map
+                                required: True
+                                mapping:
+                                  Id:
+                                    type: str
+                                    required: True
+                                  Name:
+                                    type: str
+                                    required: True
+                                    enum:
+                                      - "Processors"
+                                  Description:
+                                    type: str
+                                    required: True
+                                  Socket:
+                                    type: str
+                                    required: True
+                              PopulatedFRU:
+                                type: map
+                                required: True
+                                mapping:
+                                  FRUID:
+                                    type: str
+                                    required: True
+                                  Type:
+                                    type: str
+                                    required: True
+                                    enum:
+                                      - "Processor"
+                                  Subtype:
+                                    type: str
+                                    required: True
+                                  HWInventoryByFRUType:
+                                    type: str
+                                    required: True
+                                    enum:
+                                      - "HWInvByFRUProcessor"
+                                  ProcessorFRUInfo:
+                                    type: map
+                                    required: True
+                                    mapping:
+                                      InstructionSet:
+                                        type: str
+                                        required: True
+                                      Manufacturer:
+                                        type: str
+                                        required: True
+                                      MaxSpeedMHz:
+                                        type: int
+                                        required: True
+                                      Model:
+                                        type: str
+                                        required: True
+                                      SerialNumber:
+                                        type: str
+                                        required: True
+                                      PartNumber:
+                                        type: str
+                                        required: True
+                                      ProcessorArchitecture:
+                                        type: str
+                                        required: True
+                                      ProcessorId:
+                                        type: map
+                                        required: True
+                                        mapping:
+                                          EffectiveFamily:
+                                            type: str
+                                            required: True
+                                          EffectiveModel:
+                                            type: str
+                                            required: True
+                                          IdentificationRegisters:
+                                            type: str
+                                            required: True
+                                          MicrocodeInfo:
+                                            type: str
+                                            required: True
+                                          Step:
+                                            type: str
+                                            required: True
+                                          VendorID:
+                                            type: str
+                                            required: True
+                                      ProcessorType:
+                                        type: str
+                                        required: True
+                                        enum:
+                                          - "CPU"
+                                      TotalCores:
+                                        type: int
+                                        required: True
+                                      TotalThreads:
+                                        type: int
+                                        required: True
+                                      Oem:
+                                        type: map
+                                        required: False
+                                        mapping:
+                                          # the only instance encountered of this Oem map was empty
+                                          Key:
+                                            type: str
+                                            required: False
+                      Memory:
+                        type: seq
+                        matching: all
+                        sequence:
+                          - type: map
+                            mapping:
+                              ID:
+                                type: str
+                                required: True
+                                pattern: "{node_xname}d[0-9]+"
+                              Type:
+                                type: str
+                                required: True
+                                enum:
+                                  - "Memory"
+                              Ordinal:
+                                type: int
+                                required: True
+                              Status:
+                                type: str
+                                required: True
+                              HWInventoryByLocationType:
+                                type: str
+                                required: True
+                                enum:
+                                  - "HWInvByLocMemory"
+                              MemoryLocationInfo:
+                                type: map
+                                required: True
+                                mapping:
+                                  Id:
+                                    type: str
+                                    required: True
+                                  Name:
+                                    type: str
+                                    required: True
+                                  Description:
+                                    type: str
+                                    required: True
+                                  MemoryLocation:
+                                    type: map
+                                    required: True
+                                    mapping:
+                                      Socket:
+                                        type: int
+                                        required: True
+                                      MemoryController:
+                                        type: int
+                                        required: True
+                                      Channel:
+                                        type: int
+                                        required: True
+                                      Slot:
+                                        type: int
+                                        required: True
+                              PopulatedFRU:
+                                type: map
+                                # PopulatedFRU data not present for all Memory entries
+                                required: False
+                                mapping:
+                                  FRUID:
+                                    type: str
+                                    required: True
+                                  Type:
+                                    type: str
+                                    required: True
+                                    enum:
+                                      - "Memory"
+                                  Subtype:
+                                    type: str
+                                    required: True
+                                  HWInventoryByFRUType:
+                                    type: str
+                                    required: True
+                                    enum:
+                                      - "HWInvByFRUMemory"
+                                  MemoryFRUInfo:
+                                    type: map
+                                    required: True
+                                    mapping:
+                                      BaseModuleType:
+                                        type: str
+                                        required: True
+                                      BusWidthBits:
+                                        type: int
+                                        required: True
+                                      CapacityMiB:
+                                        type: int
+                                        required: True
+                                      DataWidthBits:
+                                        type: int
+                                        required: True
+                                      ErrorCorrection:
+                                        type: str
+                                        required: True
+                                      Manufacturer:
+                                        type: str
+                                        required: True
+                                      MemoryType:
+                                        type: str
+                                        required: True
+                                      MemoryDeviceType:
+                                        type: str
+                                        required: True
+                                      OperatingSpeedMhz:
+                                        type: int
+                                        required: True
+                                      PartNumber:
+                                        type: str
+                                        required: True
+                                      RankCount:
+                                        type: int
+                                        required: True
+                                      SerialNumber:
+                                        type: str
+                                        required: True
