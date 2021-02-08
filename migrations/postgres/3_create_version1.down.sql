@@ -22,7 +22,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
--- Copyright (c) 2019 Cray Inc. All Rights Reserved.
 
 -- Completely remove schema 1, i.e. everything, if we roll back this far.
 SET client_min_messages = ERROR;
