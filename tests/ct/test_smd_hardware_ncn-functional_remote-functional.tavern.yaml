@@ -808,42 +808,42 @@ stages:
                                     mapping:
                                       BaseModuleType:
                                         type: str
-                                        # Missing on Memory.SKHynix.HMA84GR7CJR4NXN.*
+                                        # Missing for Memory.SKHynix.HMA84GR7CJR4NXN.*
                                         required: False
                                       BusWidthBits:
                                         type: int
-                                        required: True
+                                        required: False
                                       CapacityMiB:
                                         type: int
-                                        required: True
+                                        required: False
                                       DataWidthBits:
                                         type: int
-                                        required: True
+                                        required: False
                                       ErrorCorrection:
                                         type: str
-                                        required: True
+                                        required: False
                                       Manufacturer:
                                         type: str
-                                        required: True
+                                        required: False
                                       MemoryType:
                                         type: str
-                                        required: True
+                                        required: False
                                       MemoryDeviceType:
                                         type: str
-                                        required: True
+                                        required: False
                                       OperatingSpeedMhz:
                                         type: int
-                                        required: True
+                                        required: False
                                       PartNumber:
                                         type: str
-                                        required: True
+                                        required: False
                                       RankCount:
                                         type: int
-                                        # Missing on Memory.SKHynix.HMA84GR7CJR4NXN.*
+                                        # Missing for Memory.SKHynix.HMA84GR7CJR4NXN.*
                                         required: False
                                       SerialNumber:
                                         type: str
-                                        required: False
+                                        required: True
                       Drives:
                         type: seq
                         required: False
