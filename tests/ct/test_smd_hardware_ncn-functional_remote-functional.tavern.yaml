@@ -668,6 +668,8 @@ stages:
                                   ProcessorFRUInfo:
                                     type: map
                                     required: True
+                                    # this allows the Oem key to be present as a map or a string
+                                    allowempty: True
                                     mapping:
                                       InstructionSet:
                                         type: str
@@ -723,9 +725,6 @@ stages:
                                       TotalThreads:
                                         type: int
                                         required: True
-                                      # the only instances of Oem encountered were an empty map and null
-                                      Oem:
-                                        required: False
                       Memory:
                         type: seq
                         matching: all
@@ -955,4 +954,80 @@ stages:
                                         required: True
                                       PredictedMediaLifeLeftPercent:
                                         type: int
+                                        required: True
+                      NodeHsnNics:
+                        type: seq
+                        required: False
+                        matching: all
+                        sequence:
+                          - type: map
+                            mapping:
+                              ID:
+                                type: str
+                                required: True
+                                pattern: "{node_xname}h[0-9]+"
+                              Type:
+                                type: str
+                                required: True
+                                enum:
+                                  - "NodeHsnNic"
+                              Ordinal:
+                                type: int
+                                required: True
+                              Status:
+                                type: str
+                                required: True
+                              HWInventoryByLocationType:
+                                type: str
+                                required: True
+                                enum:
+                                  - "HWInvByLocNodeHsnNic"
+                              NodeHsnNicLocationInfo:
+                                type: map
+                                required: True
+                                mapping:
+                                  Id:
+                                    type: str
+                                    required: True
+                                  Name:
+                                    type: str
+                                    required: True
+                                  Description:
+                                    type: str
+                                    required: True
+                              PopulatedFRU:
+                                type: map
+                                required: True
+                                mapping:
+                                  FRUID:
+                                    type: str
+                                    required: True
+                                  Type:
+                                    type: str
+                                    required: True
+                                    enum:
+                                      - "NodeHsnNic"
+                                  Subtype:
+                                    type: str
+                                    required: True
+                                  HWInventoryByFRUType:
+                                    type: str
+                                    required: True
+                                    enum:
+                                      - "HWInvByFRUNodeHsnNic"
+                                  NodeHsnNicFRUInfo:
+                                    type: map
+                                    required: True
+                                    mapping:
+                                      Manufacturer:
+                                        type: str
+                                        required: True
+                                      Model:
+                                        type: str
+                                        required: True
+                                      PartNumber:
+                                        type: str
+                                        required: True
+                                      SerialNumber:
+                                        type: str
                                         required: True
