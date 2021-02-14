@@ -638,8 +638,7 @@ stages:
                                   Name:
                                     type: str
                                     required: True
-                                    enum:
-                                      - "Processors"
+                                    pattern: "Processor*"
                                   Description:
                                     type: str
                                     required: True
@@ -669,6 +668,8 @@ stages:
                                   ProcessorFRUInfo:
                                     type: map
                                     required: True
+                                    # this allows the Oem key to be present as a map or a string
+                                    allowempty: True
                                     mapping:
                                       InstructionSet:
                                         type: str
@@ -724,14 +725,6 @@ stages:
                                       TotalThreads:
                                         type: int
                                         required: True
-                                      Oem:
-                                        type: map
-                                        required: False
-                                        mapping:
-                                          # the only instance encountered of this Oem map was empty
-                                          Key:
-                                            type: str
-                                            required: False
                       Memory:
                         type: seq
                         matching: all
@@ -814,36 +807,226 @@ stages:
                                     mapping:
                                       BaseModuleType:
                                         type: str
-                                        required: True
+                                        # Missing for Memory.SKHynix.HMA84GR7CJR4NXN.*
+                                        required: False
                                       BusWidthBits:
                                         type: int
-                                        required: True
+                                        required: False
                                       CapacityMiB:
                                         type: int
-                                        required: True
+                                        required: False
                                       DataWidthBits:
                                         type: int
-                                        required: True
+                                        required: False
                                       ErrorCorrection:
                                         type: str
+                                        required: False
+                                      Manufacturer:
+                                        type: str
+                                        required: False
+                                      MemoryType:
+                                        type: str
+                                        required: False
+                                      MemoryDeviceType:
+                                        type: str
+                                        required: False
+                                      OperatingSpeedMhz:
+                                        type: int
+                                        required: False
+                                      PartNumber:
+                                        type: str
+                                        required: False
+                                      RankCount:
+                                        type: int
+                                        # Missing for Memory.SKHynix.HMA84GR7CJR4NXN.*
+                                        required: False
+                                      SerialNumber:
+                                        type: str
                                         required: True
+                      Drives:
+                        type: seq
+                        required: False
+                        matching: all
+                        sequence:
+                          - type: map
+                            mapping:
+                              ID:
+                                type: str
+                                required: True
+                                pattern: "{node_xname}g[0-9]+k[0-9]+"
+                              Type:
+                                type: str
+                                required: True
+                                enum:
+                                  - "Drive"
+                              Ordinal:
+                                type: int
+                                required: True
+                              Status:
+                                type: str
+                                required: True
+                              HWInventoryByLocationType:
+                                type: str
+                                required: True
+                                enum:
+                                  - "HWInvByLocDrive"
+                              DriveLocationInfo:
+                                type: map
+                                required: True
+                                mapping:
+                                  Id:
+                                    type: str
+                                    required: True
+                                  Name:
+                                    type: str
+                                    required: True
+                                  Description:
+                                    type: str
+                                    required: True
+                              PopulatedFRU:
+                                type: map
+                                required: True
+                                mapping:
+                                  FRUID:
+                                    type: str
+                                    required: True
+                                  Type:
+                                    type: str
+                                    required: True
+                                    enum:
+                                      - "Drive"
+                                  Subtype:
+                                    type: str
+                                    required: True
+                                  HWInventoryByFRUType:
+                                    type: str
+                                    required: True
+                                    enum:
+                                      - "HWInvByFRUDrive"
+                                  DriveFRUInfo:
+                                    type: map
+                                    required: True
+                                    mapping:
                                       Manufacturer:
                                         type: str
                                         required: True
-                                      MemoryType:
+                                      SerialNumber:
                                         type: str
-                                        required: True
-                                      MemoryDeviceType:
-                                        type: str
-                                        required: True
-                                      OperatingSpeedMhz:
-                                        type: int
                                         required: True
                                       PartNumber:
                                         type: str
                                         required: True
-                                      RankCount:
+                                      Model:
+                                        type: str
+                                        required: True
+                                      SKU:
+                                        type: str
+                                        required: True
+                                      CapacityBytes:
                                         type: int
+                                        required: True
+                                      Protocol:
+                                        type: str
+                                        required: True
+                                      MediaType:
+                                        type: str
+                                        required: True
+                                      RotationSpeedRPM:
+                                        type: int
+                                        required: True
+                                      BlockSizeBytes:
+                                        type: int
+                                        required: True
+                                      CapableSpeedGbs:
+                                        type: int
+                                        required: True
+                                      FailurePredicted:
+                                        type: bool
+                                        required: True
+                                      EncryptionAbility:
+                                        type: str
+                                        required: True
+                                      EncryptionStatus:
+                                        type: str
+                                        required: True
+                                      NegotiatedSpeedGbs:
+                                        type: int
+                                        required: True
+                                      PredictedMediaLifeLeftPercent:
+                                        type: int
+                                        required: True
+                      NodeHsnNics:
+                        type: seq
+                        required: False
+                        matching: all
+                        sequence:
+                          - type: map
+                            mapping:
+                              ID:
+                                type: str
+                                required: True
+                                pattern: "{node_xname}h[0-9]+"
+                              Type:
+                                type: str
+                                required: True
+                                enum:
+                                  - "NodeHsnNic"
+                              Ordinal:
+                                type: int
+                                required: True
+                              Status:
+                                type: str
+                                required: True
+                              HWInventoryByLocationType:
+                                type: str
+                                required: True
+                                enum:
+                                  - "HWInvByLocNodeHsnNic"
+                              NodeHsnNicLocationInfo:
+                                type: map
+                                required: True
+                                mapping:
+                                  Id:
+                                    type: str
+                                    required: True
+                                  Name:
+                                    type: str
+                                    required: True
+                                  Description:
+                                    type: str
+                                    required: True
+                              PopulatedFRU:
+                                type: map
+                                required: True
+                                mapping:
+                                  FRUID:
+                                    type: str
+                                    required: True
+                                  Type:
+                                    type: str
+                                    required: True
+                                    enum:
+                                      - "NodeHsnNic"
+                                  Subtype:
+                                    type: str
+                                    required: True
+                                  HWInventoryByFRUType:
+                                    type: str
+                                    required: True
+                                    enum:
+                                      - "HWInvByFRUNodeHsnNic"
+                                  NodeHsnNicFRUInfo:
+                                    type: map
+                                    required: True
+                                    mapping:
+                                      Manufacturer:
+                                        type: str
+                                        required: True
+                                      Model:
+                                        type: str
+                                        required: True
+                                      PartNumber:
+                                        type: str
                                         required: True
                                       SerialNumber:
                                         type: str
