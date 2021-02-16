@@ -494,6 +494,8 @@ stages:
                 matching: all
                 sequence:
                   - type: map
+                    # allows inventory schemas for new hardware types to be accepted
+                    allowempty: True
                     mapping:
                       ID:
                         type: str
@@ -954,6 +956,215 @@ stages:
                                         required: True
                                       PredictedMediaLifeLeftPercent:
                                         type: int
+                                        required: True
+                      NodeAccels:
+                        type: seq
+                        required: False
+                        matching: all
+                        sequence:
+                          - type: map
+                            mapping:
+                              ID:
+                                type: str
+                                required: True
+                                pattern: "{node_xname}a[0-9]+"
+                              Type:
+                                type: str
+                                required: True
+                                enum:
+                                  - "NodeAccel"
+                              Ordinal:
+                                type: int
+                                required: True
+                              Status:
+                                type: str
+                                required: True
+                              HWInventoryByLocationType:
+                                type: str
+                                required: True
+                                enum:
+                                  - "HWInvByLocNodeAccel"
+                              NodeAccelLocationInfo:
+                                type: map
+                                required: True
+                                mapping:
+                                  Id:
+                                    type: str
+                                    required: True
+                                  Name:
+                                    type: str
+                                    required: True
+                                  Description:
+                                    type: str
+                                    required: True
+                                  Socket:
+                                    type: str
+                                    required: True
+                              PopulatedFRU:
+                                type: map
+                                required: True
+                                mapping:
+                                  FRUID:
+                                    type: str
+                                    required: True
+                                  Type:
+                                    type: str
+                                    required: True
+                                    enum:
+                                      - "NodeAccel"
+                                  Subtype:
+                                    type: str
+                                    required: True
+                                  HWInventoryByFRUType:
+                                    type: str
+                                    required: True
+                                    enum:
+                                      - "HWInvByFRUNodeAccel"
+                                  NodeAccelFRUInfo:
+                                    type: map
+                                    required: True
+                                    # this allows the Oem key to be present as a map or a string
+                                    allowempty: True
+                                    mapping:
+                                      InstructionSet:
+                                        type: str
+                                        required: True
+                                      Manufacturer:
+                                        type: str
+                                        required: True
+                                      MaxSpeedMHz:
+                                        type: int
+                                        required: True
+                                      Model:
+                                        type: str
+                                        required: True
+                                      SerialNumber:
+                                        type: str
+                                        required: True
+                                      PartNumber:
+                                        type: str
+                                        required: True
+                                      ProcessorArchitecture:
+                                        type: str
+                                        required: True
+                                      ProcessorId:
+                                        type: map
+                                        matching: all
+                                        mapping:
+                                          EffectiveFamily:
+                                            type: str
+                                            required: True
+                                          EffectiveModel:
+                                            type: str
+                                            required: True
+                                          IdentificationRegisters:
+                                            type: str
+                                            required: True
+                                          MicrocodeInfo:
+                                            type: str
+                                            required: True
+                                          Step:
+                                            type: str
+                                            required: True
+                                          VendorID:
+                                            type: str
+                                            required: True
+                                      ProcessorType:
+                                        type: str
+                                        required: True
+                                      TotalCores:
+                                        type: int
+                                        required: True
+                                      TotalThreads:
+                                        type: int
+                                        required: True
+
+                      NodeAccelRisers:
+                        type: seq
+                        required: False
+                        matching: all
+                        sequence:
+                          - type: map
+                            mapping:
+                              ID:
+                                type: str
+                                required: True
+                                pattern: "{node_xname}r[0-9]+"
+                              Type:
+                                type: str
+                                required: True
+                                enum:
+                                  - "NodeAccelRiser"
+                              Ordinal:
+                                type: int
+                                required: True
+                              Status:
+                                type: str
+                                required: True
+                              HWInventoryByLocationType:
+                                type: str
+                                required: True
+                                enum:
+                                  - "HWInvByLocNodeAccelRiser"
+                              NodeAccelRiserLocationInfo:
+                                type: map
+                                required: True
+                                mapping:
+                                  Name:
+                                    type: str
+                                    required: True
+                                  Description:
+                                    type: str
+                                    required: True
+                              PopulatedFRU:
+                                type: map
+                                required: True
+                                mapping:
+                                  FRUID:
+                                    type: str
+                                    required: True
+                                  Type:
+                                    type: str
+                                    required: True
+                                    enum:
+                                      - "NodeAccelRiser"
+                                  Subtype:
+                                    type: str
+                                    required: True
+                                  HWInventoryByFRUType:
+                                    type: str
+                                    required: True
+                                    enum:
+                                      - "HWInvByFRUNodeAccelRiser"
+                                  NodeAccelRiserFRUInfo:
+                                    type: map
+                                    required: True
+                                    # this allows the Oem key to be present as a map or a string
+                                    allowempty: True
+                                    mapping:
+                                      PhysicalContext:
+                                        type: str
+                                        required: True
+                                      Producer:
+                                        type: str
+                                        required: True
+                                      SerialNumber:
+                                        type: str
+                                        required: True
+                                      PartNumber:
+                                        type: str
+                                        required: True
+                                      Model:
+                                        type: str
+                                        required: True
+                                      ProductionDate:
+                                        type: str
+                                        required: True
+                                      Version:
+                                        type: str
+                                        required: True
+                                      EngineeringChangeLevel:
+                                        type: str
                                         required: True
                       NodeHsnNics:
                         type: seq
