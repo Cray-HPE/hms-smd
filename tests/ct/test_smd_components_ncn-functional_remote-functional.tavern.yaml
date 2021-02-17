@@ -131,6 +131,9 @@ stages:
                       Enabled:
                         type: bool
                         required: True
+                      SoftwareStatus:
+                        type: str
+                        required: False
                       Role:
                         type: str
                         required: True
