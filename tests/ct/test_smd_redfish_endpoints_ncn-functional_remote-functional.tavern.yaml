@@ -122,6 +122,7 @@ stages:
                           - "NodeBMC"
                           - "ChassisBMC"
                           - "RouterBMC"
+                          - "CabinetPDUController"
                       UUID:
                         type: str
                         #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
