@@ -185,15 +185,20 @@ func (j *JobSCN) Run() {
 		go func(urlStr string) {
 			defer waitGroup.Done()
 			for retry := 0; retry < 3; retry++ {
+				var strbody []byte
 				rsp, err := client.Post(urlStr, "application/json", bytes.NewReader(payload))
 				if err != nil {
 					j.s.LogAlways("WARNING: SCN POST failed for %s: %v", urlStr, err)
-				} else if rsp.StatusCode != 200 {
-					strbody, _ := ioutil.ReadAll(rsp.Body)
-					j.s.LogAlways("WARNING: An error occurred uploading SCN to %s: %s %s", urlStr, rsp.Status, string(strbody))
-					rsp.Body.Close()
 				} else {
-					return
+					if rsp.Body != nil {
+						strbody, _ = ioutil.ReadAll(rsp.Body)
+						rsp.Body.Close()
+					}
+					if rsp.StatusCode != 200 {
+						j.s.LogAlways("WARNING: An error occurred uploading SCN to %s: %s %s", urlStr, rsp.Status, string(strbody))
+					} else {
+						return
+					}
 				}
 				time.Sleep(5 * time.Second)
 			}
