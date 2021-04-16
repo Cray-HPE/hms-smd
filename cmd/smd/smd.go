@@ -151,6 +151,7 @@ type SmD struct {
 
 	wp            *base.WorkerPool
 	wpRFEvent     *base.WorkerPool
+	wpHwHist      *base.WorkerPool
 	scnSubs       sm.SCNSubscriptionArray
 	scnSubMap     SCNSubMap
 	scnSubLock    sync.Mutex
@@ -951,6 +952,9 @@ func main() {
 
 	s.wpRFEvent = base.NewWorkerPool(1000, 10000)
 	s.wpRFEvent.Run()
+
+	s.wpHwHist = base.NewWorkerPool(1, 10000)
+	s.wpHwHist.Run()
 
 	// Start monitoring message bus, if configured
 	s.smapCompEP = NewSyncMap(ComponentEndpointSMap(&s))

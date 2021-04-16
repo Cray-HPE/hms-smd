@@ -3329,17 +3329,18 @@ func (d *hmsdbPg) GetDiscoveryStatusAll() ([]*sm.DiscoveryStatus, error) {
 
 // Update discovery status in DB.
 func (d *hmsdbPg) UpsertDiscoveryStatus(stat *sm.DiscoveryStatus) error {
-	t, err := d.Begin()
-	if err != nil {
-		return err
-	}
-	err = t.UpsertDiscoveryStatusTx(stat)
-	if err != nil {
-		t.Rollback()
-		return err
-	}
-	err = t.Commit()
-	return err
+	return nil
+	// t, err := d.Begin()
+	// if err != nil {
+		// return err
+	// }
+	// err = t.UpsertDiscoveryStatusTx(stat)
+	// if err != nil {
+		// t.Rollback()
+		// return err
+	// }
+	// err = t.Commit()
+	// return err
 }
 
 ////////////////////////////////////////////////////////////////////////////
