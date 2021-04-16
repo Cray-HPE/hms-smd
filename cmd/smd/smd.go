@@ -151,7 +151,6 @@ type SmD struct {
 
 	wp            *base.WorkerPool
 	wpRFEvent     *base.WorkerPool
-	wpHwHist      *base.WorkerPool
 	scnSubs       sm.SCNSubscriptionArray
 	scnSubMap     SCNSubMap
 	scnSubLock    sync.Mutex
@@ -388,22 +387,8 @@ func (s *SmD) HWInvHistCleanup() {
 						s.LogAlways("HWInvHistCleanup(): Expired history lookup failure: %s", err)
 						failed = true
 					}
-					// Clean up HWInv history "Scanned" entries. Keep only the previous day.
-					endTime = time.Now()
-					endTime = endTime.AddDate(0, 0, -1)
-					numScanDeleted, err := s.db.DeleteHWInvHistFilter(
-						hmsds.HWInvHist_EndTime(endTime.Format(time.RFC3339)),
-						hmsds.HWInvHist_EventTypes([]string{sm.HWInvHistEventTypeScanned}),
-					)
-					if err != nil {
-						s.LogAlways("HWInvHistCleanup(): Expired 'Scanned' history lookup failure: %s", err)
-						failed = true
-					}
 					if numDeleted > 0 {
 						s.LogAlways("HWInvHistCleanup(): Deleted %d expired HWInv history events", numDeleted)
-					}
-					if numScanDeleted > 0 {
-						s.LogAlways("HWInvHistCleanup(): Deleted %d expired HWInv history 'Scanned' events", numScanDeleted)
 					}
 					if failed {
 						time.Sleep(10 * time.Second)
@@ -952,9 +937,6 @@ func main() {
 
 	s.wpRFEvent = base.NewWorkerPool(1000, 10000)
 	s.wpRFEvent.Run()
-
-	s.wpHwHist = base.NewWorkerPool(1, 10000)
-	s.wpHwHist.Run()
 
 	// Start monitoring message bus, if configured
 	s.smapCompEP = NewSyncMap(ComponentEndpointSMap(&s))

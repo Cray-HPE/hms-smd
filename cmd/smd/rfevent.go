@@ -850,13 +850,11 @@ func (s *SmD) doUpdateCompHWInv(cep *sm.ComponentEndpoint, ep *rf.RedfishEP) err
 				cep.ID, err)
 		}
 		// Generate hardware history
-		hwHistJob := NewJobHwHist(nodehls, sm.HWInvHistEventTypeScanned, s)
-		s.wpHwHist.Queue(hwHistJob)
-		// err = s.GenerateHWInvHist(nodehls, sm.HWInvHistEventTypeScanned)
-		// if err != nil {
-			// s.Log(LOG_INFO, "doUpdateCompHWInv(%s): Failed to update hwinv history: %s",
-				// cep.ID, err)
-		// }
+		err = s.GenerateHWInvHist(nodehls, sm.HWInvHistEventTypeDetected)
+		if err != nil {
+			s.Log(LOG_INFO, "doUpdateCompHWInv(%s): Failed to update hwinv history: %s",
+				cep.ID, err)
+		}
 	}
 	return nil
 }

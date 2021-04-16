@@ -48,7 +48,6 @@ const (
 	JTYPE_INVALID base.JobType = iota
 	JTYPE_SCN
 	JTYPE_RFEVENT
-	JTYPE_HWHIST
 	JTYPE_MAX
 )
 
@@ -56,7 +55,6 @@ var JTypeString = map[base.JobType]string{
 	JTYPE_INVALID: "JTYPE_INVALID",
 	JTYPE_SCN:     "JTYPE_SCN",
 	JTYPE_RFEVENT: "JTYPE_RFEVENT",
-	JTYPE_HWHIST:  "JTYPE_HWHIST",
 	JTYPE_MAX:     "JTYPE_MAX",
 }
 
@@ -358,136 +356,6 @@ func (j *JobRFEvent) SetStatus(newStatus base.JobStatus, err error) (base.JobSta
 // Return: Current job status before cancelling.
 /////////////////////////////////////////////////////////////////////////////
 func (j *JobRFEvent) Cancel() base.JobStatus {
-	if j.Status == base.JSTAT_QUEUED || j.Status == base.JSTAT_DEFAULT {
-		j.Status = base.JSTAT_CANCELLED
-	}
-	return j.Status
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Job: JTYPE_HWHIST
-///////////////////////////////////////////////////////////////////////////////
-type JobHwHist struct {
-	Status         base.JobStatus
-	Hwlocs         []HWInvHistID
-	ForceEventType string
-	Err            error
-	s              *SmD
-	Logger         *log.Logger
-}
-type HWInvHistID struct {
-	ID    string
-	FRUID string
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// Create a JTYPE_HWHIST job data structure.
-//
-// payload(in):        The hw inventory entries to generate a history event for.
-// forceEventType(in): Force the history event type
-// s(in):              SmD instance we are working on behalf of.
-// Return:             Job data structure to be used by work Q.
-/////////////////////////////////////////////////////////////////////////////
-func NewJobHwHist(hwlocs []*sm.HWInvByLoc, forceEventType string, s *SmD) base.Job {
-	j := new(JobHwHist)
-	j.Status = base.JSTAT_DEFAULT
-	j.ForceEventType = forceEventType
-	j.s = s
-	j.Logger = s.lg
-
-	hwHistIds := make([]HWInvHistID, 0, 1)
-	for _, hwloc := range hwlocs {
-		if hwloc == nil || hwloc.PopulatedFRU == nil {
-			continue
-		}
-		hwHistId := HWInvHistID{
-			ID: hwloc.ID,
-			FRUID: hwloc.PopulatedFRU.FRUID,
-		}
-		hwHistIds = append(hwHistIds, hwHistId)
-	}
-	j.Hwlocs = hwHistIds
-	j.ForceEventType = forceEventType
-
-	return j
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// Log function for HwHist job. Note that for now this is just a simple
-// log call, but may be expanded in the future.
-//
-// format(in):  Printf-like format string.
-// a(in):       Printf-like argument list.
-// Return:      None.
-/////////////////////////////////////////////////////////////////////////////
-func (j *JobHwHist) Log(format string, a ...interface{}) {
-	// Use caller's line number (depth=2)
-	j.Logger.Output(2, fmt.Sprintf(format, a...))
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// Return current job type.
-//
-// Args: None
-// Return: Job type.
-/////////////////////////////////////////////////////////////////////////////
-func (j *JobHwHist) Type() base.JobType {
-	return JTYPE_HWHIST
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// Run a job. This is done by the worker pool when popping a job off of the
-// work Q/chan.
-//
-// Args: None.
-// Return: None.
-/////////////////////////////////////////////////////////////////////////////
-func (j *JobHwHist) Run() {
-	err := j.s.GenerateHWInvHist(j.Hwlocs, j.ForceEventType)
-	if err != nil {
-		j.s.Log(LOG_INFO, "Got error '%s' Generating HW Inventory History", err)
-	}
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// Return the current job status and error info.
-//
-// Args: None
-// Return: Current job status, and any error info (if any).
-/////////////////////////////////////////////////////////////////////////////
-func (j *JobHwHist) GetStatus() (base.JobStatus, error) {
-	if j.Status == base.JSTAT_ERROR {
-		return j.Status, j.Err
-	}
-	return j.Status, nil
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// Set job status.
-//
-// newStatus(in): Status to set job to.
-// err(in):       Error info to associate with the job.
-// Return:        Previous job status; nil on success, error string on error.
-/////////////////////////////////////////////////////////////////////////////
-func (j *JobHwHist) SetStatus(newStatus base.JobStatus, err error) (base.JobStatus, error) {
-	if newStatus >= base.JSTAT_MAX {
-		return j.Status, errors.New("Error: Invalid Status")
-	} else {
-		oldStatus := j.Status
-		j.Status = newStatus
-		j.Err = err
-		return oldStatus, nil
-	}
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// Cancel a job.  Note that this JobType does not support cancelling the
-// job while it is being processed
-//
-// Args:   None
-// Return: Current job status before cancelling.
-/////////////////////////////////////////////////////////////////////////////
-func (j *JobHwHist) Cancel() base.JobStatus {
 	if j.Status == base.JSTAT_QUEUED || j.Status == base.JSTAT_DEFAULT {
 		j.Status = base.JSTAT_CANCELLED
 	}

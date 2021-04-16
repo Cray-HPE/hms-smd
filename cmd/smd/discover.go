@@ -397,16 +397,14 @@ func (s *SmD) updateFromRfEndpoint(rfEP *rf.RedfishEP) error {
 	}
 
 	// Generate HWInv History Entries
-	hwHistJob := NewJobHwHist(hwlocs, "", s)
-	s.wpHwHist.Queue(hwHistJob)
-	// err = s.GenerateHWInvHist(hwlocs, "")
-	// if err != nil {
-		// // Unexpected error storing HWInv history entries.
-		// s.LogAlways("GenerateHWInvHist(): Fatal error storing: %s", err)
-		// if savedErr == nil {
-			// return err
-		// }
-	// }
+	err = s.GenerateHWInvHist(hwlocs, sm.HWInvHistEventTypeDetected)
+	if err != nil {
+		// Unexpected error storing HWInv history entries.
+		s.LogAlways("GenerateHWInvHist(): Fatal error storing: %s", err)
+		if savedErr == nil {
+			return err
+		}
+	}
 
 	// Return "main" error as far as whether discovered info could be written.
 	return savedErr
@@ -848,112 +846,7 @@ func (s *SmD) DiscoverHWInvByLocArray(rfEP *rf.RedfishEP) ([]*sm.HWInvByLoc, err
 //   adding to the new location. (Removal event wasn't generated)
 // If a eventType is specified, all generated entries will be forced to that
 // event type.
-// func (s *SmD) GenerateHWInvHist(hwlocs []*sm.HWInvByLoc, forceEventType string) error {
-	// var (
-		// force     bool
-		// eventType string
-	// )
-	// hwhists := make([]*sm.HWInvHist, 0, 1)
-	// hwhistRemovals := make([]*sm.HWInvHist, 0, 1)
-	// fruIDs := make([]string, 0, len(hwlocs))
-	// locIDs := make([]string, 0, len(hwlocs))
-	// hhsMap := make(map[string]*sm.HWInvHist, 0)
-	// lhsMap := make(map[string]*sm.HWInvHist, 0)
-	// dups := make(map[string]bool, 0)
-	// if len(forceEventType) > 0 && sm.VerifyNormalizeHWInvHistEventType(forceEventType) != "" {
-		// force = true
-		// eventType = sm.VerifyNormalizeHWInvHistEventType(forceEventType)
-	// } else {
-		// // Get a list of the FRUIDs
-		// for _, hwloc := range hwlocs {
-			// if hwloc == nil || hwloc.PopulatedFRU == nil {
-				// continue
-			// }
-			// fruIDs = append(fruIDs, hwloc.PopulatedFRU.FRUID)
-			// locIDs = append(locIDs, hwloc.ID)
-		// }
-		// // Get all the history for the FRUIDs
-		// hhs, err := s.db.GetHWInvHistFilter(
-			// hmsds.HWInvHist_FruIDs(fruIDs),
-			// hmsds.HWInvHist_EventTypes([]string{sm.HWInvHistEventTypeAdded, sm.HWInvHistEventTypeRemoved}))
-		// if err != nil {
-			// return err
-		// }
-		// // Get all the history for locs
-		// lhs, err := s.db.GetHWInvHistFilter(
-			// hmsds.HWInvHist_IDs(locIDs),
-			// hmsds.HWInvHist_EventTypes([]string{sm.HWInvHistEventTypeAdded, sm.HWInvHistEventTypeRemoved}))
-		// if err != nil {
-			// return err
-		// }
-		// // Create a map linking the FRUIDs to the last recorded history entry
-		// for _, hh := range hhs {
-			// hhsMap[hh.FruId] = hh
-		// }
-		// // Create a map linking the locIDs to the last recorded history entry
-		// for _, lh := range lhs {
-			// lhsMap[lh.ID] = lh
-		// }
-	// }
-	// for _, hwloc := range hwlocs {
-		// // Skip hwlocs that have no FRU
-		// if hwloc == nil || hwloc.PopulatedFRU == nil {
-			// continue
-		// }
-		// newHist := sm.HWInvHist{
-			// ID:        hwloc.ID,
-			// FruId:     hwloc.PopulatedFRU.FRUID,
-			// EventType: sm.HWInvHistEventTypeAdded,
-		// }
-		// if !force {
-			// // Check the last history entry for this FRU to determine
-			// // what kind of action is being taken.
-			// if hh, ok := hhsMap[hwloc.PopulatedFRU.FRUID]; ok && hh.EventType != sm.HWInvHistEventTypeRemoved {
-				// if hh.ID == hwloc.ID {
-					// // The FRU is just getting rescanned
-					// newHist.EventType = sm.HWInvHistEventTypeScanned
-				// } else {
-					// // The FRU has been moved but no "Removed" event
-					// // was generated. Create a "Removed" event.
-					// // Check to see if there is a pending "Removed"
-					// // event already generated.
-					// if _, ok := dups[hh.ID]; !ok {
-						// hh.EventType = sm.HWInvHistEventTypeRemoved
-						// hwhistRemovals = append(hwhistRemovals, hh)
-						// dups[hh.ID] = true
-					// }
-				// }
-			// }
-			// if newHist.EventType == sm.HWInvHistEventTypeAdded {
-				// // We are being added.
-				// // Check to see if we are displacing any FRUs
-				// // by checking the last history for this loc
-				// if lh, ok := lhsMap[hwloc.ID]; ok && lh.EventType != sm.HWInvHistEventTypeRemoved {
-					// // We are displacing a FRU.
-					// // Check to see if a removal event has been created
-					// if _, ok := dups[hwloc.ID]; !ok {
-						// lh.EventType = sm.HWInvHistEventTypeRemoved
-						// hwhistRemovals = append(hwhistRemovals, lh)
-						// dups[hwloc.ID] = true
-					// }
-				// }
-			// }
-		// } else {
-			// newHist.EventType = eventType
-		// }
-		// hwhists = append(hwhists, &newHist)
-	// }
-	// if len(hwhistRemovals) != 0 {
-		// // Don't care much if the removals successfully make it into the database.
-		// // Generally these will already have been generated when the component was removed.
-		// s.db.InsertHWInvHists(hwhistRemovals)
-	// }
-	// // Insert the hw history events. Do this separately so the removals will
-	// // have different timestamps if only by milliseconds.
-	// err := s.db.InsertHWInvHists(hwhists)
-	// return err
-// }
-func (s *SmD) GenerateHWInvHist(hwlocs []HWInvHistID, forceEventType string) error {
+func (s *SmD) GenerateHWInvHist(hwlocs []*sm.HWInvByLoc, forceEventType string) error {
 	var (
 		force     bool
 		eventType string
@@ -971,7 +864,10 @@ func (s *SmD) GenerateHWInvHist(hwlocs []HWInvHistID, forceEventType string) err
 	} else {
 		// Get a list of the FRUIDs
 		for _, hwloc := range hwlocs {
-			fruIDs = append(fruIDs, hwloc.FRUID)
+			if hwloc == nil || hwloc.PopulatedFRU == nil {
+				continue
+			}
+			fruIDs = append(fruIDs, hwloc.PopulatedFRU.FRUID)
 			locIDs = append(locIDs, hwloc.ID)
 		}
 		// Get all the history for the FRUIDs
@@ -998,15 +894,19 @@ func (s *SmD) GenerateHWInvHist(hwlocs []HWInvHistID, forceEventType string) err
 		}
 	}
 	for _, hwloc := range hwlocs {
+		// Skip hwlocs that have no FRU
+		if hwloc == nil || hwloc.PopulatedFRU == nil {
+			continue
+		}
 		newHist := sm.HWInvHist{
 			ID:        hwloc.ID,
-			FruId:     hwloc.FRUID,
+			FruId:     hwloc.PopulatedFRU.FRUID,
 			EventType: sm.HWInvHistEventTypeAdded,
 		}
 		if !force {
 			// Check the last history entry for this FRU to determine
 			// what kind of action is being taken.
-			if hh, ok := hhsMap[hwloc.FRUID]; ok && hh.EventType != sm.HWInvHistEventTypeRemoved {
+			if hh, ok := hhsMap[hwloc.PopulatedFRU.FRUID]; ok && hh.EventType != sm.HWInvHistEventTypeRemoved {
 				if hh.ID == hwloc.ID {
 					// The FRU is just getting rescanned
 					newHist.EventType = sm.HWInvHistEventTypeScanned
