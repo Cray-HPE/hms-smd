@@ -397,7 +397,7 @@ func (s *SmD) updateFromRfEndpoint(rfEP *rf.RedfishEP) error {
 	}
 
 	// Generate HWInv History Entries
-	err = s.GenerateHWInvHist(hwlocs, "")
+	err = s.GenerateHWInvHist(hwlocs, sm.HWInvHistEventTypeDetected)
 	if err != nil {
 		// Unexpected error storing HWInv history entries.
 		s.LogAlways("GenerateHWInvHist(): Fatal error storing: %s", err)

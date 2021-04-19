@@ -1421,7 +1421,7 @@ func (s *SmD) doHWInvByLocationPost(w http.ResponseWriter, r *http.Request) {
 		sendJsonDBError(w, "", "operation 'POST' failed during store.", err)
 		return
 	}
-	s.GenerateHWInvHist(hwlocs, "")
+	s.GenerateHWInvHist(hwlocs, sm.HWInvHistEventTypeDetected)
 
 	numStr := strconv.Itoa(len(hwlocs))
 	sendJsonError(w, http.StatusOK, "Created "+numStr+" entries")
@@ -3450,25 +3450,13 @@ func (s *SmD) doInventoryDiscoverPost(w http.ResponseWriter, r *http.Request) {
 	var id uint = 0
 
 	// TODO: This should be atomic and set the state to pending
-	stat, err := s.db.GetDiscoveryStatusByID(id)
-	if err != nil {
-		sendJsonError(w, http.StatusInternalServerError,
-			"Failed due to DB access issue.")
-		s.lg.Printf("GetDiscoveryStatusByID failed: %s: %s", r.RemoteAddr, err)
-		return
-	}
 	body, err := ioutil.ReadAll(r.Body)
 	err = json.Unmarshal(body, &discIn)
 	if err != nil {
 		sendJsonError(w, http.StatusBadRequest, "POST body was not understood")
 		return
 	}
-	if stat.Status == sm.DiscInProgress && discIn.Force == false {
-		sendJsonError(w, http.StatusConflict,
-			"Discovery with id 0 already in progress.")
-		s.lg.Printf("stat.Status == sm.DiscInProgress and Force == false")
-		return
-	}
+
 	// We got an array of one or more xnames.  If they are valid
 	// RedfishEndpoints, discover just this set.
 	if len(discIn.XNames) > 0 {
