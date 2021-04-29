@@ -26,13 +26,11 @@ package main
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net/http"
 	base "stash.us.cray.com/HMS/hms-base"
 	"stash.us.cray.com/HMS/hms-smd/pkg/sm"
 	"strings"
@@ -140,15 +138,7 @@ func (j *JobSCN) Run() {
 		return
 	}
 	// j.s.LogAlways("Sending SCN Payload: %v\n", string(payload))
-	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-		},
-	}
-	client := http.Client{
-		Transport: transport,
-		Timeout:   30 * time.Second,
-	}
+	client := j.s.GetHTTPClient()
 
 	// Get a the state that triggered this SCN
 	if len(scn.State) != 0 {

@@ -173,23 +173,23 @@ func (s *SmD) doCompUpdate(u *CompUpdate, name string) error {
 		data.State = base.VerifyNormalizeState(u.State)
 		data.Flag = base.VerifyNormalizeFlag(nflag)
 		scnIDs, err = s.dbUpdateCompState(compIDs, u.State, nflag, u.Force, pi)
-		if err == nil {
-			if data.State == base.StateStandby.String() {
-				// Start State Redfish Polling jobs for any nodes
-				// transitioning to standby.
-				for _, id := range scnIDs {
-					if base.GetHMSTypeString(id) == base.Node.String() {
-						s.doStateRFPoll(id, 30)
-					}
-				}
-			} else {
-				// Find and cancel State Redfish Polling jobs for any component
-				// transitioning to a state other than standby.
-				for _, id := range scnIDs {
-					s.cancelStateRFPoll(id)
-				}
-			}
-		}
+		// if err == nil {
+			// if data.State == base.StateStandby.String() {
+				// // Start State Redfish Polling jobs for any nodes
+				// // transitioning to standby.
+				// for _, id := range scnIDs {
+					// if base.GetHMSTypeString(id) == base.Node.String() {
+						// s.doStateRFPoll(id, 30)
+					// }
+				// }
+			// } else {
+				// // Find and cancel State Redfish Polling jobs for any component
+				// // transitioning to a state other than standby.
+				// for _, id := range scnIDs {
+					// s.cancelStateRFPoll(id)
+				// }
+			// }
+		// }
 	case FlagOnlyUpdate:
 		// This should work, but we don't support it as a valid SCN type
 		// now.

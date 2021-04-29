@@ -3117,8 +3117,7 @@ func (t *hmsdbPgTx) GetCompEthInterfaceByIDTx(id string) (*sm.CompEthInterfaceV2
 	// Generate query
 	query := sq.Select(compEthCols...).
 		From(compEthTable).
-		Where(sq.Eq{compEthIdCol: id}).
-		Suffix("FOR UPDATE")
+		Where(sq.Eq{compEthIdCol: id})
 
 	// Query with statement cache for caching prepared statements (local to tx)
 	query = query.PlaceholderFormat(sq.Dollar)
