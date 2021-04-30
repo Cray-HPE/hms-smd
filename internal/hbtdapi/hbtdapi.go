@@ -29,6 +29,8 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/go-retryablehttp"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -39,7 +41,7 @@ const DefaultHbtdUrl string = "http://cray-hbtd/hmi/v1"
 
 type HBTD struct {
 	Url    *url.URL
-	Client *http.Client
+	Client *retryablehttp.Client
 }
 
 type HBState struct {
@@ -56,7 +58,7 @@ type HBStatusPayload struct {
 }
 
 // Allocate and initialize new HBTD struct.
-func NewHBTD(hbtdUrl string, httpClient *http.Client) *HBTD {
+func NewHBTD(hbtdUrl string, httpClient *retryablehttp.Client) *HBTD {
 	var err error
 	hbtd := new(HBTD)
 	if hbtd.Url, err = url.Parse(hbtdUrl); err != nil {
@@ -70,15 +72,14 @@ func NewHBTD(hbtdUrl string, httpClient *http.Client) *HBTD {
 
 	// Create an httpClient if one was not given
 	if httpClient == nil {
-		transport := &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		}
-		hbtd.Client = &http.Client{
-			Transport: transport,
-			Timeout:   30 * time.Second,
-		}
+		hbtd.Client = retryablehttp.NewClient()
+		hbtd.Client.HTTPClient.Transport = &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
+		hbtd.Client.RetryMax = 5
+		hbtd.Client.HTTPClient.Timeout = time.Second * 40
+		//turn off the http client loggin!
+		tmpLogger := logrus.New()
+		tmpLogger.SetLevel(logrus.PanicLevel)
+		hbtd.Client.Logger = tmpLogger
 	} else {
 		hbtd.Client = httpClient
 	}
@@ -133,8 +134,14 @@ func (hbtd *HBTD) doRequest(req *http.Request) ([]byte, error) {
 		return nil, fmt.Errorf("HBTD struct has no HTTP Client")
 	}
 
+	newRequest, err := retryablehttp.FromRequest(req)
+	if err != nil {
+        return nil, err
+    }
+    newRequest.Header.Set("Content-Type", "application/json")
+
 	// Send the request
-	rsp, err := hbtd.Client.Do(req)
+	rsp, err := hbtd.Client.Do(newRequest)
 	if err != nil {
 		return nil, err
 	}
