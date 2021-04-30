@@ -5,15 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.26.18] - 2021-04-29
+## [1.26.18] - 2021-04-30
 
 ### Changed
-- CASMHMS-4796 - HSM no longer takes out row exclusive locks in postgres
-- CASMHMS-4796 - Reuses http transport whenever possible
-- CASMHMS-4796 - Pod resources are increased for both HSM and postgres
-- CASMHMS-4796 - Readiness probe timeout is increased
-- CASMHMS-4796 - Set GOMAXPROCS to tune HSM to the CPU resource limits
+- CASMHMS-4796 - HSM no longer takes out row exclusive locks in postgres.
+- CASMHMS-4796 - Reuses http transport whenever possible.
+- CASMHMS-4796 - Pod resources are increased for both HSM and postgres.
+- CASMHMS-4796 - Readiness probe timeout is increased.
+- CASMHMS-4796 - Set GOMAXPROCS to tune HSM to the CPU resource limits.
 - CASMHMS-4796 - Unset SetConnMaxLifetime() so postgres connections can be reused.
+- CASMHMS-4796 - Set indexs on role/subrole rows in the components table
 
 ## [1.26.17] - 2021-04-19
 

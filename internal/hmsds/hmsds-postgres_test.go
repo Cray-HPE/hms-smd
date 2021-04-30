@@ -564,7 +564,7 @@ func TestPgUpsertComponents(t *testing.T) {
 		// },
 		dbError:         nil,
 		dbInsertErr:     nil,
-		expectedPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1) FOR UPDATE"),
+		expectedPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedArgs:    []driver.Value{"x0c0s0b0n0"},
 		expectedInsert: []string{
 			regexp.QuoteMeta(ToPGQueryArgs(insertPgCompQuery)),
@@ -596,7 +596,7 @@ func TestPgUpsertComponents(t *testing.T) {
 		},
 		dbError:         nil,
 		dbInsertErr:     nil,
-		expectedPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1) FOR UPDATE"),
+		expectedPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedArgs:    []driver.Value{"x0c0s0b0n0"},
 		expectedInsert:  []string{},
 		expectedInArgs:  [][]driver.Value{},
@@ -615,7 +615,7 @@ func TestPgUpsertComponents(t *testing.T) {
 		},
 		dbError:         nil,
 		dbInsertErr:     nil,
-		expectedPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1) FOR UPDATE"),
+		expectedPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedArgs:    []driver.Value{"x0c0s0b0n0"},
 		expectedInsert: []string{
 			regexp.QuoteMeta(ToPGQueryArgs(insertPgCompQuery)),
@@ -648,7 +648,7 @@ func TestPgUpsertComponents(t *testing.T) {
 		dbRows:          [][]driver.Value{},
 		dbError:         nil,
 		dbInsertErr:     nil,
-		expectedPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1,$2) FOR UPDATE"),
+		expectedPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1,$2)"),
 		expectedArgs:    []driver.Value{"x0c0s0b0n0", "x0c0s0b0n1"},
 		expectedInsert: []string{
 			regexp.QuoteMeta(ToPGQueryArgs(insertPgCompQuery)),
@@ -690,7 +690,7 @@ func TestPgUpsertComponents(t *testing.T) {
 		dbRows:          [][]driver.Value{},
 		dbError:         sql.ErrNoRows,
 		dbInsertErr:     nil,
-		expectedPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1) FOR UPDATE"),
+		expectedPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedArgs:    []driver.Value{"x0c0s0b0n0"},
 		expectedInsert:  []string{},
 		expectedInArgs:  [][]driver.Value{},
@@ -709,7 +709,7 @@ func TestPgUpsertComponents(t *testing.T) {
 		dbRows:          [][]driver.Value{},
 		dbError:         nil,
 		dbInsertErr:     sql.ErrNoRows,
-		expectedPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1) FOR UPDATE"),
+		expectedPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedArgs:    []driver.Value{"x0c0s0b0n0"},
 		expectedInsert: []string{
 			regexp.QuoteMeta(ToPGQueryArgs(insertPgCompQuery)),
@@ -795,7 +795,7 @@ func TestPgUpdateCompStates(t *testing.T) {
 		},
 		nil,
 		regexp.QuoteMeta(getCompIDPrefix +
-			" WHERE (id = $1 OR id = $2) AND ((state != $3) OR (flag != $4)) AND (state = $5 OR state = $6 OR state = $7 OR state = $8) FOR UPDATE;"),
+			" WHERE (id = $1 OR id = $2) AND ((state != $3) OR (flag != $4)) AND (state = $5 OR state = $6 OR state = $7 OR state = $8);"),
 		[]driver.Value{"x0c0s25b0n0", "x0c0s27b0n0", "On", "OK", "On", "Off", "Standby", "Halt"},
 		nil,
 		regexp.QuoteMeta(updateCompPrefix +
@@ -886,7 +886,7 @@ func TestPgUpdateCompStates(t *testing.T) {
 		},
 		nil,
 		regexp.QuoteMeta(getCompIDPrefix +
-			" WHERE (id = $1 OR id = $2) AND ((state != $3) OR (flag != $4)) AND (state = $5 OR state = $6 OR state = $7 OR state = $8) FOR UPDATE;"),
+			" WHERE (id = $1 OR id = $2) AND ((state != $3) OR (flag != $4)) AND (state = $5 OR state = $6 OR state = $7 OR state = $8);"),
 		[]driver.Value{"x0c0s25b0n0", "x0c0s27b0n0", "On", "OK", "On", "Off", "Standby", "Halt"},
 		nil,
 		regexp.QuoteMeta(updateCompPrefix + " state = 'On', flag = CASE WHEN flag = 'Locked' THEN 'Locked' ELSE 'OK' END WHERE (id = $1 OR id = $2);"),
@@ -979,7 +979,7 @@ func TestPgBulkUpdateCompFlagOnly(t *testing.T) {
 		},
 		nil,
 		regexp.QuoteMeta(getCompIDPrefix +
-			" WHERE (id = $1 OR id = $2) AND (flag != $3) FOR UPDATE;"),
+			" WHERE (id = $1 OR id = $2) AND (flag != $3);"),
 		[]driver.Value{"x0c0s25b0n0", "x0c0s27b0n0", "Alert"},
 		nil,
 		regexp.QuoteMeta(ToPGQueryArgs(updateCompFlagOnlyPrefix) +
@@ -1009,7 +1009,7 @@ func TestPgBulkUpdateCompFlagOnly(t *testing.T) {
 		},
 		nil,
 		regexp.QuoteMeta(getCompIDPrefix +
-			" WHERE (id = $1 OR id = $2) AND (flag != $3) FOR UPDATE;"),
+			" WHERE (id = $1 OR id = $2) AND (flag != $3);"),
 		[]driver.Value{"x0c0s25b0n0", "x0c0s27b0n0", "OK"},
 		sql.ErrNoRows,
 		regexp.QuoteMeta(ToPGQueryArgs(updateCompFlagOnlyPrefix) +
@@ -1091,7 +1091,7 @@ func TestPgBulkUpdateCompEnabled(t *testing.T) {
 		},
 		nil,
 		regexp.QuoteMeta(getCompIDPrefix +
-			" WHERE (id = $1 OR id = $2) AND (enabled != $3) FOR UPDATE;"),
+			" WHERE (id = $1 OR id = $2) AND (enabled != $3);"),
 		[]driver.Value{"x0c0s25b0n0", "x0c0s27b0n0", "1"},
 		nil,
 		regexp.QuoteMeta(ToPGQueryArgs(updateCompEnabledPrefix) +
@@ -1122,7 +1122,7 @@ func TestPgBulkUpdateCompEnabled(t *testing.T) {
 		},
 		nil,
 		regexp.QuoteMeta(getCompIDPrefix +
-			" WHERE (id = $1 OR id = $2) AND (enabled != $3) FOR UPDATE;"),
+			" WHERE (id = $1 OR id = $2) AND (enabled != $3);"),
 		[]driver.Value{"x0c0s27b0n0", "x0c0s28b0n0", "0"},
 		nil,
 		regexp.QuoteMeta(ToPGQueryArgs(updateCompEnabledPrefix) +
@@ -1207,7 +1207,7 @@ func TestPgBulkUpdateCompSwStatus(t *testing.T) {
 		},
 		nil,
 		regexp.QuoteMeta(getCompIDPrefix +
-			" WHERE (id = $1 OR id = $2) AND (admin != $3) FOR UPDATE;"),
+			" WHERE (id = $1 OR id = $2) AND (admin != $3);"),
 		[]driver.Value{"x0c0s25b0n0", "x0c0s27b0n0", "OtherStatus"},
 		nil,
 		regexp.QuoteMeta(ToPGQueryArgs(updateCompSwStatusPrefix) +
@@ -1238,7 +1238,7 @@ func TestPgBulkUpdateCompSwStatus(t *testing.T) {
 		},
 		nil,
 		regexp.QuoteMeta(getCompIDPrefix +
-			" WHERE (id = $1 OR id = $2) AND (admin != $3) FOR UPDATE;"),
+			" WHERE (id = $1 OR id = $2) AND (admin != $3);"),
 		[]driver.Value{"x0c0s27b0n0", "x0c0s28b0n0", "OtherStatus"},
 		nil,
 		regexp.QuoteMeta(ToPGQueryArgs(updateCompSwStatusPrefix) +
@@ -1320,7 +1320,7 @@ func TestPgBulkUpdateCompRole(t *testing.T) {
 			[]driver.Value{"x0c0s27b0n0"},
 		},
 		nil,
-		regexp.QuoteMeta(getCompIDPrefix + " WHERE (id = $1 OR id = $2) AND (role != $3) FOR UPDATE;"),
+		regexp.QuoteMeta(getCompIDPrefix + " WHERE (id = $1 OR id = $2) AND (role != $3);"),
 		[]driver.Value{"x0c0s25b0n0", "x0c0s27b0n0", "Compute"},
 		nil,
 		regexp.QuoteMeta(ToPGQueryArgs(updateCompRolePrefix) +
@@ -1351,7 +1351,7 @@ func TestPgBulkUpdateCompRole(t *testing.T) {
 		},
 		nil,
 		regexp.QuoteMeta(getCompIDPrefix +
-			" WHERE (id = $1) AND (role != $2) FOR UPDATE;"),
+			" WHERE (id = $1) AND (role != $2);"),
 		[]driver.Value{"x0c0s27b0n0", "Service"},
 		sql.ErrNoRows,
 		regexp.QuoteMeta(ToPGQueryArgs(updateCompRolePrefix) +
@@ -1435,7 +1435,7 @@ func TestPgBulkUpdateCompClass(t *testing.T) {
 		},
 		nil,
 		regexp.QuoteMeta(getCompIDPrefix +
-			" WHERE (id = $1 OR id = $2) AND (class != $3) FOR UPDATE;"),
+			" WHERE (id = $1 OR id = $2) AND (class != $3);"),
 		[]driver.Value{"x0c0s25b0n0", "x0c0s27b0n0", "River"},
 		nil,
 		regexp.QuoteMeta(ToPGQueryArgs(updateCompClassPrefix) +
@@ -1466,7 +1466,7 @@ func TestPgBulkUpdateCompClass(t *testing.T) {
 		},
 		nil,
 		regexp.QuoteMeta(getCompIDPrefix +
-			" WHERE (id = $1 OR id = $2) AND (class != $3) FOR UPDATE;"),
+			" WHERE (id = $1 OR id = $2) AND (class != $3);"),
 		[]driver.Value{"x0c0s27b0n0", "x0c0s28b0n0", "River"},
 		nil,
 		regexp.QuoteMeta(ToPGQueryArgs(updateCompClassPrefix) +
@@ -1553,7 +1553,7 @@ func TestPgBulkUpdateCompNID(t *testing.T) {
 		},
 		nil,
 		regexp.QuoteMeta(getCompIDPrefix +
-			" WHERE (id = $1 OR id = $2) FOR UPDATE;"),
+			" WHERE (id = $1 OR id = $2);"),
 		[]driver.Value{"x0c0s25b0n0", "x0c0s27b0n0"},
 		[]UpdateItem{
 			UpdateItem{
@@ -1578,7 +1578,7 @@ func TestPgBulkUpdateCompNID(t *testing.T) {
 			[]driver.Value{"x0c0s27b0n0"},
 		},
 		nil,
-		regexp.QuoteMeta(getCompIDPrefix + " WHERE (id = $1 OR id = $2) FOR UPDATE;"),
+		regexp.QuoteMeta(getCompIDPrefix + " WHERE (id = $1 OR id = $2);"),
 		[]driver.Value{"x0c0s25b0n0", "x0c0s27b0n0"},
 		[]UpdateItem{
 			UpdateItem{
@@ -1604,7 +1604,7 @@ func TestPgBulkUpdateCompNID(t *testing.T) {
 		},
 		sql.ErrNoRows,
 		regexp.QuoteMeta(getCompIDPrefix +
-			" WHERE (id = $1 OR id = $2) FOR UPDATE;"),
+			" WHERE (id = $1 OR id = $2);"),
 		[]driver.Value{"x0c0s25b0n0", "x0c0s27b0n0"},
 		[]UpdateItem{},
 	}, {
@@ -1618,7 +1618,7 @@ func TestPgBulkUpdateCompNID(t *testing.T) {
 			[]driver.Value{"x0c0s27b0n0"},
 		},
 		nil,
-		regexp.QuoteMeta(getCompIDPrefix + " WHERE (id = $1 OR id = $2) FOR UPDATE;"),
+		regexp.QuoteMeta(getCompIDPrefix + " WHERE (id = $1 OR id = $2);"),
 		[]driver.Value{"x0c0s25b0n0", "x0c0s27b0n0"},
 		[]UpdateItem{
 			UpdateItem{
@@ -1639,7 +1639,7 @@ func TestPgBulkUpdateCompNID(t *testing.T) {
 		},
 		nil,
 		regexp.QuoteMeta(getCompIDPrefix +
-			" WHERE (id = $1 OR id = $2) FOR UPDATE;"),
+			" WHERE (id = $1 OR id = $2);"),
 		[]driver.Value{"x0c0s25b0n0", "x0c0s27b0n0"},
 		[]UpdateItem{
 			UpdateItem{
@@ -5912,7 +5912,7 @@ func TestPgInsertCompLock(t *testing.T) {
 		Columns(compLockMembersCols...).
 		Values(dLock1.Xnames[0], sq.Expr("?", dLock1.ID)).ToSql()
 
-	dLock1GetCompIDs := "SELECT id FROM components WHERE (id = $1) FOR UPDATE;"
+	dLock1GetCompIDs := "SELECT id FROM components WHERE (id = $1);"
 
 	dLock1UpdateComp := updateCompPrefix + " flag = $1 WHERE (id = $2);"
 

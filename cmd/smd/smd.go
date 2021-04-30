@@ -975,7 +975,7 @@ func main() {
 	s.jobList = make(map[string]*Job, 0)
 	s.srfpJobList = make(map[string]*Job, 0)
 	s.discMap = make(map[string]int, 0)
-	//s.JobSync()
+	s.JobSync()
 	s.DiscoverySync()
 	s.DiscoveryUpdater()
 

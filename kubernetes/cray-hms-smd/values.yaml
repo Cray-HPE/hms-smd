@@ -98,7 +98,7 @@ cray-service:
           path: /hsm/v1/service/ready
         initialDelaySeconds: 15
         periodSeconds: 30
-		timeoutSeconds: 10
+        timeoutSeconds: 10
       volumeMounts:
         - name: hms-config-vol
           mountPath: /hms_config/

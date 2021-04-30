@@ -49,7 +49,7 @@ func (f RTFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 // NewTestClient returns *http.Client with Transport replaced to avoid making real calls
 func NewTestClient(f RTFunc) *hms_certs.HTTPClientPair {
 	cp, _ := hms_certs.CreateHTTPClientPair("", 5)
-	cp.InsecureClient.Transport = RTFunc(f)
+	cp.InsecureClient.HTTPClient.Transport = RTFunc(f)
 	return cp
 }
 
