@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.26.18] - 2021-05-03
+## [1.26.19] - 2021-05-03
 
 ### Changed
 - CASMHMS-4811 - Added anti-affinity for HSM to avoid (if possible) scheduling on the same nodes as the Istio gateways.
