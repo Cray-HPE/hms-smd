@@ -33,7 +33,7 @@ cray-service:
                   - istio-ingressgateway-hmn
             topologyKey: "kubernetes.io/hostname"
             namespaces:
-            - istio-system
+              - istio-system
   containers:
     cray-smd:
       name: "cray-smd"
