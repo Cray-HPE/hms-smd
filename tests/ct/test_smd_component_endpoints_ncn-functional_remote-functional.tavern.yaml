@@ -1,4 +1,24 @@
-# Copyright 2019-2020 Hewlett Packard Enterprise Development LP
+# MIT License
+
+# (C) Copyright [2019-2021] Hewlett Packard Enterprise Development LP
+
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
 
 # Tavern test cases for the Hardware State Manager (HSM) component endpoints API.
 # Author: Mitch Schooler, Isa Wazirzada
@@ -34,11 +54,11 @@ stages:
       verify: !bool "{verify}"
     response:
       status_code: 200
-      body:
+      json:
         ComponentEndpoints: !anything
       save:
-        body:
-          ID: ComponentEndpoints.0.ID
+        json:
+          ID: ComponentEndpoints[0].ID
 
 ---
 test_name: Query the ComponentEndpoints collection and get Node Information
@@ -56,8 +76,8 @@ stages:
     response:
       status_code: 200
       save:
-        body:
-          id: ComponentEndpoints.0.RedfishEndpointID
+        json:
+          id: ComponentEndpoints[0].RedfishEndpointID
 
   # 5. GET /ComponentEndpoints/{node} API response code
   - name: Ensure that we can conduct a query on a specific node xname in the ComponentEndpoints collection
@@ -86,8 +106,8 @@ stages:
     response:
       status_code: 200
       save:
-        body:
-          id: ComponentEndpoints.0.RedfishEndpointID
+        json:
+          id: ComponentEndpoints[0].RedfishEndpointID
 
   # 8. GET /ComponentEndpoints/{nodeBMC} API response code
   - name: Ensure that we can conduct a query on a specific node BMC xname in the ComponentEndpoints collection
@@ -116,8 +136,8 @@ stages:
     response:
       status_code: 200
       save:
-        body:
-          id: ComponentEndpoints.0.RedfishEndpointID
+        json:
+          id: ComponentEndpoints[0].RedfishEndpointID
 
   # 11. GET /ComponentEndpoints/{nodeEnclosure} API response code
   - name: Ensure that we can conduct a query on a specific node enclosure xname in the ComponentEndpoints collection

@@ -1,4 +1,26 @@
-// Copyright 2018-2020 Hewlett Packard Enterprise Development LP
+/*
+ * MIT License
+ *
+ * (C) Copyright [2018-2021] Hewlett Packard Enterprise Development LP
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ */
 
 package rf
 
@@ -27,7 +49,7 @@ func (f RTFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 // NewTestClient returns *http.Client with Transport replaced to avoid making real calls
 func NewTestClient(f RTFunc) *hms_certs.HTTPClientPair {
 	cp, _ := hms_certs.CreateHTTPClientPair("", 5)
-	cp.InsecureClient.Transport = RTFunc(f)
+	cp.InsecureClient.HTTPClient.Transport = RTFunc(f)
 	return cp
 }
 
@@ -532,10 +554,41 @@ var GBTVerifyInfo = RedfishEPVerifyInfo{
 	SystemActionTargets: []string{"/redfish/v1/Systems/Self/Actions/ComputerSystem.Reset"},
 }
 
+// HPE Proliant iLO/BMC dummy endpoint 1
+var TestRedfishEPInitPRLT = RedfishEP{
+	RedfishEPDescription: RedfishEPDescription{
+		ID:             testXName,
+		Type:           "NodeBMC",
+		Hostname:       "x3000c0s7b0",
+		Domain:         testDomain,
+		FQDN:           testFQDN,
+		Enabled:        true,
+		User:           "root",
+		Password:       "********",
+		UseSSDP:        false,
+		RediscOnUpdate: true,
+		DiscInfo: DiscoveryInfo{
+			LastStatus: NotYetQueried,
+		},
+	},
+	ServiceRootURL: testFQDN + "/redfish/v1",
+	RedfishType:    "ServiceRoot",
+	OdataID:        "/redfish/v1",
+	NumSystems:     1,
+}
+
+// Verification data for Cray Mountain Node Card BMC dummy endpoint 1
+var PRLTVerifyInfo = RedfishEPVerifyInfo{
+	SystemIds:           []string{"1"},
+	SystemActionCount:   6,
+	SystemActionTargets: []string{"/redfish/v1/Systems/1/Actions/ComputerSystem.Reset"},
+}
+
 // Do a mock discovery of the two main HW types we're seen so far,
 // which demonstrate all of the existing workarounds needed to discover
 // them.  This should touch just about all tv.ManagerIdhe code in rfcomponents.
 func TestGetRootInfo(t *testing.T) {
+
 	// GBT Endpoint
 	clientGBT1 := NewTestClient(NewRTFuncGBT1())
 	gbtEP1 := TestRedfishEPInitGBT
@@ -562,15 +615,15 @@ func TestGetRootInfo(t *testing.T) {
 	intelEP1.GetRootInfo()
 
 	if intelEP1.DiscInfo.LastStatus != DiscoverOK {
-		t.Errorf("Testcase 1: (Intel): FAILED discovery, LastStatus: %s",
+		t.Errorf("Testcase 2: (Intel): FAILED discovery, LastStatus: %s",
 			intelEP1.DiscInfo.LastStatus)
 	} else {
-		t.Logf("Testcase 1: (Intel): PASSED discovery, LastStatus: %s",
+		t.Logf("Testcase 2: (Intel): PASSED discovery, LastStatus: %s",
 			intelEP1.DiscInfo.LastStatus)
 		if err := VerifyGetRootInfo(&intelEP1, IntelVerifyInfo); err != nil {
-			t.Errorf("Testcase 1: (Intel): FAILED verfication: %s", err)
+			t.Errorf("Testcase 2: (Intel): FAILED verfication: %s", err)
 		} else {
-			t.Logf("Testcase 1: (Intel): PASSED verification")
+			t.Logf("Testcase 2: (Intel): PASSED verification")
 		}
 	}
 
@@ -581,15 +634,15 @@ func TestGetRootInfo(t *testing.T) {
 	dellEP1.GetRootInfo()
 
 	if dellEP1.DiscInfo.LastStatus != DiscoverOK {
-		t.Errorf("Testcase 2: (Dell):  FAILED discovery, LastStatus: %s",
+		t.Errorf("Testcase 3: (Dell):  FAILED discovery, LastStatus: %s",
 			dellEP1.DiscInfo.LastStatus)
 	} else {
-		t.Logf("Testcase 2: (Dell):  PASSED discovery, LastStatus: %s",
+		t.Logf("Testcase 3: (Dell):  PASSED discovery, LastStatus: %s",
 			dellEP1.DiscInfo.LastStatus)
 		if err := VerifyGetRootInfo(&dellEP1, DellVerifyInfo); err != nil {
-			t.Errorf("Testcase 2: (Dell): FAILED verfication: %s", err)
+			t.Errorf("Testcase 3: (Dell): FAILED verfication: %s", err)
 		} else {
-			t.Logf("Testcase 2: (Dell): PASSED verification")
+			t.Logf("Testcase 3: (Dell): PASSED verification")
 		}
 	}
 
@@ -600,15 +653,15 @@ func TestGetRootInfo(t *testing.T) {
 	crayCMM1.GetRootInfo()
 
 	if crayCMM1.DiscInfo.LastStatus != DiscoverOK {
-		t.Errorf("Testcase 2: (CrayChassis):  FAILED discovery, LastStatus: %s",
+		t.Errorf("Testcase 4: (CrayChassis):  FAILED discovery, LastStatus: %s",
 			crayCMM1.DiscInfo.LastStatus)
 	} else {
-		t.Logf("Testcase 2: (CrayChassis):  PASSED discovery, LastStatus: %s",
+		t.Logf("Testcase 4: (CrayChassis):  PASSED discovery, LastStatus: %s",
 			crayCMM1.DiscInfo.LastStatus)
 		if err := VerifyGetRootInfo(&crayCMM1, CrayCMM1VerifyInfo); err != nil {
-			t.Errorf("Testcase 2: (CrayChassis): FAILED verfication: %s", err)
+			t.Errorf("Testcase 4: (CrayChassis): FAILED verfication: %s", err)
 		} else {
-			t.Logf("Testcase 2: (CrayChassis): PASSED verification")
+			t.Logf("Testcase 4: (CrayChassis): PASSED verification")
 		}
 	}
 
@@ -619,15 +672,15 @@ func TestGetRootInfo(t *testing.T) {
 	CrayNC1.GetRootInfo()
 
 	if CrayNC1.DiscInfo.LastStatus != DiscoverOK {
-		t.Errorf("Testcase 2: (CrayNC1):  FAILED discovery, LastStatus: %s",
+		t.Errorf("Testcase 5: (CrayNC1):  FAILED discovery, LastStatus: %s",
 			CrayNC1.DiscInfo.LastStatus)
 	} else {
-		t.Logf("Testcase 2: (CrayNC1):  PASSED discovery, LastStatus: %s",
+		t.Logf("Testcase 5: (CrayNC1):  PASSED discovery, LastStatus: %s",
 			CrayNC1.DiscInfo.LastStatus)
 		if err := VerifyGetRootInfo(&CrayNC1, CrayNC1VerifyInfo); err != nil {
-			t.Errorf("Testcase 2: (CrayNC1): FAILED verfication: %s", err)
+			t.Errorf("Testcase 5: (CrayNC1): FAILED verfication: %s", err)
 		} else {
-			t.Logf("Testcase 2: (CrayNC1): PASSED verification")
+			t.Logf("Testcase 5: (CrayNC1): PASSED verification")
 		}
 	}
 
@@ -639,15 +692,15 @@ func TestGetRootInfo(t *testing.T) {
 	CrayNC2.GetRootInfo()
 
 	if CrayNC2.DiscInfo.LastStatus != DiscoverOK {
-		t.Errorf("Testcase 2: (CrayNC2):  FAILED discovery, LastStatus: %s",
+		t.Errorf("Testcase 6: (CrayNC2):  FAILED discovery, LastStatus: %s",
 			CrayNC2.DiscInfo.LastStatus)
 	} else {
-		t.Logf("Testcase 2: (CrayNC2):  PASSED discovery, LastStatus: %s",
+		t.Logf("Testcase 6: (CrayNC2):  PASSED discovery, LastStatus: %s",
 			CrayNC2.DiscInfo.LastStatus)
 		if err := VerifyGetRootInfo(&CrayNC2, CrayNC2VerifyInfo); err != nil {
-			t.Errorf("Testcase 2: (CrayNC2): FAILED verfication: %s", err)
+			t.Errorf("Testcase 6: (CrayNC2): FAILED verfication: %s", err)
 		} else {
-			t.Logf("Testcase 2: (CrayNC2): PASSED verification")
+			t.Logf("Testcase 6: (CrayNC2): PASSED verification")
 		}
 	}
 	// Cray Router Card/TOR BMC
@@ -657,15 +710,15 @@ func TestGetRootInfo(t *testing.T) {
 	CrayRC1.GetRootInfo()
 
 	if CrayRC1.DiscInfo.LastStatus != DiscoverOK {
-		t.Errorf("Testcase 2: (CrayRC1):  FAILED discovery, LastStatus: %s",
+		t.Errorf("Testcase 7: (CrayRC1):  FAILED discovery, LastStatus: %s",
 			CrayRC1.DiscInfo.LastStatus)
 	} else {
-		t.Logf("Testcase 2: (CrayRC1):  PASSED discovery, LastStatus: %s",
+		t.Logf("Testcase 7: (CrayRC1):  PASSED discovery, LastStatus: %s",
 			CrayRC1.DiscInfo.LastStatus)
 		if err := VerifyGetRootInfo(&CrayRC1, CrayRC1VerifyInfo); err != nil {
-			t.Errorf("Testcase 2: (CrayRC1): FAILED verfication: %s", err)
+			t.Errorf("Testcase 7: (CrayRC1): FAILED verfication: %s", err)
 		} else {
-			t.Logf("Testcase 2: (CrayRC1): PASSED verification")
+			t.Logf("Testcase 7: (CrayRC1): PASSED verification")
 		}
 	}
 
@@ -676,15 +729,34 @@ func TestGetRootInfo(t *testing.T) {
 	RtsPDU1.GetRootInfo()
 
 	if RtsPDU1.DiscInfo.LastStatus != DiscoverOK {
-		t.Errorf("Testcase 2: (RtsPDU1):  FAILED discovery, LastStatus: %s",
+		t.Errorf("Testcase 8: (RtsPDU1):  FAILED discovery, LastStatus: %s",
 			RtsPDU1.DiscInfo.LastStatus)
 	} else {
-		t.Logf("Testcase 2: (RtsPDU1):  PASSED discovery, LastStatus: %s",
+		t.Logf("Testcase 8: (RtsPDU1):  PASSED discovery, LastStatus: %s",
 			RtsPDU1.DiscInfo.LastStatus)
 		if err := VerifyGetRootInfo(&RtsPDU1, RtsCabPDUControllerVerifyInfo); err != nil {
-			t.Errorf("Testcase 2: (RtsPDU1): FAILED verfication: %s", err)
+			t.Errorf("Testcase 8: (RtsPDU1): FAILED verfication: %s", err)
 		} else {
-			t.Logf("Testcase 2: (RtsPDU1): PASSED verification")
+			t.Logf("Testcase 8: (RtsPDU1): PASSED verification")
+		}
+	}
+
+	// HPE Proliant Endpoint
+	clientPRLT1 := NewTestClient(NewRTFuncPRLT1())
+	prltEP1 := TestRedfishEPInitPRLT
+	prltEP1.client = clientPRLT1
+	prltEP1.GetRootInfo()
+
+	if prltEP1.DiscInfo.LastStatus != DiscoverOK {
+		t.Errorf("Testcase 9: (PRLT): FAILED discovery, LastStatus: %s",
+			prltEP1.DiscInfo.LastStatus)
+	} else {
+		t.Logf("Testcase 9: (PRLT): PASSED discovery, LastStatus: %s",
+			prltEP1.DiscInfo.LastStatus)
+		if err := VerifyGetRootInfo(&prltEP1, PRLTVerifyInfo); err != nil {
+			t.Errorf("Testcase 9: (PRLT): FAILED verfication: %s", err)
+		} else {
+			t.Logf("Testcase 9: (PRLT): PASSED verification")
 		}
 	}
 }
@@ -707,7 +779,7 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 				v.SystemActionCount ||
 				s.Actions.ComputerSystemReset.Target !=
 					v.SystemActionTargets[i] {
-				return fmt.Errorf(sysId + ": bad Target/AllowableValues")
+				return fmt.Errorf("SystemId: " + sysId + ": bad Target/AllowableValues")
 			}
 			if v.SystemExpectPowerInfo {
 				if len(s.PowerCtl) != len(v.SystemPowerControl) {
@@ -793,7 +865,7 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 			v.ManagerActionCount ||
 			m.Actions.ManagerReset.Target !=
 				v.ManagerActionTarget {
-			return fmt.Errorf(v.ManagerId + ": bad Target/AllowableValues")
+			return fmt.Errorf("ManagerId: " + v.ManagerId + ": bad Target/AllowableValues")
 		}
 		// Verify xname and type
 		mtype := base.GetHMSTypeString(m.ID)
@@ -818,7 +890,7 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 			v.NodeEnclosureActionCount ||
 			c.Actions.ChassisReset.Target !=
 				v.NodeEnclosureActionTarget {
-			return fmt.Errorf(neId + ": bad Target/AllowableValues")
+			return fmt.Errorf("NodeEnclosureId: " + neId + ": bad Target/AllowableValues")
 		}
 		// Verify xname and type
 		ctype := base.GetHMSType(c.ID)
@@ -842,7 +914,7 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 			v.ChassisEnclosureActionCount ||
 			c.Actions.ChassisReset.Target !=
 				v.ChassisEnclosureActionTarget {
-			return fmt.Errorf(ceId + ": bad Target/AllowableValues")
+			return fmt.Errorf("ChassisEnclosureId: " + ceId + ": bad Target/AllowableValues")
 		}
 		// Verify xname and type
 		ctype := base.GetHMSType(c.ID)
@@ -866,7 +938,7 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 				v.ComputeBladeActionCount ||
 				cb.Actions.ChassisReset.Target !=
 					v.ComputeBladeActionTargets[i] {
-				return fmt.Errorf(cbId + ": bad Target/AllowableValues")
+				return fmt.Errorf("ComputeBladeId: " + cbId + ": bad Target/AllowableValues")
 			}
 			// Verify xname and type
 			cbtype := base.GetHMSType(cb.ID)
@@ -895,7 +967,7 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 				v.RouterBladeActionCount ||
 				rb.Actions.ChassisReset.Target !=
 					v.RouterBladeActionTargets[i] {
-				return fmt.Errorf(rbId + ": bad Target/AllowableValues")
+				return fmt.Errorf("RouterBladeId: " + rbId + ": bad Target/AllowableValues")
 			}
 			// Verify xname and type
 			rbtype := base.GetHMSType(rb.ID)
@@ -1019,6 +1091,2636 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 // Path and matching payload variables - Mock responses for the given URI
 //
 /////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////
+//                         Proliant - Mock Client
+//////////////////////////////////////////////////////////////////////////////
+
+func NewRTFuncPRLT1() RTFunc {
+	return func(req *http.Request) *http.Response {
+		// Test request parameters
+		switch req.URL.String() {
+		case "https://" + testFQDN + testPathPRLT_redfish_v1:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_redfish_v1)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_account_service:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_account_service)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_session_service:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_session_service)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_event_service:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_event_service)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_task_service:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_task_service)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_update_service:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_update_service)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_managers:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_managers)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_managers_1:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_managers_1)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_managers_1_ethernet_interfaces:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_managers_1_ethernet_interfaces)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_managers_1_ethernet_interfaces_1:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_managers_1_ethernet_interfaces_1)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_managers_1_ethernet_interfaces_2:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_managers_1_ethernet_interfaces_2)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_managers_1_ethernet_interfaces_3:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_managers_1_ethernet_interfaces_3)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_chassis:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_chassis)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_chassis_1:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_chassis_1)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_chassis_1_power:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_chassis_1_power)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_chassis_1_network_adapters:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_chassis_1_network_adapters)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_systems:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_systems)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_systems_1:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_systems_1)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_systems_1_ethernet_interfaces:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_systems_1_ethernet_interfaces)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_systems_1_ethernet_interfaces_1:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_systems_1_ethernet_interfaces_1)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_systems_1_ethernet_interfaces_2:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_systems_1_ethernet_interfaces_2)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_systems_1_processors:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_systems_1_processors)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_systems_1_processors_1:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_systems_1_processors_1)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_systems_1_memory:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_systems_1_memory)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_systems_1_memory_proc1dimm1:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_systems_1_memory_proc1dimm1)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_systems_1_memory_proc1dimm2:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_systems_1_memory_proc1dimm2)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_systems_1_memory_proc1dimm3:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_systems_1_memory_proc1dimm3)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_systems_1_memory_proc1dimm4:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_systems_1_memory_proc1dimm4)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		case "https://" + testFQDN + testPathPRLT_systems_1_storage:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadPRLT_systems_1_storage)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
+		default:
+			return &http.Response{
+				StatusCode: 404,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString("")),
+
+				Header: make(http.Header),
+			}
+		}
+	}
+}
+
+const testPathPRLT_redfish_v1 = "/redfish/v1"
+
+const testPayloadPRLT_redfish_v1 = `{
+        "@odata.context": "/redfish/v1/$metadata#ServiceRoot.ServiceRoot",
+        "@odata.etag": "W/\"F583FFB0\"",
+        "@odata.id": "/redfish/v1/",
+        "@odata.type": "#ServiceRoot.v1_5_1.ServiceRoot",
+        "Id": "RootService",
+        "AccountService": {
+          "@odata.id": "/redfish/v1/AccountService/"
+        },
+        "Chassis": {
+          "@odata.id": "/redfish/v1/Chassis/"
+        },
+        "EventService": {
+          "@odata.id": "/redfish/v1/EventService/"
+        },
+        "JsonSchemas": {
+          "@odata.id": "/redfish/v1/JsonSchemas/"
+        },
+        "Links": {
+          "Sessions": {
+            "@odata.id": "/redfish/v1/SessionService/Sessions/"
+          }
+        },
+        "Managers": {
+          "@odata.id": "/redfish/v1/Managers/"
+        },
+        "Name": "HPE RESTful Root Service",
+        "Oem": {
+          "Hpe": {
+            "@odata.context": "/redfish/v1/$metadata#HpeiLOServiceExt.HpeiLOServiceExt",
+            "@odata.type": "#HpeiLOServiceExt.v2_3_0.HpeiLOServiceExt",
+            "Links": {
+              "ResourceDirectory": {
+                "@odata.id": "/redfish/v1/ResourceDirectory/"
+              }
+            },
+            "Manager": [
+              {
+                "DefaultLanguage": "en",
+                "FQDN": "ILOMXQ019020H.",
+                "HostName": "ILOMXQ019020H",
+                "Languages": [
+                  {
+                    "Language": "en",
+                    "TranslationName": "English",
+                    "Version": "2.14"
+                  }
+                ],
+                "ManagerFirmwareVersion": "2.14",
+                "ManagerType": "iLO 5",
+                "Status": {
+                  "Health": "OK"
+                }
+              }
+            ],
+            "Moniker": {
+              "ADVLIC": "iLO Advanced",
+              "BMC": "iLO",
+              "BSYS": "BladeSystem",
+              "CLASS": "Baseboard Management Controller",
+              "FEDGRP": "DEFAULT",
+              "IPROV": "Intelligent Provisioning",
+              "PRODABR": "iLO",
+              "PRODFAM": "Integrated Lights-Out",
+              "PRODGEN": "iLO 5",
+              "PRODNAM": "Integrated Lights-Out 5",
+              "PRODTAG": "HPE iLO 5",
+              "STDLIC": "iLO Standard",
+              "SUMABR": "SUM",
+              "SUMGR": "Smart Update Manager",
+              "SYSFAM": "ProLiant",
+              "VENDABR": "HPE",
+              "VENDNAM": "Hewlett Packard Enterprise",
+              "WWW": "www.hpe.com",
+              "WWWAHSV": "www.hpe.com/servers/ahsv",
+              "WWWBMC": "www.hpe.com/info/ilo",
+              "WWWDOC": "www.hpe.com/support/ilo-docs",
+              "WWWERS": "www.hpe.com/services/getconnected",
+              "WWWGLIS": "reserved for liconf URI",
+              "WWWIOL": "www.hpe.com/info/insightonline",
+              "WWWLIC": "www.hpe.com/info/ilo",
+              "WWWLML": "www.hpe.com/support",
+              "WWWPASS": "www.hpe.com/support/hpesc",
+              "WWWPRV": "www.hpe.com/info/privacy",
+              "WWWQSPEC": "www.hpe.com/info/qs",
+              "WWWRESTDOC": "www.hpe.com/support/restfulinterface/docs",
+              "WWWSUP": "www.hpe.com/support/ilo5",
+              "WWWSWLIC": "www.hpe.com/software/SWLicensing"
+            },
+            "Sessions": {
+              "CertCommonName": "ILOMXQ019020H",
+              "CertificateLoginEnabled": false,
+              "KerberosEnabled": false,
+              "LDAPAuthLicenced": true,
+              "LDAPEnabled": false,
+              "LocalLoginEnabled": true,
+              "LoginFailureDelay": 0,
+              "LoginHint": {
+                "Hint": "POST to /Sessions to login using the following JSON object:",
+                "HintPOSTData": {
+                  "Password": "password",
+                  "UserName": "username"
+                }
+              },
+              "SecurityOverride": false,
+              "ServerName": ""
+            },
+            "System": [
+              {
+                "Status": {
+                  "Health": "OK"
+                }
+              }
+            ],
+            "Time": "2021-01-12T16:27:02Z"
+          }
+        },
+        "Product": "ProLiant DL325 Gen10 Plus",
+        "ProtocolFeaturesSupported": {
+          "ExpandQuery": {
+            "ExpandAll": false,
+            "Levels": true,
+            "Links": false,
+            "MaxLevels": 1,
+            "NoLinks": true
+          },
+          "FilterQuery": true,
+          "OnlyMemberQuery": true,
+          "SelectQuery": false
+        },
+        "RedfishVersion": "1.6.0",
+        "Registries": {
+          "@odata.id": "/redfish/v1/Registries/"
+        },
+        "SessionService": {
+          "@odata.id": "/redfish/v1/SessionService/"
+        },
+        "Systems": {
+          "@odata.id": "/redfish/v1/Systems/"
+        },
+        "Tasks": {
+          "@odata.id": "/redfish/v1/TaskService/"
+        },
+        "UUID": "9bd8d4d5-9904-541e-bee4-997455a4bcf7",
+        "UpdateService": {
+          "@odata.id": "/redfish/v1/UpdateService/"
+        },
+        "Vendor": "HPE"
+      }       
+`
+const testPathPRLT_managers = "/redfish/v1/Managers/"
+
+const testPayloadPRLT_managers = `{
+   "@odata.context": "/redfish/v1/$metadata#ManagerCollection.ManagerCollection",
+   "@odata.etag": "W/\"AA6D42B0\"",
+   "@odata.id": "/redfish/v1/Managers",
+   "@odata.type": "#ManagerCollection.ManagerCollection",
+   "Description": "Managers view",
+   "Name": "Managers",
+   "Members": [
+     {
+       "@odata.id": "/redfish/v1/Managers/1"
+     }
+   ],
+   "Members@odata.count": 1
+ }
+`
+const testPathPRLT_account_service = "/redfish/v1/AccountService/"
+
+const testPayloadPRLT_account_service = `{
+        "@odata.context": "/redfish/v1/$metadata#AccountService.AccountService",
+        "@odata.etag": "W/\"DF31857A\"",
+        "@odata.id": "/redfish/v1/AccountService/",
+        "@odata.type": "#AccountService.v1_3_0.AccountService",
+        "Id": "AccountService",
+        "Accounts": {
+          "@odata.id": "/redfish/v1/AccountService/Accounts/"
+        },
+        "ActiveDirectory": {
+          "AccountProviderType": "ActiveDirectoryService",
+          "Authentication": {
+            "AuthenticationType": "UsernameAndPassword",
+            "Password": null,
+            "Username": ""
+          },
+          "RemoteRoleMapping": [
+            {
+              "LocalRole": "dirgroupb3d8954f6ebbe735764e9f7c",
+              "RemoteGroup": "Administrators"
+            },
+            {
+              "LocalRole": "dirgroup9d4546a03a03bb977c03086a",
+              "RemoteGroup": "Authenticated Users:S-1-5-11"
+            }
+          ],
+          "ServiceAddresses": [
+            ""
+          ],
+          "ServiceEnabled": false
+        },
+        "Description": "iLO User Accounts",
+        "LDAP": {
+          "AccountProviderType": "ActiveDirectoryService",
+          "Authentication": {
+            "AuthenticationType": "UsernameAndPassword",
+            "Password": null,
+            "Username": ""
+          },
+          "LDAPService": {
+            "SearchSettings": {}
+          },
+          "RemoteRoleMapping": [
+            {
+              "LocalRole": "dirgroupb3d8954f6ebbe735764e9f7c",
+              "RemoteGroup": "Administrators"
+            },
+            {
+              "LocalRole": "dirgroup9d4546a03a03bb977c03086a",
+              "RemoteGroup": "Authenticated Users:S-1-5-11"
+            }
+          ],
+          "ServiceAddresses": [
+            ""
+          ],
+          "ServiceEnabled": false
+        },
+        "LocalAccountAuth": "Enabled",
+        "Name": "Account Service",
+        "Oem": {
+          "Hpe": {
+            "@odata.context": "/redfish/v1/$metadata#HpeiLOAccountService.HpeiLOAccountService",
+            "@odata.id": "/redfish/v1/AccountService/",
+            "@odata.type": "#HpeiLOAccountService.v2_3_0.HpeiLOAccountService",
+            "Id": "AccountService",
+            "Actions": {
+              "#HpeiLOAccountService.ImportKerberosKeytab": {
+                "target": "/redfish/v1/AccountService/Actions/Oem/Hpe/HpeiLOAccountService.ImportKerberosKeytab/"
+              }
+            },
+            "AuthFailureDelayTimeSeconds": 10,
+            "AuthFailureLoggingThreshold": 3,
+            "AuthFailuresBeforeDelay": 1,
+            "DefaultPassword": null,
+            "DefaultUserName": null,
+            "DirectorySettings": {
+              "LdapAuthenticationMode": "Disabled",
+              "LdapCaCertificateLoaded": false,
+              "LdapCaCertificates": {
+                "@odata.id": "/redfish/v1/AccountService/ExternalAccountProviders/LDAP/Certificates/"
+              },
+              "LdapServerPort": 636
+            },
+            "DirectoryTest": {
+              "@odata.id": "/redfish/v1/AccountService/DirectoryTest/"
+            },
+            "EnforcePasswordComplexity": false,
+            "KerberosSettings": {
+              "KDCServerPort": 88,
+              "KerberosRealm": ""
+            },
+            "MinPasswordLength": 8
+          }
+        },
+        "Roles": {
+          "@odata.id": "/redfish/v1/AccountService/Roles/"
+        }
+      }      
+`
+const testPathPRLT_session_service = "/redfish/v1/SessionService/"
+
+const testPayloadPRLT_session_service = `{
+        "@odata.context": "/redfish/v1/$metadata#SessionService.SessionService",
+        "@odata.etag": "W/\"ED13A396\"",
+        "@odata.id": "/redfish/v1/SessionService/",
+        "@odata.type": "#SessionService.v1_0_0.SessionService",
+        "Id": "SessionService",
+        "Description": "Session Service",
+        "Name": "Session Service",
+        "ServiceEnabled": true,
+        "Sessions": {
+          "@odata.id": "/redfish/v1/SessionService/Sessions/"
+        },
+        "Status": {
+          "Health": "OK",
+          "State": "Enabled"
+        }
+      }            
+`
+const testPathPRLT_event_service = "/redfish/v1/EventService/"
+
+const testPayloadPRLT_event_service = `{
+        "@odata.context": "/redfish/v1/$metadata#EventService.EventService",
+        "@odata.etag": "W/\"0427F3F5\"",
+        "@odata.id": "/redfish/v1/EventService/",
+        "@odata.type": "#EventService.v1_0_8.EventService",
+        "Id": "EventService",
+        "Actions": {
+          "#EventService.SubmitTestEvent": {
+            "target": "/redfish/v1/EventService/Actions/EventService.SubmitTestEvent/"
+          }
+        },
+        "DeliveryRetryAttempts": 3,
+        "DeliveryRetryIntervalSeconds": 30,
+        "Description": "Event Subscription service",
+        "EventTypesForSubscription": [
+          "StatusChange",
+          "ResourceUpdated",
+          "ResourceAdded",
+          "ResourceRemoved",
+          "Alert"
+        ],
+        "Name": "Event Service",
+        "Oem": {
+          "Hpe": {
+            "@odata.context": "/redfish/v1/$metadata#HpeEventService.HpeEventService",
+            "@odata.id": "/redfish/v1/EventService/",
+            "@odata.type": "#HpeEventService.v2_1_0.HpeEventService",
+            "Id": "EventService",
+            "Actions": {
+              "#HpeEventService.ImportCACertificate": {
+                "target": "/redfish/v1/EventService/Actions/Oem/Hpe/HpeEventService.ImportCACertificate/"
+              }
+            },
+            "CACertificates": {
+              "@odata.id": "/redfish/v1/EventService/CACertificates/"
+            },
+            "RequestedMaxEventsToQueueDefault": 3,
+            "RetireOldEventInMinutesDefault": 10,
+            "TTLCountDefault": 999999,
+            "TTLUnitsDefault": "minutes"
+          }
+        },
+        "ServiceEnabled": true,
+        "Status": {
+          "Health": "OK",
+          "HealthRollup": "OK",
+          "State": "Enabled"
+        },
+        "Subscriptions": {
+          "@odata.id": "/redfish/v1/EventService/Subscriptions/"
+        }
+      }                  
+`
+const testPathPRLT_task_service = "/redfish/v1/TaskService/"
+
+const testPayloadPRLT_task_service = `{
+        "@odata.context": "/redfish/v1/$metadata#TaskService.TaskService",
+        "@odata.etag": "W/\"538CCB4A\"",
+        "@odata.id": "/redfish/v1/TaskService/",
+        "@odata.type": "#TaskService.v1_1_1.TaskService",
+        "Id": "TaskService",
+        "CompletedTaskOverWritePolicy": "Manual",
+        "DateTime": "2021-01-13T19:25:53Z",
+        "Description": "iLO Task Service",
+        "LifeCycleEventOnTaskStateChange": true,
+        "Name": "Task Service",
+        "ServiceEnabled": true,
+        "Status": {
+          "Health": "OK",
+          "HealthRollup": "OK",
+          "State": "Enabled"
+        },
+        "Tasks": {
+          "@odata.id": "/redfish/v1/TaskService/Tasks/"
+        }
+      }                        
+`
+const testPathPRLT_update_service = "/redfish/v1/UpdateService/"
+
+const testPayloadPRLT_update_service = `{
+        "@odata.context": "/redfish/v1/$metadata#UpdateService.UpdateService",
+        "@odata.etag": "W/\"886F108C\"",
+        "@odata.id": "/redfish/v1/UpdateService/",
+        "@odata.type": "#UpdateService.v1_1_1.UpdateService",
+        "Id": "UpdateService",
+        "Actions": {
+          "#UpdateService.SimpleUpdate": {
+            "TransferProtocol@Redfish.AllowableValues": [
+              "HTTP",
+              "HTTPS"
+            ],
+            "target": "/redfish/v1/UpdateService/Actions/UpdateService.SimpleUpdate/"
+          }
+        },
+        "Description": "iLO Update Service",
+        "FirmwareInventory": {
+          "@odata.id": "/redfish/v1/UpdateService/FirmwareInventory/"
+        },
+        "HttpPushUri": "/cgi-bin/uploadFile",
+        "Name": "Update Service",
+        "Oem": {
+          "Hpe": {
+            "@odata.context": "/redfish/v1/$metadata#HpeiLOUpdateServiceExt.HpeiLOUpdateServiceExt",
+            "@odata.type": "#HpeiLOUpdateServiceExt.v2_1_4.HpeiLOUpdateServiceExt",
+            "Actions": {
+              "#HpeiLOUpdateServiceExt.AddFromUri": {
+                "target": "/redfish/v1/UpdateService/Actions/Oem/Hpe/HpeiLOUpdateServiceExt.AddFromUri/"
+              },
+              "#HpeiLOUpdateServiceExt.DeleteInstallSets": {
+                "target": "/redfish/v1/UpdateService/Actions/Oem/Hpe/HpeiLOUpdateServiceExt.DeleteInstallSets/"
+              },
+              "#HpeiLOUpdateServiceExt.DeleteMaintenanceWindows": {
+                "target": "/redfish/v1/UpdateService/Actions/Oem/Hpe/HpeiLOUpdateServiceExt.DeleteMaintenanceWindows/"
+              },
+              "#HpeiLOUpdateServiceExt.DeleteUnlockedComponents": {
+                "target": "/redfish/v1/UpdateService/Actions/Oem/Hpe/HpeiLOUpdateServiceExt.DeleteUnlockedComponents/"
+              },
+              "#HpeiLOUpdateServiceExt.DeleteUpdateTaskQueueItems": {
+                "target": "/redfish/v1/UpdateService/Actions/Oem/Hpe/HpeiLOUpdateServiceExt.DeleteUpdateTaskQueueItems/"
+              },
+              "#HpeiLOUpdateServiceExt.RemoveLanguagePack": {
+                "target": "/redfish/v1/UpdateService/Actions/Oem/Hpe/HpeiLOUpdateServiceExt.RemoveLanguagePack/"
+              },
+              "#HpeiLOUpdateServiceExt.SetDefaultLanguage": {
+                "target": "/redfish/v1/UpdateService/Actions/Oem/Hpe/HpeiLOUpdateServiceExt.SetDefaultLanguage/"
+              },
+              "#HpeiLOUpdateServiceExt.StartFirmwareIntegrityCheck": {
+                "target": "/redfish/v1/UpdateService/Actions/Oem/Hpe/HpeiLOUpdateServiceExt.StartFirmwareIntegrityCheck/"
+              }
+            },
+            "ComponentRepository": {
+              "@odata.id": "/redfish/v1/UpdateService/ComponentRepository/"
+            },
+            "CurrentTime": "2021-01-13T19:26:06Z",
+            "DowngradePolicy": "AllowDowngrade",
+            "FirmwareIntegrity": {
+              "EnableBackgroundScan": false,
+              "LastScanResult": "OK",
+              "LastScanTime": "1970-01-01T00:01:57Z",
+              "OnIntegrityFailure": "LogOnly",
+              "ScanEveryDays": 7
+            },
+            "InstallSets": {
+              "@odata.id": "/redfish/v1/UpdateService/InstallSets/"
+            },
+            "InvalidImageRepository": {
+              "@odata.id": "/redfish/v1/UpdateService/InvalidImageRepository/"
+            },
+            "MaintenanceWindows": {
+              "@odata.id": "/redfish/v1/UpdateService/MaintenanceWindows/"
+            },
+            "State": "Idle",
+            "UpdateTaskQueue": {
+              "@odata.id": "/redfish/v1/UpdateService/UpdateTaskQueue/"
+            }
+          }
+        },
+        "ServiceEnabled": true,
+        "SoftwareInventory": {
+          "@odata.id": "/redfish/v1/UpdateService/SoftwareInventory/"
+        }
+      }
+`
+const testPathPRLT_managers_1 = "/redfish/v1/Managers/1"
+
+const testPayloadPRLT_managers_1 = `{
+   "@odata.context": "/redfish/v1/$metadata#Manager.Manager",
+   "@odata.etag": "W/\"49D4F98F\"",
+   "@odata.id": "/redfish/v1/Managers/1",
+   "@odata.type": "#Manager.v1_5_1.Manager",
+   "Id": "1",
+   "Actions": {
+     "#Manager.Reset": {
+       "ResetType@Redfish.AllowableValues": [
+         "ForceRestart",
+         "GracefulRestart"
+       ],
+       "target": "/redfish/v1/Managers/1/Actions/Manager.Reset"
+     }
+   },
+   "CommandShell": {
+     "ConnectTypesSupported": [
+       "SSH",
+       "Oem"
+     ],
+     "MaxConcurrentSessions": 9,
+     "ServiceEnabled": true
+   },
+   "DateTime": "2021-01-12T16:39:59Z",
+   "DateTimeLocalOffset": "+00:00",
+   "EthernetInterfaces": {
+     "@odata.id": "/redfish/v1/Managers/1/EthernetInterfaces"
+   },
+   "FirmwareVersion": "iLO 5 v2.14",
+   "GraphicalConsole": {
+     "ConnectTypesSupported": [
+       "KVMIP"
+     ],
+     "MaxConcurrentSessions": 10,
+     "ServiceEnabled": true
+   },
+   "HostInterfaces": {
+     "@odata.id": "/redfish/v1/Managers/1/HostInterfaces"
+   },
+   "Links": {
+     "ManagerInChassis": {
+       "@odata.id": "/redfish/v1/Chassis/1"
+     },
+     "ManagerForServers": [
+       {
+         "@odata.id": "/redfish/v1/Systems/1"
+       }
+     ],
+     "ManagerForChassis": [
+       {
+         "@odata.id": "/redfish/v1/Chassis/1"
+       }
+     ]
+   },
+   "LogServices": {
+     "@odata.id": "/redfish/v1/Managers/1/LogServices"
+   },
+   "ManagerType": "BMC",
+   "Model": "iLO 5",
+   "Name": "Manager",
+   "NetworkProtocol": {
+     "@odata.id": "/redfish/v1/Managers/1/NetworkProtocol"
+   },
+   "Oem": {
+     "Hpe": {
+       "@odata.context": "/redfish/v1/$metadata#HpeiLO.HpeiLO",
+       "@odata.type": "#HpeiLO.v2_7_1.HpeiLO",
+       "Actions": {
+         "#HpeiLO.ClearHotKeys": {
+           "target": "/redfish/v1/Managers/1/Actions/Oem/Hpe/HpeiLO.ClearHotKeys"
+         },
+         "#HpeiLO.ClearRestApiState": {
+           "target": "/redfish/v1/Managers/1/Actions/Oem/Hpe/HpeiLO.ClearRestApiState"
+         },
+         "#HpeiLO.DisableiLOFunctionality": {
+           "target": "/redfish/v1/Managers/1/Actions/Oem/Hpe/HpeiLO.DisableiLOFunctionality"
+         },
+         "#HpeiLO.RequestFirmwareAndOsRecovery": {
+           "target": "/redfish/v1/Managers/1/Actions/Oem/Hpe/HpeiLO.RequestFirmwareAndOsRecovery"
+         },
+         "#HpeiLO.ResetToFactoryDefaults": {
+           "ResetType@Redfish.AllowableValues": [
+             "Default"
+           ],
+           "target": "/redfish/v1/Managers/1/Actions/Oem/Hpe/HpeiLO.ResetToFactoryDefaults"
+         }
+       },
+       "ClearRestApiStatus": "DataPresent",
+       "ConfigurationSettings": "Current",
+       "FederationConfig": {
+         "IPv6MulticastScope": "Site",
+         "MulticastAnnouncementInterval": 600,
+         "MulticastDiscovery": "Enabled",
+         "MulticastTimeToLive": 5,
+         "iLOFederationManagement": "Enabled"
+       },
+       "Firmware": {
+         "Current": {
+           "Date": "Feb 11 2020",
+           "DebugBuild": false,
+           "MajorVersion": 2,
+           "MinorVersion": 14,
+           "VersionString": "iLO 5 v2.14"
+         }
+       },
+       "FrontPanelUSB": {
+         "State": "Ready"
+       },
+       "IdleConnectionTimeoutMinutes": 30,
+       "IntegratedRemoteConsole": {
+         "HotKeys": [
+           {
+             "KeySequence": [
+               "NONE",
+               "NONE",
+               "NONE",
+               "NONE",
+               "NONE"
+             ],
+             "Name": "Ctrl-T"
+           },
+           {
+             "KeySequence": [
+               "NONE",
+               "NONE",
+               "NONE",
+               "NONE",
+               "NONE"
+             ],
+             "Name": "Ctrl-U"
+           },
+           {
+             "KeySequence": [
+               "NONE",
+               "NONE",
+               "NONE",
+               "NONE",
+               "NONE"
+             ],
+             "Name": "Ctrl-V"
+           },
+           {
+             "KeySequence": [
+               "NONE",
+               "NONE",
+               "NONE",
+               "NONE",
+               "NONE"
+             ],
+             "Name": "Ctrl-W"
+           },
+           {
+             "KeySequence": [
+               "NONE",
+               "NONE",
+               "NONE",
+               "NONE",
+               "NONE"
+             ],
+             "Name": "Ctrl-X"
+           },
+           {
+             "KeySequence": [
+               "NONE",
+               "NONE",
+               "NONE",
+               "NONE",
+               "NONE"
+             ],
+             "Name": "Ctrl-Y"
+           }
+         ],
+         "LockKey": {
+           "CustomKeySequence": [
+             "NONE",
+             "NONE",
+             "NONE",
+             "NONE",
+             "NONE"
+           ],
+           "LockOption": "Disabled"
+         },
+         "TrustedCertificateRequired": false
+       },
+       "License": {
+         "LicenseKey": "XXXXX-XXXXX-XXXXX-XXXXX-QQ4PB",
+         "LicenseString": "iLO Advanced",
+         "LicenseType": "Perpetual"
+       },
+       "Links": {
+         "DateTimeService": {
+           "@odata.id": "/redfish/v1/Managers/1/DateTime"
+         },
+         "LicenseService": {
+           "@odata.id": "/redfish/v1/Managers/1/LicenseService"
+         },
+         "EmbeddedMediaService": {
+           "@odata.id": "/redfish/v1/Managers/1/EmbeddedMedia"
+         },
+         "FederationPeers": {
+           "@odata.id": "/redfish/v1/Managers/1/FederationPeers"
+         },
+         "FederationGroups": {
+           "@odata.id": "/redfish/v1/Managers/1/FederationGroups"
+         },
+         "ActiveHealthSystem": {
+           "@odata.id": "/redfish/v1/Managers/1/ActiveHealthSystem"
+         },
+         "SecurityService": {
+           "@odata.id": "/redfish/v1/Managers/1/SecurityService"
+         },
+         "BackupRestoreService": {
+           "@odata.id": "/redfish/v1/Managers/1/BackupRestoreService"
+         },
+         "RemoteSupport": {
+           "@odata.id": "/redfish/v1/Managers/1/RemoteSupportService"
+         },
+         "GUIService": {
+           "@odata.id": "/redfish/v1/Managers/1/GUIService"
+         },
+         "FederationDispatch": {
+           "extref": "/dispatch"
+         },
+         "VSPLogLocation": {
+           "extref": "/sol.log.gz"
+         },
+         "Thumbnail": {
+           "extref": "/images/thumbnail.bmp"
+         }
+       },
+       "PersistentMouseKeyboardEnabled": false,
+       "PhysicalMonitorHealthStatusEnabled": true,
+       "RIBCLEnabled": true,
+       "RemoteConsoleThumbnailEnabled": true,
+       "RequireHostAuthentication": false,
+       "RequiredLoginForiLORBSU": false,
+       "SerialCLISpeed": 115200,
+       "SerialCLIStatus": "EnabledAuthReq",
+       "SerialCLIUART": "Present",
+       "VSPDlLoggingEnabled": false,
+       "VSPLogDownloadEnabled": false,
+       "VideoPresenceDetectOverride": true,
+       "VideoPresenceDetectOverrideSupported": true,
+       "VirtualNICEnabled": true,
+       "WebGuiEnabled": true,
+       "iLOFunctionalityEnabled": true,
+       "iLOFunctionalityRequired": false,
+       "iLOIPduringPOSTEnabled": true,
+       "iLORBSUEnabled": true,
+       "iLOSelfTestResults": [
+         {
+           "Notes": "",
+           "SelfTestName": "NVRAMData",
+           "Status": "OK"
+         },
+         {
+           "Notes": "Controller firmware revision  2.11.00  ",
+           "SelfTestName": "EmbeddedFlash",
+           "Status": "OK"
+         },
+         {
+           "Notes": "",
+           "SelfTestName": "EEPROM",
+           "Status": "OK"
+         },
+         {
+           "Notes": "",
+           "SelfTestName": "HostRom",
+           "Status": "OK"
+         },
+         {
+           "Notes": "",
+           "SelfTestName": "SupportedHost",
+           "Status": "OK"
+         },
+         {
+           "Notes": "Version 1.0.7",
+           "SelfTestName": "PowerManagementController",
+           "Status": "Informational"
+         },
+         {
+           "Notes": "ProLiant DL325 Gen10 Plus System Programmable Logic Device 0x0D",
+           "SelfTestName": "CPLDPAL0",
+           "Status": "Informational"
+         },
+         {
+           "Notes": "",
+           "SelfTestName": "ASICFuses",
+           "Status": "OK"
+         }
+       ],
+       "iLOServicePort": {
+         "MassStorageAuthenticationRequired": false,
+         "USBEthernetAdaptersEnabled": true,
+         "USBFlashDriveEnabled": true,
+         "iLOServicePortEnabled": true
+       }
+     }
+   },
+   "SerialConsole": {
+     "ConnectTypesSupported": [
+       "SSH",
+       "IPMI",
+       "Oem"
+     ],
+     "MaxConcurrentSessions": 13,
+     "ServiceEnabled": true
+   },
+   "Status": {
+     "Health": "OK",
+     "State": "Enabled"
+   },
+   "UUID": "5e623487-8864-51e7-af0a-0d0c365a1fd0",
+   "VirtualMedia": {
+     "@odata.id": "/redfish/v1/Managers/1/VirtualMedia"
+   }
+ } 
+`
+const testPathPRLT_managers_1_ethernet_interfaces = "/redfish/v1/Managers/1/EthernetInterfaces"
+
+const testPayloadPRLT_managers_1_ethernet_interfaces = `{
+   "@odata.context": "/redfish/v1/$metadata#EthernetInterfaceCollection.EthernetInterfaceCollection",
+   "@odata.etag": "W/\"E589C4BF\"",
+   "@odata.id": "/redfish/v1/Managers/1/EthernetInterfaces",
+   "@odata.type": "#EthernetInterfaceCollection.EthernetInterfaceCollection",
+   "Description": "Configuration of Manager Network Interfaces",
+   "Name": "Manager Network Interfaces",
+   "Members": [
+     {
+       "@odata.id": "/redfish/v1/Managers/1/EthernetInterfaces/1"
+     },
+     {
+       "@odata.id": "/redfish/v1/Managers/1/EthernetInterfaces/2"
+     },
+     {
+       "@odata.id": "/redfish/v1/Managers/1/EthernetInterfaces/3"
+     }
+   ],
+   "Members@odata.count": 3
+ } 
+`
+const testPathPRLT_managers_1_ethernet_interfaces_1 = "/redfish/v1/Managers/1/EthernetInterfaces/1"
+
+const testPayloadPRLT_managers_1_ethernet_interfaces_1 = `{
+   "@odata.context": "/redfish/v1/$metadata#EthernetInterface.EthernetInterface",
+   "@odata.etag": "W/\"0E8D4794\"",
+   "@odata.id": "/redfish/v1/Managers/1/EthernetInterfaces/1",
+   "@odata.type": "#EthernetInterface.v1_4_1.EthernetInterface",
+   "Id": "1",
+   "AutoNeg": true,
+   "DHCPv4": {
+     "DHCPEnabled": true,
+     "UseDNSServers": true,
+     "UseDomainName": true,
+     "UseGateway": true,
+     "UseNTPServers": true,
+     "UseStaticRoutes": true
+   },
+   "DHCPv6": {
+     "OperatingMode": "Stateful",
+     "UseDNSServers": true,
+     "UseDomainName": true,
+     "UseNTPServers": true,
+     "UseRapidCommit": false
+   },
+   "Description": "Configuration of this Manager Network Interface",
+   "FQDN": "ILOMXQ019020H.",
+   "FullDuplex": true,
+   "HostName": "ILOMXQ019020H",
+   "IPv4Addresses": [
+     {
+       "Address": "10.254.2.11",
+       "AddressOrigin": "DHCP",
+       "Gateway": "10.254.0.1",
+       "SubnetMask": "255.255.128.0"
+     }
+   ],
+   "IPv4StaticAddresses": [],
+   "IPv6AddressPolicyTable": [
+     {
+       "Label": null,
+       "Precedence": 35,
+       "Prefix": "::ffff:0:0/96"
+     }
+   ],
+   "IPv6Addresses": [
+     {
+       "Address": "FE80::9640:C9FF:FE37:E38A",
+       "AddressOrigin": "SLAAC",
+       "AddressState": "Preferred",
+       "PrefixLength": 64
+     }
+   ],
+   "IPv6DefaultGateway": "::",
+   "IPv6StaticAddresses": [
+     {
+       "Address": "::",
+       "PrefixLength": null
+     },
+     {
+       "Address": "::",
+       "PrefixLength": null
+     },
+     {
+       "Address": "::",
+       "PrefixLength": null
+     },
+     {
+       "Address": "::",
+       "PrefixLength": null
+     }
+   ],
+   "IPv6StaticDefaultGateways": [
+     {
+       "Address": "::"
+     }
+   ],
+   "InterfaceEnabled": true,
+   "LinkStatus": "LinkUp",
+   "MACAddress": "94:40:C9:37:E3:8A",
+   "MaxIPv6StaticAddresses": 4,
+   "Name": "Manager Dedicated Network Interface",
+   "NameServers": [
+     "10.94.100.225"
+   ],
+   "Oem": {
+     "Hpe": {
+       "@odata.context": "/redfish/v1/$metadata#HpeiLOEthernetNetworkInterface.HpeiLOEthernetNetworkInterface",
+       "@odata.type": "#HpeiLOEthernetNetworkInterface.v2_2_1.HpeiLOEthernetNetworkInterface",
+       "ConfigurationSettings": "Current",
+       "DHCPv4": {
+         "ClientIdType": "Default",
+         "Enabled": true,
+         "UseDNSServers": true,
+         "UseDomainName": true,
+         "UseGateway": true,
+         "UseNTPServers": true,
+         "UseStaticRoutes": true,
+         "UseWINSServers": true
+       },
+       "DHCPv6": {
+         "StatefulModeEnabled": true,
+         "StatelessModeEnabled": true,
+         "UseDNSServers": true,
+         "UseDomainName": true,
+         "UseNTPServers": true,
+         "UseRapidCommit": false
+       },
+       "DomainName": "",
+       "HostName": "ILOMXQ019020H",
+       "IPv4": {
+         "DDNSRegistration": true,
+         "DNSServers": [
+           "10.94.100.225",
+           "0.0.0.0",
+           "0.0.0.0"
+         ],
+         "StaticRoutes": [
+           {
+             "Destination": "0.0.0.0",
+             "Gateway": "0.0.0.0",
+             "SubnetMask": "0.0.0.0"
+           },
+           {
+             "Destination": "0.0.0.0",
+             "Gateway": "0.0.0.0",
+             "SubnetMask": "0.0.0.0"
+           },
+           {
+             "Destination": "0.0.0.0",
+             "Gateway": "0.0.0.0",
+             "SubnetMask": "0.0.0.0"
+           }
+         ],
+         "WINSRegistration": true,
+         "WINSServers": [
+           "0.0.0.0",
+           "0.0.0.0"
+         ]
+       },
+       "IPv6": {
+         "DDNSRegistration": true,
+         "DNSServers": [
+           "::",
+           "::",
+           "::"
+         ],
+         "SLAACEnabled": true,
+         "StaticDefaultGateway": "::",
+         "StaticRoutes": [
+           {
+             "Destination": "::",
+             "Gateway": "::",
+             "PrefixLength": null,
+             "Status": "Unknown"
+           },
+           {
+             "Destination": "::",
+             "Gateway": "::",
+             "PrefixLength": null,
+             "Status": "Unknown"
+           },
+           {
+             "Destination": "::",
+             "Gateway": "::",
+             "PrefixLength": null,
+             "Status": "Unknown"
+           }
+         ]
+       },
+       "InterfaceType": "Dedicated",
+       "NICEnabled": true,
+       "NICSupportsIPv6": true,
+       "PingGatewayOnStartup": true
+     }
+   },
+   "PermanentMACAddress": "94:40:C9:37:E3:8A",
+   "SpeedMbps": 1000,
+   "StatelessAddressAutoConfig": {
+     "IPv6AutoConfigEnabled": true
+   },
+   "StaticNameServers": [
+     "0.0.0.0",
+     "0.0.0.0",
+     "0.0.0.0",
+     "::",
+     "::",
+     "::"
+   ],
+   "Status": {
+     "Health": "OK",
+     "State": "Enabled"
+   },
+   "VLAN": {
+     "VLANEnable": false,
+     "VLANId": null
+   }
+ } 
+`
+const testPathPRLT_managers_1_ethernet_interfaces_2 = "/redfish/v1/Managers/1/EthernetInterfaces/2"
+
+const testPayloadPRLT_managers_1_ethernet_interfaces_2 = `{
+   "@odata.context": "/redfish/v1/$metadata#EthernetInterface.EthernetInterface",
+   "@odata.etag": "W/\"BBD0FBD8\"",
+   "@odata.id": "/redfish/v1/Managers/1/EthernetInterfaces/2",
+   "@odata.type": "#EthernetInterface.v1_4_1.EthernetInterface",
+   "Id": "2",
+   "AutoNeg": null,
+   "DHCPv4": {
+     "DHCPEnabled": true,
+     "UseDNSServers": true,
+     "UseDomainName": true,
+     "UseGateway": true,
+     "UseNTPServers": true,
+     "UseStaticRoutes": true
+   },
+   "DHCPv6": {
+     "OperatingMode": "Stateful",
+     "UseDNSServers": true,
+     "UseDomainName": true,
+     "UseNTPServers": true,
+     "UseRapidCommit": false
+   },
+   "Description": "Configuration of this Manager Network Interface",
+   "FQDN": "ILOMXQ019020H.",
+   "FullDuplex": false,
+   "HostName": "ILOMXQ019020H",
+   "IPv4Addresses": [
+     {
+       "Address": "0.0.0.0",
+       "AddressOrigin": "DHCP",
+       "Gateway": "0.0.0.0",
+       "SubnetMask": "255.255.255.255"
+     }
+   ],
+   "IPv4StaticAddresses": [],
+   "IPv6AddressPolicyTable": [
+     {
+       "Label": null,
+       "Precedence": 35,
+       "Prefix": "::ffff:0:0/96"
+     }
+   ],
+   "IPv6Addresses": [],
+   "IPv6DefaultGateway": "::",
+   "IPv6StaticAddresses": [
+     {
+       "Address": "::",
+       "PrefixLength": null
+     },
+     {
+       "Address": "::",
+       "PrefixLength": null
+     },
+     {
+       "Address": "::",
+       "PrefixLength": null
+     },
+     {
+       "Address": "::",
+       "PrefixLength": null
+     }
+   ],
+   "IPv6StaticDefaultGateways": [
+     {
+       "Address": "::"
+     }
+   ],
+   "InterfaceEnabled": false,
+   "LinkStatus": null,
+   "MACAddress": "94:40:C9:37:E3:8B",
+   "MaxIPv6StaticAddresses": 4,
+   "Name": "Manager Shared Network Interface",
+   "NameServers": [],
+   "Oem": {
+     "Hpe": {
+       "@odata.context": "/redfish/v1/$metadata#HpeiLOEthernetNetworkInterface.HpeiLOEthernetNetworkInterface",
+       "@odata.type": "#HpeiLOEthernetNetworkInterface.v2_2_1.HpeiLOEthernetNetworkInterface",
+       "ConfigurationSettings": "Current",
+       "DHCPv4": {
+         "ClientIdType": "Default",
+         "Enabled": true,
+         "UseDNSServers": true,
+         "UseDomainName": true,
+         "UseGateway": true,
+         "UseNTPServers": true,
+         "UseStaticRoutes": true,
+         "UseWINSServers": true
+       },
+       "DHCPv6": {
+         "StatefulModeEnabled": true,
+         "StatelessModeEnabled": true,
+         "UseDNSServers": true,
+         "UseDomainName": true,
+         "UseNTPServers": true,
+         "UseRapidCommit": false
+       },
+       "DomainName": "",
+       "HostName": "ILOMXQ019020H",
+       "IPv4": {
+         "DDNSRegistration": true,
+         "DNSServers": [
+           "0.0.0.0",
+           "0.0.0.0",
+           "0.0.0.0"
+         ],
+         "StaticRoutes": [
+           {
+             "Destination": "0.0.0.0",
+             "Gateway": "0.0.0.0",
+             "SubnetMask": "0.0.0.0"
+           },
+           {
+             "Destination": "0.0.0.0",
+             "Gateway": "0.0.0.0",
+             "SubnetMask": "0.0.0.0"
+           },
+           {
+             "Destination": "0.0.0.0",
+             "Gateway": "0.0.0.0",
+             "SubnetMask": "0.0.0.0"
+           }
+         ],
+         "WINSRegistration": true,
+         "WINSServers": [
+           "0.0.0.0",
+           "0.0.0.0"
+         ]
+       },
+       "IPv6": {
+         "DDNSRegistration": true,
+         "DNSServers": [
+           "::",
+           "::",
+           "::"
+         ],
+         "SLAACEnabled": true,
+         "StaticDefaultGateway": "::",
+         "StaticRoutes": [
+           {
+             "Destination": "::",
+             "Gateway": "::",
+             "PrefixLength": null,
+             "Status": "Unknown"
+           },
+           {
+             "Destination": "::",
+             "Gateway": "::",
+             "PrefixLength": null,
+             "Status": "Unknown"
+           },
+           {
+             "Destination": "::",
+             "Gateway": "::",
+             "PrefixLength": null,
+             "Status": "Unknown"
+           }
+         ]
+       },
+       "InterfaceType": "Shared",
+       "NICEnabled": false,
+       "NICSupportsIPv6": true,
+       "PingGatewayOnStartup": true,
+       "SharedNetworkPortOptions": {
+         "Port": 1
+       },
+       "SupportsFlexibleLOM": true,
+       "SupportsLOM": true
+     }
+   },
+   "PermanentMACAddress": "94:40:C9:37:E3:8B",
+   "SpeedMbps": null,
+   "StatelessAddressAutoConfig": {
+     "IPv6AutoConfigEnabled": true
+   },
+   "StaticNameServers": [
+     "0.0.0.0",
+     "0.0.0.0",
+     "0.0.0.0",
+     "::",
+     "::",
+     "::"
+   ],
+   "Status": {
+     "Health": null,
+     "State": "Disabled"
+   },
+   "VLAN": {
+     "VLANEnable": false,
+     "VLANId": null
+   }
+ } 
+`
+const testPathPRLT_managers_1_ethernet_interfaces_3 = "/redfish/v1/Managers/1/EthernetInterfaces/3"
+
+const testPayloadPRLT_managers_1_ethernet_interfaces_3 = `{
+   "@odata.context": "/redfish/v1/$metadata#EthernetInterface.EthernetInterface",
+   "@odata.etag": "W/\"BCB18AFB\"",
+   "@odata.id": "/redfish/v1/Managers/1/EthernetInterfaces/3",
+   "@odata.type": "#EthernetInterface.v1_4_1.EthernetInterface",
+   "Id": "3",
+   "Description": "Configuration of this Manager USB Ethernet Interface available for access from Host.",
+   "IPv4Addresses": [
+     {
+       "Address": "16.1.15.1",
+       "AddressOrigin": "DHCP",
+       "SubnetMask": "255.255.255.252"
+     }
+   ],
+   "IPv4StaticAddresses": [],
+   "IPv6AddressPolicyTable": [],
+   "IPv6Addresses": [],
+   "IPv6StaticAddresses": [],
+   "IPv6StaticDefaultGateways": [],
+   "InterfaceEnabled": true,
+   "LinkStatus": "LinkUp",
+   "Links": {
+     "HostInterface": {
+       "@odata.id": "/redfish/v1/Managers/1/HostInterfaces/1"
+     }
+   },
+   "MACAddress": "00:CA:FE:F0:0D:04",
+   "Name": "Manager Virtual Network Interface",
+   "NameServers": [],
+   "Oem": {
+     "Hpe": {
+       "@odata.context": "/redfish/v1/$metadata#HpeiLOEthernetNetworkInterface.HpeiLOEthernetNetworkInterface",
+       "@odata.type": "#HpeiLOEthernetNetworkInterface.v2_2_1.HpeiLOEthernetNetworkInterface",
+       "ConfigurationSettings": "Current",
+       "InterfaceType": "HostInterface",
+       "NICSupportsIPv6": false
+     }
+   },
+   "PermanentMACAddress": "00:CA:FE:F0:0D:04",
+   "StaticNameServers": [],
+   "Status": {
+     "Health": "OK",
+     "State": "Enabled"
+   }
+ } 
+`
+const testPathPRLT_chassis = "/redfish/v1/Chassis/"
+
+const testPayloadPRLT_chassis = `{
+   "@odata.context": "/redfish/v1/$metadata#ChassisCollection.ChassisCollection",
+   "@odata.etag": "W/\"AA6D42B0\"",
+   "@odata.id": "/redfish/v1/Chassis",
+   "@odata.type": "#ChassisCollection.ChassisCollection",
+   "Description": "Computer System Chassis View",
+   "Name": "Computer System Chassis",
+   "Members": [
+     {
+       "@odata.id": "/redfish/v1/Chassis/1"
+     }
+   ],
+   "Members@odata.count": 1
+ }  
+`
+const testPathPRLT_chassis_1 = "/redfish/v1/Chassis/1"
+
+const testPayloadPRLT_chassis_1 = `{
+   "@odata.context": "/redfish/v1/$metadata#Chassis.Chassis",
+   "@odata.etag": "W/\"DD454000\"",
+   "@odata.id": "/redfish/v1/Chassis/1",
+   "@odata.type": "#Chassis.v1_6_0.Chassis",
+   "Id": "1",
+   "AssetTag": "",
+   "ChassisType": "RackMount",
+   "IndicatorLED": "Off",
+   "Links": {
+     "ManagedBy": [
+       {
+         "@odata.id": "/redfish/v1/Managers/1"
+       }
+     ],
+     "ComputerSystems": [
+       {
+         "@odata.id": "/redfish/v1/Systems/1"
+       }
+     ]
+   },
+   "Manufacturer": "HPE",
+   "Model": "ProLiant DL325 Gen10 Plus",
+   "Name": "Computer System Chassis",
+   "NetworkAdapters": {
+     "@odata.id": "/redfish/v1/Chassis/1/NetworkAdapters"
+   },
+   "Oem": {
+     "Hpe": {
+       "@odata.context": "/redfish/v1/$metadata#HpeServerChassis.HpeServerChassis",
+       "@odata.type": "#HpeServerChassis.v2_3_1.HpeServerChassis",
+       "Actions": {
+         "#HpeServerChassis.DisableMCTPOnServer": {
+           "target": "/redfish/v1/Chassis/1/Actions/Oem/Hpe/HpeServerChassis.DisableMCTPOnServer"
+         },
+         "#HpeServerChassis.FactoryResetMCTP": {
+           "target": "/redfish/v1/Chassis/1/Actions/Oem/Hpe/HpeServerChassis.FactoryResetMCTP"
+         }
+       },
+       "Firmware": {
+         "PlatformDefinitionTable": {
+           "Current": {
+             "VersionString": "2.5.0 Build 21"
+           }
+         },
+         "PowerManagementController": {
+           "Current": {
+             "VersionString": "1.0.7"
+           }
+         },
+         "PowerManagementControllerBootloader": {
+           "Current": {
+             "Family": "25",
+             "VersionString": "1.1"
+           }
+         },
+         "SystemProgrammableLogicDevice": {
+           "Current": {
+             "VersionString": "0x0D"
+           }
+         }
+       },
+       "Links": {
+         "Devices": {
+           "@odata.id": "/redfish/v1/Chassis/1/Devices"
+         }
+       },
+       "MCTPEnabledOnServer": true,
+       "SystemMaintenanceSwitches": {
+         "Sw1": "Off",
+         "Sw10": "Off",
+         "Sw11": "Off",
+         "Sw12": "Off",
+         "Sw2": "Off",
+         "Sw3": "Off",
+         "Sw4": "Off",
+         "Sw5": "Off",
+         "Sw6": "Off",
+         "Sw7": "Off",
+         "Sw8": "Off",
+         "Sw9": "Off"
+       }
+     }
+   },
+   "Power": {
+     "@odata.id": "/redfish/v1/Chassis/1/Power"
+   },
+   "PowerState": "On",
+   "SKU": "P18606-B21",
+   "SerialNumber": "MXQ019020H",
+   "Status": {
+     "Health": "OK",
+     "State": "Enabled"
+   },
+   "Thermal": {
+     "@odata.id": "/redfish/v1/Chassis/1/Thermal"
+   }
+ }  
+`
+const testPathPRLT_chassis_1_power = "/redfish/v1/Chassis/1/Power"
+
+const testPayloadPRLT_chassis_1_power = `{
+   "@odata.context": "/redfish/v1/$metadata#Power.Power",
+   "@odata.etag": "W/\"88AA866B\"",
+   "@odata.id": "/redfish/v1/Chassis/1/Power",
+   "@odata.type": "#Power.v1_3_0.Power",
+   "Id": "Power",
+   "Name": "PowerMetrics",
+   "Oem": {
+     "Hpe": {
+       "@odata.context": "/redfish/v1/$metadata#HpePowerMetricsExt.HpePowerMetricsExt",
+       "@odata.type": "#HpePowerMetricsExt.v2_2_0.HpePowerMetricsExt",
+       "BrownoutRecoveryEnabled": true,
+       "HasCpuPowerMetering": true,
+       "HasDimmPowerMetering": true,
+       "HasGpuPowerMetering": false,
+       "HasPowerMetering": true,
+       "HighEfficiencyMode": "Balanced",
+       "Links": {
+         "PowerMeter": {
+           "@odata.id": "/redfish/v1/Chassis/1/Power/PowerMeter"
+         },
+         "FastPowerMeter": {
+           "@odata.id": "/redfish/v1/Chassis/1/Power/FastPowerMeter"
+         },
+         "FederatedGroupCapping": {
+           "@odata.id": "/redfish/v1/Chassis/1/Power/FederatedGroupCapping"
+         }
+       },
+       "MinimumSafelyAchievableCap": null,
+       "MinimumSafelyAchievableCapValid": false,
+       "SNMPPowerThresholdAlert": {
+         "DurationInMin": 0,
+         "ThresholdWatts": 0,
+         "Trigger": "Disabled"
+       }
+     }
+   },
+   "PowerControl": [
+     {
+       "@odata.id": "/redfish/v1/Chassis/1/Power#PowerControl/0",
+       "MemberId": "0",
+       "PowerCapacityWatts": 1000,
+       "PowerConsumedWatts": 121,
+       "PowerLimit": {
+         "LimitInWatts": null
+       },
+       "PowerMetrics": {
+         "AverageConsumedWatts": 121,
+         "IntervalInMin": 20,
+         "MaxConsumedWatts": 137,
+         "MinConsumedWatts": 121
+       }
+     }
+   ],
+   "PowerSupplies": [
+     {
+       "@odata.id": "/redfish/v1/Chassis/1/Power#PowerSupplies/0",
+       "FirmwareVersion": "1.00",
+       "LastPowerOutputWatts": 55,
+       "LineInputVoltage": 206,
+       "LineInputVoltageType": "ACHighLine",
+       "Manufacturer": "LTEON",
+       "MemberId": "0",
+       "Model": "865408-B21",
+       "Name": "HpeServerPowerSupply",
+       "Oem": {
+         "Hpe": {
+           "@odata.context": "/redfish/v1/$metadata#HpeServerPowerSupply.HpeServerPowerSupply",
+           "@odata.type": "#HpeServerPowerSupply.v2_0_0.HpeServerPowerSupply",
+           "AveragePowerOutputWatts": 55,
+           "BayNumber": 1,
+           "HotplugCapable": true,
+           "MaxPowerOutputWatts": 56,
+           "Mismatched": false,
+           "PowerSupplyStatus": {
+             "State": "Ok"
+           },
+           "iPDUCapable": false
+         }
+       },
+       "PowerCapacityWatts": 500,
+       "PowerSupplyType": "AC",
+       "SerialNumber": "5WBXK0FLLDG2YG",
+       "SparePartNumber": "866729-001",
+       "Status": {
+         "Health": "OK",
+         "State": "Enabled"
+       }
+     },
+     {
+       "@odata.id": "/redfish/v1/Chassis/1/Power#PowerSupplies/1",
+       "FirmwareVersion": "1.00",
+       "LastPowerOutputWatts": 66,
+       "LineInputVoltage": 206,
+       "LineInputVoltageType": "ACHighLine",
+       "Manufacturer": "LTEON",
+       "MemberId": "1",
+       "Model": "865408-B21",
+       "Name": "HpeServerPowerSupply",
+       "Oem": {
+         "Hpe": {
+           "@odata.context": "/redfish/v1/$metadata#HpeServerPowerSupply.HpeServerPowerSupply",
+           "@odata.type": "#HpeServerPowerSupply.v2_0_0.HpeServerPowerSupply",
+           "AveragePowerOutputWatts": 66,
+           "BayNumber": 2,
+           "HotplugCapable": true,
+           "MaxPowerOutputWatts": 68,
+           "Mismatched": false,
+           "PowerSupplyStatus": {
+             "State": "Ok"
+           },
+           "iPDUCapable": false
+         }
+       },
+       "PowerCapacityWatts": 500,
+       "PowerSupplyType": "AC",
+       "SerialNumber": "5WBXK0FLLDG3N9",
+       "SparePartNumber": "866729-001",
+       "Status": {
+         "Health": "OK",
+         "State": "Enabled"
+       }
+     }
+   ],
+   "Redundancy": [
+     {
+       "@odata.id": "/redfish/v1/Chassis/1/Power#Redundancy/0",
+       "MaxNumSupported": 2,
+       "MemberId": "0",
+       "MinNumNeeded": 2,
+       "Mode": "Failover",
+       "Name": "PowerSupply Redundancy Group 1",
+       "RedundancySet": [
+         {
+           "@odata.id": "/redfish/v1/Chassis/1/Power#PowerSupplies/0"
+         },
+         {
+           "@odata.id": "/redfish/v1/Chassis/1/Power#PowerSupplies/1"
+         }
+       ],
+       "Status": {
+         "Health": "OK",
+         "State": "Enabled"
+       }
+     }
+   ]
+ }  
+`
+const testPathPRLT_chassis_1_network_adapters = "/redfish/v1/Chassis/1/NetworkAdapters"
+
+const testPayloadPRLT_chassis_1_network_adapters = `{
+   "@odata.context": "/redfish/v1/$metadata#NetworkAdapterCollection.NetworkAdapterCollection",
+   "@odata.etag": "W/\"F303ECE9\"",
+   "@odata.id": "/redfish/v1/Chassis/1/NetworkAdapters",
+   "@odata.type": "#NetworkAdapterCollection.NetworkAdapterCollection",
+   "Description": "The collection of network adapter resource instances available in this chassis.",
+   "Name": "NetworkAdapterCollection",
+   "Oem": {
+     "Hpe": {
+       "@odata.context": "/redfish/v1/$metadata#HpeNetworkAdapterStatus.HpeNetworkAdapterStatus",
+       "@odata.type": "#HpeNetworkAdapterStatus.v1_0_0.HpeNetworkAdapterStatus",
+       "MemberContents": "AllDevices"
+     }
+   },
+   "Members": [],
+   "Members@odata.count": 0
+ } 
+`
+const testPathPRLT_systems = "/redfish/v1/Systems/"
+
+const testPayloadPRLT_systems = `{
+        "@odata.context": "/redfish/v1/$metadata#ComputerSystemCollection.ComputerSystemCollection",
+        "@odata.etag": "W/\"AA6D42B0\"",
+        "@odata.id": "/redfish/v1/Systems",
+        "@odata.type": "#ComputerSystemCollection.ComputerSystemCollection",
+        "Description": "Computer Systems view",
+        "Name": "Computer Systems",
+        "Members": [
+          {
+            "@odata.id": "/redfish/v1/Systems/1"
+          }
+        ],
+        "Members@odata.count": 1
+      }      
+`
+const testPathPRLT_systems_1 = "/redfish/v1/Systems/1"
+
+const testPayloadPRLT_systems_1 = `{
+        "@odata.context": "/redfish/v1/$metadata#ComputerSystem.ComputerSystem",
+        "@odata.etag": "W/\"F7ACBF79\"",
+        "@odata.id": "/redfish/v1/Systems/1",
+        "@odata.type": "#ComputerSystem.v1_4_0.ComputerSystem",
+        "Id": "1",
+        "Actions": {
+          "#ComputerSystem.Reset": {
+            "ResetType@Redfish.AllowableValues": [
+              "On",
+              "ForceOff",
+              "GracefulShutdown",
+              "ForceRestart",
+              "Nmi",
+              "PushPowerButton"
+            ],
+            "target": "/redfish/v1/Systems/1/Actions/ComputerSystem.Reset"
+          }
+        },
+        "AssetTag": "",
+        "Bios": {
+          "@odata.id": "/redfish/v1/systems/1/bios"
+        },
+        "BiosVersion": "A43 v1.20 (02/28/2020)",
+        "Boot": {
+          "BootOptions": {
+            "@odata.id": "/redfish/v1/Systems/1/BootOptions"
+          },
+          "BootOrder": [
+            "Boot000D",
+            "Boot000E",
+            "Boot000F",
+            "Boot0010",
+            "Boot0011",
+            "Boot0012",
+            "Boot0013",
+            "Boot0014",
+            "Boot0015",
+            "Boot001E",
+            "Boot001F",
+            "Boot0016",
+            "Boot0017",
+            "Boot0018",
+            "Boot0019"
+          ],
+          "BootSourceOverrideEnabled": "Disabled",
+          "BootSourceOverrideMode": "UEFI",
+          "BootSourceOverrideTarget": "None",
+          "BootSourceOverrideTarget@Redfish.AllowableValues": [
+            "None",
+            "Cd",
+            "Hdd",
+            "Usb",
+            "SDCard",
+            "Utilities",
+            "Diags",
+            "BiosSetup",
+            "Pxe",
+            "UefiShell",
+            "UefiHttp",
+            "UefiTarget"
+          ],
+          "UefiTargetBootSourceOverride": "None",
+          "UefiTargetBootSourceOverride@Redfish.AllowableValues": [
+            "UsbClass(0xFFFF,0xFFFF,0xFF,0xFF,0xFF)",
+            "PciRoot(0x1)/Pci(0x8,0x3)/Pci(0x0,0x0)/Sata(0x0,0x0,0x0)",
+            "PciRoot(0x1)/Pci(0x8,0x3)/Pci(0x0,0x0)/Sata(0x1,0x0,0x0)",
+            "PciRoot(0x1)/Pci(0x8,0x3)/Pci(0x0,0x0)/Sata(0x2,0x0,0x0)",
+            "PciRoot(0x1)/Pci(0x8,0x3)/Pci(0x0,0x0)/Sata(0x3,0x0,0x0)",
+            "PciRoot(0x1)/Pci(0x8,0x3)/Pci(0x0,0x0)/Sata(0x4,0x0,0x0)",
+            "PciRoot(0x1)/Pci(0x8,0x3)/Pci(0x0,0x0)/Sata(0x5,0x0,0x0)",
+            "PciRoot(0x1)/Pci(0x8,0x3)/Pci(0x0,0x0)/Sata(0x6,0x0,0x0)",
+            "PciRoot(0x1)/Pci(0x8,0x3)/Pci(0x0,0x0)/Sata(0x7,0x0,0x0)",
+            "PciRoot(0x1)/Pci(0x8,0x2)/Pci(0x0,0x0)/Sata(0x6,0x0,0x0)",
+            "PciRoot(0x1)/Pci(0x8,0x2)/Pci(0x0,0x0)/Sata(0x7,0x0,0x0)",
+            "PciRoot(0x0)/Pci(0x1,0x1)/Pci(0x0,0x0)/MAC(1402ECD93C80,0x1)/IPv4(0.0.0.0)/Uri()",
+            "PciRoot(0x0)/Pci(0x1,0x1)/Pci(0x0,0x0)/MAC(1402ECD93C80,0x1)/IPv4(0.0.0.0)",
+            "PciRoot(0x0)/Pci(0x1,0x1)/Pci(0x0,0x0)/MAC(1402ECD93C80,0x1)/IPv6(0000:0000:0000:0000:0000:0000:0000:0000)/Uri()",
+            "PciRoot(0x0)/Pci(0x1,0x1)/Pci(0x0,0x0)/MAC(1402ECD93C80,0x1)/IPv6(0000:0000:0000:0000:0000:0000:0000:0000)"
+          ]
+        },
+        "EthernetInterfaces": {
+          "@odata.id": "/redfish/v1/Systems/1/EthernetInterfaces"
+        },
+        "HostName": "",
+        "IndicatorLED": "Off",
+        "Links": {
+          "ManagedBy": [
+            {
+              "@odata.id": "/redfish/v1/Managers/1"
+            }
+          ],
+          "Chassis": [
+            {
+              "@odata.id": "/redfish/v1/Chassis/1"
+            }
+          ]
+        },
+        "LogServices": {
+          "@odata.id": "/redfish/v1/Systems/1/LogServices"
+        },
+        "Manufacturer": "HPE",
+        "Memory": {
+          "@odata.id": "/redfish/v1/Systems/1/Memory"
+        },
+        "MemoryDomains": {
+          "@odata.id": "/redfish/v1/Systems/1/MemoryDomains"
+        },
+        "MemorySummary": {
+          "Status": {
+            "HealthRollup": "OK"
+          },
+          "TotalSystemMemoryGiB": 128,
+          "TotalSystemPersistentMemoryGiB": 0
+        },
+        "Model": "ProLiant DL325 Gen10 Plus",
+        "Name": "Computer System",
+        "NetworkInterfaces": {
+          "@odata.id": "/redfish/v1/Systems/1/NetworkInterfaces"
+        },
+        "Oem": {
+          "Hpe": {
+            "@odata.context": "/redfish/v1/$metadata#HpeComputerSystemExt.HpeComputerSystemExt",
+            "@odata.type": "#HpeComputerSystemExt.v2_7_0.HpeComputerSystemExt",
+            "Actions": {
+              "#HpeComputerSystemExt.PowerButton": {
+                "PushType@Redfish.AllowableValues": [
+                  "Press",
+                  "PressAndHold"
+                ],
+                "target": "/redfish/v1/Systems/1/Actions/Oem/Hpe/HpeComputerSystemExt.PowerButton"
+              },
+              "#HpeComputerSystemExt.RestoreManufacturingDefaults": {
+                "target": "/redfish/v1/Systems/1/Actions/Oem/Hpe/HpeComputerSystemExt.RestoreManufacturingDefaults"
+              },
+              "#HpeComputerSystemExt.RestoreSystemDefaults": {
+                "target": "/redfish/v1/Systems/1/Actions/Oem/Hpe/HpeComputerSystemExt.RestoreSystemDefaults"
+              },
+              "#HpeComputerSystemExt.SecureSystemErase": {
+                "target": "/redfish/v1/Systems/1/Actions/Oem/Hpe/HpeComputerSystemExt.SecureSystemErase"
+              },
+              "#HpeComputerSystemExt.ServerIntelligentDiagnosticsMode": {
+                "target": "/redfish/v1/Systems/1/Actions/Oem/Hpe/HpeComputerSystemExt.ServerIntelligentDiagnosticsMode"
+              },
+              "#HpeComputerSystemExt.ServerSafeMode": {
+                "target": "/redfish/v1/Systems/1/Actions/Oem/Hpe/HpeComputerSystemExt.ServerSafeMode"
+              },
+              "#HpeComputerSystemExt.SystemReset": {
+                "ResetType@Redfish.AllowableValues": [
+                  "ColdBoot",
+                  "AuxCycle"
+                ],
+                "target": "/redfish/v1/Systems/1/Actions/Oem/Hpe/HpeComputerSystemExt.SystemReset"
+              }
+            },
+            "AggregateHealthStatus": {
+              "AgentlessManagementService": "Unavailable",
+              "BiosOrHardwareHealth": {
+                "Status": {
+                  "Health": "OK"
+                }
+              },
+              "FanRedundancy": "Redundant",
+              "Fans": {
+                "Status": {
+                  "Health": "OK"
+                }
+              },
+              "Memory": {
+                "Status": {
+                  "Health": "OK"
+                }
+              },
+              "Network": {
+                "Status": {
+                  "Health": "OK"
+                }
+              },
+              "PowerSupplies": {
+                "PowerSuppliesMismatch": false,
+                "Status": {
+                  "Health": "OK"
+                }
+              },
+              "PowerSupplyRedundancy": "Redundant",
+              "Processors": {
+                "Status": {
+                  "Health": "OK"
+                }
+              },
+              "Storage": {
+                "Status": {
+                  "Health": "OK"
+                }
+              },
+              "Temperatures": {
+                "Status": {
+                  "Health": "OK"
+                }
+              }
+            },
+            "Bios": {
+              "Backup": {
+                "Date": "02/28/2020",
+                "Family": "A43",
+                "VersionString": "A43 v1.20 (02/28/2020)"
+              },
+              "Current": {
+                "Date": "02/28/2020",
+                "Family": "A43",
+                "VersionString": "A43 v1.20 (02/28/2020)"
+              },
+              "UefiClass": 2
+            },
+            "CurrentPowerOnTimeSeconds": 5179955,
+            "DeviceDiscoveryComplete": {
+              "AMSDeviceDiscovery": "NoAMS",
+              "DeviceDiscovery": "vMainDeviceDiscoveryComplete",
+              "SmartArrayDiscovery": "Complete"
+            },
+            "ElapsedEraseTimeInMinutes": 0,
+            "EndOfPostDelaySeconds": null,
+            "EstimatedEraseTimeInMinutes": 0,
+            "IntelligentProvisioningAlwaysOn": true,
+            "IntelligentProvisioningIndex": 7,
+            "IntelligentProvisioningLocation": "System Board",
+            "IntelligentProvisioningVersion": "3.40.192",
+            "IsColdBooting": false,
+            "Links": {
+              "PCIDevices": {
+                "@odata.id": "/redfish/v1/Systems/1/PCIDevices"
+              },
+              "PCISlots": {
+                "@odata.id": "/redfish/v1/Systems/1/PCISlots"
+              },
+              "NetworkAdapters": {
+                "@odata.id": "/redfish/v1/Systems/1/BaseNetworkAdapters"
+              },
+              "SmartStorage": {
+                "@odata.id": "/redfish/v1/Systems/1/SmartStorage"
+              },
+              "USBPorts": {
+                "@odata.id": "/redfish/v1/Systems/1/USBPorts"
+              },
+              "USBDevices": {
+                "@odata.id": "/redfish/v1/Systems/1/USBDevices"
+              },
+              "EthernetInterfaces": {
+                "@odata.id": "/redfish/v1/Systems/1/EthernetInterfaces"
+              },
+              "WorkloadPerformanceAdvisor": {
+                "@odata.id": "/redfish/v1/Systems/1/WorkloadPerformanceAdvisor"
+              }
+            },
+            "PCAPartNumber": "P12579-001",
+            "PCASerialNumber": "PWWSE0ARHDK0AS",
+            "PostDiscoveryCompleteTimeStamp": "2020-11-13T17:49:44Z",
+            "PostDiscoveryMode": null,
+            "PostMode": null,
+            "PostState": "FinishedPost",
+            "PowerAllocationLimit": 1000,
+            "PowerAutoOn": "Restore",
+            "PowerOnDelay": "Minimum",
+            "PowerOnMinutes": 159823,
+            "PowerRegulatorMode": "Unknown",
+            "PowerRegulatorModesSupported": [
+              "OSControl",
+              "Max"
+            ],
+            "SMBIOS": {
+              "extref": "/smbios"
+            },
+            "ServerFQDN": "",
+            "ServerIntelligentDiagnosticsModeEnabled": false,
+            "ServerSafeModeEnabled": false,
+            "SystemROMAndiLOEraseComponentStatus": {
+              "BIOSSettingsEraseStatus": "Idle",
+              "iLOSettingsEraseStatus": "Idle"
+            },
+            "SystemROMAndiLOEraseStatus": "Idle",
+            "UserDataEraseComponentStatus": {},
+            "UserDataEraseStatus": "Idle",
+            "VirtualProfile": "Inactive"
+          }
+        },
+        "PowerState": "On",
+        "ProcessorSummary": {
+          "Count": 1,
+          "Model": "AMD EPYC 7302P 16-Core Processor               ",
+          "Status": {
+            "HealthRollup": "OK"
+          }
+        },
+        "Processors": {
+          "@odata.id": "/redfish/v1/Systems/1/Processors"
+        },
+        "SKU": "P18606-B21",
+        "SecureBoot": {
+          "@odata.id": "/redfish/v1/Systems/1/SecureBoot"
+        },
+        "SerialNumber": "MXQ019020H",
+        "Status": {
+          "Health": "OK",
+          "HealthRollup": "OK",
+          "State": "Enabled"
+        },
+        "Storage": {
+          "@odata.id": "/redfish/v1/Systems/1/Storage"
+        },
+        "SystemType": "Physical",
+        "TrustedModules": [
+          {
+            "FirmwareVersion": "73.64",
+            "InterfaceType": "TPM2_0",
+            "Oem": {
+              "Hpe": {
+                "@odata.context": "/redfish/v1/$metadata#HpeTrustedModuleExt.HpeTrustedModuleExt",
+                "@odata.type": "#HpeTrustedModuleExt.v2_0_0.HpeTrustedModuleExt",
+                "VendorName": "STMicro"
+              }
+            },
+            "Status": {
+              "Health": "OK",
+              "State": "Enabled"
+            }
+          }
+        ],
+        "UUID": "36383150-3630-584D-5130-313930323048"
+      }      
+`
+const testPathPRLT_systems_1_ethernet_interfaces = "/redfish/v1/Systems/1/EthernetInterfaces"
+
+const testPayloadPRLT_systems_1_ethernet_interfaces = `{
+        "@odata.context": "/redfish/v1/$metadata#EthernetInterfaceCollection.EthernetInterfaceCollection",
+        "@odata.etag": "W/\"570254F2\"",
+        "@odata.id": "/redfish/v1/Systems/1/EthernetInterfaces/",
+        "@odata.type": "#EthernetInterfaceCollection.EthernetInterfaceCollection",
+        "Description": "Collection of System Ethernet Interfaces",
+        "Name": "System Ethernet Interfaces",
+        "Members": [
+          {
+            "@odata.id": "/redfish/v1/Systems/1/EthernetInterfaces/1/"
+          },
+          {
+            "@odata.id": "/redfish/v1/Systems/1/EthernetInterfaces/2/"
+          }
+        ],
+        "Members@odata.count": 2
+      }            
+`
+const testPathPRLT_systems_1_ethernet_interfaces_1 = "/redfish/v1/Systems/1/EthernetInterfaces/1/"
+
+const testPayloadPRLT_systems_1_ethernet_interfaces_1 = `{
+        "@odata.context": "/redfish/v1/$metadata#EthernetInterface.EthernetInterface",
+        "@odata.etag": "W/\"C42D3985\"",
+        "@odata.id": "/redfish/v1/Systems/1/EthernetInterfaces/1/",
+        "@odata.type": "#EthernetInterface.v1_4_1.EthernetInterface",
+        "Id": "1",
+        "FullDuplex": true,
+        "IPv4Addresses": [],
+        "IPv4StaticAddresses": [],
+        "IPv6AddressPolicyTable": [],
+        "IPv6Addresses": [],
+        "IPv6StaticAddresses": [],
+        "IPv6StaticDefaultGateways": [],
+        "InterfaceEnabled": null,
+        "LinkStatus": "LinkUp",
+        "MACAddress": "14:02:ec:d9:3c:80",
+        "Name": "",
+        "NameServers": [],
+        "SpeedMbps": null,
+        "StaticNameServers": [],
+        "Status": {
+          "Health": "OK",
+          "State": "Enabled"
+        },
+        "UefiDevicePath": "PciRoot(0x0)/Pci(0x1,0x1)/Pci(0x0,0x0)"
+      }                
+`
+const testPathPRLT_systems_1_ethernet_interfaces_2 = "/redfish/v1/Systems/1/EthernetInterfaces/2/"
+
+const testPayloadPRLT_systems_1_ethernet_interfaces_2 = `{
+        "@odata.context": "/redfish/v1/$metadata#EthernetInterface.EthernetInterface",
+        "@odata.etag": "W/\"4C8024A2\"",
+        "@odata.id": "/redfish/v1/Systems/1/EthernetInterfaces/2/",
+        "@odata.type": "#EthernetInterface.v1_4_1.EthernetInterface",
+        "Id": "2",
+        "FullDuplex": true,
+        "IPv4Addresses": [],
+        "IPv4StaticAddresses": [],
+        "IPv6AddressPolicyTable": [],
+        "IPv6Addresses": [],
+        "IPv6StaticAddresses": [],
+        "IPv6StaticDefaultGateways": [],
+        "InterfaceEnabled": null,
+        "LinkStatus": "LinkUp",
+        "MACAddress": "14:02:ec:d9:3c:81",
+        "Name": "",
+        "NameServers": [],
+        "SpeedMbps": null,
+        "StaticNameServers": [],
+        "Status": {
+          "Health": "OK",
+          "State": "Enabled"
+        }
+      }
+`
+const testPathPRLT_systems_1_processors = "/redfish/v1/Systems/1/Processors"
+
+const testPayloadPRLT_systems_1_processors = `{
+        "@odata.context": "/redfish/v1/$metadata#ProcessorCollection.ProcessorCollection",
+        "@odata.etag": "W/\"AA6D42B0\"",
+        "@odata.id": "/redfish/v1/Systems/1/Processors",
+        "@odata.type": "#ProcessorCollection.ProcessorCollection",
+        "Description": "Processors view",
+        "Name": "Processors Collection",
+        "Members": [
+          {
+            "@odata.id": "/redfish/v1/Systems/1/Processors/1"
+          }
+        ],
+        "Members@odata.count": 1
+      }      
+`
+const testPathPRLT_systems_1_processors_1 = "/redfish/v1/Systems/1/Processors/1"
+
+const testPayloadPRLT_systems_1_processors_1 = `{
+        "@odata.context": "/redfish/v1/$metadata#Processor.Processor",
+        "@odata.etag": "W/\"772E9943\"",
+        "@odata.id": "/redfish/v1/Systems/1/Processors/1",
+        "@odata.type": "#Processor.v1_0_0.Processor",
+        "Id": "1",
+        "InstructionSet": "x86-64",
+        "Manufacturer": "Advanced Micro Devices, Inc.",
+        "MaxSpeedMHz": 3100,
+        "Model": "AMD EPYC 7302P 16-Core Processor               ",
+        "Name": "Processors",
+        "Oem": {
+          "Hpe": {
+            "@odata.context": "/redfish/v1/$metadata#HpeProcessorExt.HpeProcessorExt",
+            "@odata.type": "#HpeProcessorExt.v2_0_0.HpeProcessorExt",
+            "AssetTag": "Unknown",
+            "Cache": [
+              {
+                "Associativity": "8waySetAssociative",
+                "CacheSpeedns": 1,
+                "CurrentSRAMType": [
+                  "Pipeline Burst"
+                ],
+                "EccType": "MultiBitECC",
+                "InstalledSizeKB": 1024,
+                "Location": "Internal",
+                "MaximumSizeKB": 1024,
+                "Name": "L1-Cache",
+                "Policy": "WriteBack",
+                "Socketed": false,
+                "SupportedSRAMType": [
+                  "Pipeline Burst"
+                ],
+                "SystemCacheType": "Unified"
+              },
+              {
+                "Associativity": "8waySetAssociative",
+                "CacheSpeedns": 1,
+                "CurrentSRAMType": [
+                  "Pipeline Burst"
+                ],
+                "EccType": "MultiBitECC",
+                "InstalledSizeKB": 8192,
+                "Location": "Internal",
+                "MaximumSizeKB": 8192,
+                "Name": "L2-Cache",
+                "Policy": "WriteBack",
+                "Socketed": false,
+                "SupportedSRAMType": [
+                  "Pipeline Burst"
+                ],
+                "SystemCacheType": "Unified"
+              },
+              {
+                "Associativity": "16waySetAssociative",
+                "CacheSpeedns": 1,
+                "CurrentSRAMType": [
+                  "Pipeline Burst"
+                ],
+                "EccType": "MultiBitECC",
+                "InstalledSizeKB": 131072,
+                "Location": "Internal",
+                "MaximumSizeKB": 131072,
+                "Name": "L3-Cache",
+                "Policy": "WriteBack",
+                "Socketed": false,
+                "SupportedSRAMType": [
+                  "Pipeline Burst"
+                ],
+                "SystemCacheType": "Unified"
+              }
+            ],
+            "Characteristics": [
+              "64Bit",
+              "MultiCore",
+              "HwThread",
+              "ExecuteProtection",
+              "EnhancedVirtualization",
+              "PowerPerfControl"
+            ],
+            "ConfigStatus": {
+              "Populated": true,
+              "State": "Enabled"
+            },
+            "CoresEnabled": 16,
+            "ExternalClockMHz": 100,
+            "MicrocodePatches": [
+              {
+                "CpuId": "0x00008310",
+                "Date": "2019-10-24T00:00:00Z",
+                "PatchId": "0x08301034"
+              },
+              {
+                "CpuId": "0x00008300",
+                "Date": "2019-04-01T00:00:00Z",
+                "PatchId": "0x08300027"
+              }
+            ],
+            "PartNumber": "",
+            "RatedSpeedMHz": 3000,
+            "SerialNumber": "",
+            "VoltageVoltsX10": 11
+          }
+        },
+        "ProcessorArchitecture": "x86",
+        "ProcessorId": {
+          "EffectiveFamily": "107",
+          "EffectiveModel": "1",
+          "IdentificationRegisters": "0x0f100083fbff178b",
+          "MicrocodeInfo": null,
+          "Step": "0",
+          "VendorId": "Advanced Micro Devices, Inc."
+        },
+        "ProcessorType": "CPU",
+        "Socket": "Proc 1",
+        "Status": {
+          "Health": "OK",
+          "State": "Enabled"
+        },
+        "TotalCores": 16,
+        "TotalThreads": 32
+      }      
+`
+const testPathPRLT_systems_1_memory = "/redfish/v1/Systems/1/Memory"
+
+const testPayloadPRLT_systems_1_memory = `{
+        "@odata.context": "/redfish/v1/$metadata#MemoryCollection.MemoryCollection",
+        "@odata.etag": "W/\"C687E11B\"",
+        "@odata.id": "/redfish/v1/Systems/1/Memory",
+        "@odata.type": "#MemoryCollection.MemoryCollection",
+        "Description": "Memory DIMM Collection",
+        "Name": "Memory DIMM Collection",
+        "Oem": {
+          "Hpe": {
+            "@odata.context": "/redfish/v1/$metadata#HpeAdvancedMemoryProtection.HpeAdvancedMemoryProtection",
+            "@odata.type": "#HpeAdvancedMemoryProtection.v2_0_0.HpeAdvancedMemoryProtection",
+            "AmpModeActive": "AdvancedECC",
+            "AmpModeStatus": "AdvancedECC",
+            "AmpModeSupported": [
+              "AdvancedECC"
+            ],
+            "MemoryList": [
+              {
+                "BoardCpuNumber": 1,
+                "BoardNumberOfSockets": 16,
+                "BoardOperationalFrequency": 3200,
+                "BoardOperationalVoltage": 1200,
+                "BoardTotalMemorySize": 131072
+              }
+            ]
+          }
+        },
+        "Members": [
+          {
+            "@odata.id": "/redfish/v1/Systems/1/Memory/proc1dimm1"
+          },
+          {
+            "@odata.id": "/redfish/v1/Systems/1/Memory/proc1dimm2"
+          },
+          {
+            "@odata.id": "/redfish/v1/Systems/1/Memory/proc1dimm3"
+          },
+          {
+            "@odata.id": "/redfish/v1/Systems/1/Memory/proc1dimm4"
+          }
+        ],
+        "Members@odata.count": 4 
+      }
+`
+const testPathPRLT_systems_1_memory_proc1dimm1 = "/redfish/v1/Systems/1/Memory/proc1dimm1"
+
+const testPayloadPRLT_systems_1_memory_proc1dimm1 = `{
+        "@odata.context": "/redfish/v1/$metadata#Memory.Memory",
+        "@odata.etag": "W/\"E6EC3A2C\"",
+        "@odata.id": "/redfish/v1/Systems/1/Memory/proc1dimm1",
+        "@odata.type": "#Memory.v1_7_1.Memory",
+        "Id": "proc1dimm1",
+        "BaseModuleType": "RDIMM",
+        "BusWidthBits": 72,
+        "CacheSizeMiB": 0,
+        "CapacityMiB": 16384,
+        "DataWidthBits": 64,
+        "DeviceLocator": "PROC 1 DIMM 1",
+        "ErrorCorrection": "MultiBitECC",
+        "LogicalSizeMiB": 0,
+        "Manufacturer": "Hynix",
+        "MemoryDeviceType": "DDR4",
+        "MemoryLocation": {
+          "Channel": 3,
+          "MemoryController": 3,
+          "Slot": 1,
+          "Socket": 1
+        },
+        "MemoryMedia": [
+          "DRAM"
+        ],
+        "MemoryType": "DRAM",
+        "Name": "proc1dimm1",
+        "NonVolatileSizeMiB": 0,
+        "Oem": {
+          "Hpe": {
+            "@odata.context": "/redfish/v1/$metadata#HpeMemoryExt.HpeMemoryExt",
+            "@odata.type": "#HpeMemoryExt.v2_5_0.HpeMemoryExt",
+            "Attributes": [
+              "HpeStandardMemory"
+            ],
+            "BaseModuleType": "RDIMM",
+            "DIMMStatus": "GoodInUse",
+            "MaxOperatingSpeedMTs": 3200,
+            "MinimumVoltageVoltsX10": 12,
+            "VendorName": "SK Hynix"
+          }
+        },
+        "OperatingMemoryModes": [
+          "Volatile"
+        ],
+        "OperatingSpeedMhz": 3200,
+        "PartNumber": "P11442-191",
+        "PersistentRegionSizeLimitMiB": 0,
+        "RankCount": 1,
+        "SecurityCapabilities": {},
+        "SerialNumber": "438AED20",
+        "Status": {
+          "Health": "OK",
+          "State": "Enabled"
+        },
+        "VendorID": "44288",
+        "VolatileRegionSizeLimitMiB": 16384,
+        "VolatileSizeMiB": 16384
+      }      
+`
+const testPathPRLT_systems_1_memory_proc1dimm2 = "/redfish/v1/Systems/1/Memory/proc1dimm2"
+
+const testPayloadPRLT_systems_1_memory_proc1dimm2 = `{
+        "@odata.context": "/redfish/v1/$metadata#Memory.Memory",
+        "@odata.etag": "W/\"6165906D\"",
+        "@odata.id": "/redfish/v1/Systems/1/Memory/proc1dimm2",
+        "@odata.type": "#Memory.v1_7_1.Memory",
+        "Id": "proc1dimm2",
+        "BusWidthBits": 72,
+        "CacheSizeMiB": 0,
+        "CapacityMiB": 0,
+        "DataWidthBits": 64,
+        "DeviceLocator": "PROC 1 DIMM 2",
+        "ErrorCorrection": "MultiBitECC",
+        "LogicalSizeMiB": 0,
+        "MemoryLocation": {
+          "Channel": 3,
+          "MemoryController": 3,
+          "Slot": 2,
+          "Socket": 1
+        },
+        "MemoryMedia": [
+          "DRAM"
+        ],
+        "MemoryType": "DRAM",
+        "Name": "proc1dimm2",
+        "NonVolatileSizeMiB": 0,
+        "Oem": {
+          "Hpe": {
+            "@odata.context": "/redfish/v1/$metadata#HpeMemoryExt.HpeMemoryExt",
+            "@odata.type": "#HpeMemoryExt.v2_5_0.HpeMemoryExt",
+            "DIMMStatus": "NotPresent",
+            "MinimumVoltageVoltsX10": 0
+          }
+        },
+        "OperatingMemoryModes": [
+          "Volatile"
+        ],
+        "PersistentRegionSizeLimitMiB": 0,
+        "RankCount": null,
+        "SecurityCapabilities": {},
+        "Status": {
+          "Health": "OK",
+          "State": "Absent"
+        },
+        "VendorID": "0",
+        "VolatileRegionSizeLimitMiB": 0,
+        "VolatileSizeMiB": 0
+      }            
+`
+const testPathPRLT_systems_1_memory_proc1dimm3 = "/redfish/v1/Systems/1/Memory/proc1dimm3"
+
+const testPayloadPRLT_systems_1_memory_proc1dimm3 = `{
+        "@odata.context": "/redfish/v1/$metadata#Memory.Memory",
+        "@odata.etag": "W/\"E6EC3A2C\"",
+        "@odata.id": "/redfish/v1/Systems/1/Memory/proc1dimm3",
+        "@odata.type": "#Memory.v1_7_1.Memory",
+        "Id": "proc1dimm3",
+        "BaseModuleType": "RDIMM",
+        "BusWidthBits": 72,
+        "CacheSizeMiB": 0,
+        "CapacityMiB": 16384,
+        "DataWidthBits": 64,
+        "DeviceLocator": "PROC 1 DIMM 3",
+        "ErrorCorrection": "MultiBitECC",
+        "LogicalSizeMiB": 0,
+        "Manufacturer": "Hynix",
+        "MemoryDeviceType": "DDR4",
+        "MemoryLocation": {
+          "Channel": 4,
+          "MemoryController": 4,
+          "Slot": 3,
+          "Socket": 1
+        },
+        "MemoryMedia": [
+          "DRAM"
+        ],
+        "MemoryType": "DRAM",
+        "Name": "proc1dimm3",
+        "NonVolatileSizeMiB": 0,
+        "Oem": {
+          "Hpe": {
+            "@odata.context": "/redfish/v1/$metadata#HpeMemoryExt.HpeMemoryExt",
+            "@odata.type": "#HpeMemoryExt.v2_5_0.HpeMemoryExt",
+            "Attributes": [
+              "HpeStandardMemory"
+            ],
+            "BaseModuleType": "RDIMM",
+            "DIMMStatus": "GoodInUse",
+            "MaxOperatingSpeedMTs": 3200,
+            "MinimumVoltageVoltsX10": 12,
+            "VendorName": "SK Hynix"
+          }
+        },
+        "OperatingMemoryModes": [
+          "Volatile"
+        ],
+        "OperatingSpeedMhz": 3200,
+        "PartNumber": "P11442-191",
+        "PersistentRegionSizeLimitMiB": 0,
+        "RankCount": 1,
+        "SecurityCapabilities": {},
+        "SerialNumber": "438AED1F",
+        "Status": {
+          "Health": "OK",
+          "State": "Enabled"
+        },
+        "VendorID": "44288",
+        "VolatileRegionSizeLimitMiB": 16384,
+        "VolatileSizeMiB": 16384
+      }                  
+`
+const testPathPRLT_systems_1_memory_proc1dimm4 = "/redfish/v1/Systems/1/Memory/proc1dimm4"
+
+const testPayloadPRLT_systems_1_memory_proc1dimm4 = `{
+        "@odata.context": "/redfish/v1/$metadata#Memory.Memory",
+        "@odata.etag": "W/\"6165906D\"",
+        "@odata.id": "/redfish/v1/Systems/1/Memory/proc1dimm4",
+        "@odata.type": "#Memory.v1_7_1.Memory",
+        "Id": "proc1dimm4",
+        "BusWidthBits": 72,
+        "CacheSizeMiB": 0,
+        "CapacityMiB": 0,
+        "DataWidthBits": 64,
+        "DeviceLocator": "PROC 1 DIMM 4",
+        "ErrorCorrection": "MultiBitECC",
+        "LogicalSizeMiB": 0,
+        "MemoryLocation": {
+          "Channel": 4,
+          "MemoryController": 4,
+          "Slot": 4,
+          "Socket": 1
+        },
+        "MemoryMedia": [
+          "DRAM"
+        ],
+        "MemoryType": "DRAM",
+        "Name": "proc1dimm4",
+        "NonVolatileSizeMiB": 0,
+        "Oem": {
+          "Hpe": {
+            "@odata.context": "/redfish/v1/$metadata#HpeMemoryExt.HpeMemoryExt",
+            "@odata.type": "#HpeMemoryExt.v2_5_0.HpeMemoryExt",
+            "DIMMStatus": "NotPresent",
+            "MinimumVoltageVoltsX10": 0
+          }
+        },
+        "OperatingMemoryModes": [
+          "Volatile"
+        ],
+        "PersistentRegionSizeLimitMiB": 0,
+        "RankCount": null,
+        "SecurityCapabilities": {},
+        "Status": {
+          "Health": "OK",
+          "State": "Absent"
+        },
+        "VendorID": "0",
+        "VolatileRegionSizeLimitMiB": 0,
+        "VolatileSizeMiB": 0
+      }                        
+`
+const testPathPRLT_systems_1_storage = "/redfish/v1/Systems/1/Storage"
+
+const testPayloadPRLT_systems_1_storage = `{
+        "@odata.context": "/redfish/v1/$metadata#StorageCollection.StorageCollection",
+        "@odata.etag": "W/\"75983E8D\"",
+        "@odata.id": "/redfish/v1/Systems/1/Storage",
+        "@odata.type": "#StorageCollection.StorageCollection",
+        "Description": "Storage View",
+        "Name": "Storage",
+        "Members": [],
+        "Members@odata.count": 0
+      }
+`
 
 //////////////////////////////////////////////////////////////////////////////
 //                         GBT - Mock Client

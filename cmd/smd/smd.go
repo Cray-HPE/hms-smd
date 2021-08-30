@@ -1,15 +1,41 @@
-// Copyright 2018-2020 Hewlett Packard Enterprise Development LP
+/*
+ * MIT License
+ *
+ * (C) Copyright [2018-2021] Hewlett Packard Enterprise Development LP
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ */
 
 package main
 
 import (
+	"crypto/tls"
 	"errors"
 	"flag"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/hashicorp/go-retryablehttp"
+	"github.com/sirupsen/logrus"
 	"log"
 	"net/http"
 	"os"
+	"runtime"
 	base "stash.us.cray.com/HMS/hms-base"
 	compcreds "stash.us.cray.com/HMS/hms-compcredentials"
 	msgbus "stash.us.cray.com/HMS/hms-msgbus"
@@ -158,6 +184,8 @@ type SmD struct {
 
 	//router
 	router *mux.Router
+
+	httpClient *retryablehttp.Client
 }
 
 type LogLevel int
@@ -365,22 +393,8 @@ func (s *SmD) HWInvHistCleanup() {
 						s.LogAlways("HWInvHistCleanup(): Expired history lookup failure: %s", err)
 						failed = true
 					}
-					// Clean up HWInv history "Scanned" entries. Keep only the previous day.
-					endTime = time.Now()
-					endTime = endTime.AddDate(0, 0, -1)
-					numScanDeleted, err := s.db.DeleteHWInvHistFilter(
-						hmsds.HWInvHist_EndTime(endTime.Format(time.RFC3339)),
-						hmsds.HWInvHist_EventTypes([]string{sm.HWInvHistEventTypeScanned}),
-					)
-					if err != nil {
-						s.LogAlways("HWInvHistCleanup(): Expired 'Scanned' history lookup failure: %s", err)
-						failed = true
-					}
 					if numDeleted > 0 {
 						s.LogAlways("HWInvHistCleanup(): Deleted %d expired HWInv history events", numDeleted)
-					}
-					if numScanDeleted > 0 {
-						s.LogAlways("HWInvHistCleanup(): Deleted %d expired HWInv history 'Scanned' events", numScanDeleted)
 					}
 					if failed {
 						time.Sleep(10 * time.Second)
@@ -546,6 +560,20 @@ func (s *SmD) DiscoveryUpdater() {
 			time.Sleep(20 * time.Minute)
 		}
 	}()
+}
+
+func (s *SmD) GetHTTPClient() *retryablehttp.Client {
+	if s.httpClient == nil {
+		s.httpClient = retryablehttp.NewClient()
+		s.httpClient.HTTPClient.Transport = &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
+		s.httpClient.RetryMax = 5
+		s.httpClient.HTTPClient.Timeout = time.Second * 40
+		//turn off the http client loggin!
+		tmpLogger := logrus.New()
+		tmpLogger.SetLevel(logrus.PanicLevel)
+		s.httpClient.Logger = tmpLogger
+	}
+	return s.httpClient
 }
 
 // Parse command line options.
@@ -813,14 +841,16 @@ func main() {
 		s.LogAlways("Error: %s\n", err)
 	}
 
+	client := s.GetHTTPClient()
+
 	// Skip SLS if not given a URL.
 	if len(s.slsUrl) != 0 {
-		s.sls = slsapi.NewSLS(s.slsUrl, nil)
+		s.sls = slsapi.NewSLS(s.slsUrl, client)
 	}
 
 	// Skip HBTD if not given a URL.
 	if len(s.hbtdUrl) != 0 {
-		s.hbtd = hbtdapi.NewHBTD(s.hbtdUrl, nil)
+		s.hbtd = hbtdapi.NewHBTD(s.hbtdUrl, client)
 	}
 
 	// Use socks, etc. proxy when interrogating Redfish endpoints
@@ -953,6 +983,7 @@ func main() {
 	routes := s.generateRoutes()
 	router := s.NewRouter(routes)
 
+	s.LogAlways("GOMAXPROCS is: %v", runtime.GOMAXPROCS(0))
 	s.LogAlways("Listening for connections.")
 	err := s.setupCerts(s.tlsCert, s.tlsKey)
 	if err == nil {

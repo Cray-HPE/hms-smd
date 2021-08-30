@@ -5,7 +5,71 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.26.8] - 2020-12-10
+## [1.26.19] - 2021-05-03
+
+### Changed
+- CASMHMS-4811 - Added anti-affinity for HSM to avoid (if possible) scheduling on the same nodes as the Istio gateways.
+
+## [1.26.18] - 2021-04-30
+
+### Changed
+- CASMHMS-4796 - HSM no longer takes out row exclusive locks in postgres.
+- CASMHMS-4796 - Reuses http transport whenever possible.
+- CASMHMS-4796 - Pod resources are increased for both HSM and postgres.
+- CASMHMS-4796 - Readiness probe timeout is increased.
+- CASMHMS-4796 - Set GOMAXPROCS to tune HSM to the CPU resource limits.
+- CASMHMS-4796 - Unset SetConnMaxLifetime() so postgres connections can be reused.
+- CASMHMS-4796 - Set indexs on role/subrole rows in the components table
+
+## [1.26.17] - 2021-04-19
+
+### Changed
+- CASMHMS-4751 - Increased the wait-for-postgres resource limit
+
+## [1.26.16] - 2021-04-16
+
+### Fixed
+- CASMHMS-4719 - Fix HSM postgres slowness during discovery floods on large (2000+ nodes) systems.
+
+### Changed
+- CASMHMS-4719 - Changed FRU tracking to be more simple and avoid long running sql queries.
+
+## [1.26.15] - 2021-04-14
+
+### Fixed
+- CASMHMS-4713 - Fix HTTP response leaks
+
+## [1.26.14] - 2021-03-08
+
+### Changed
+- Added a note in HSM v1 and v2 Swagger about v1 deprecation. 
+
+## [1.26.13] - 2021-02-24
+
+### Changed
+- Update SMD CT RedfishEndpoints test to allow endpoints of type CabinetPDUController.
+
+## [1.26.12] - 2021-02-16
+
+### Changed
+- Update SMD CT hardware inventory test for NVIDIA-A100-SXM4-40GB GPU and arbitrary hardware schemas.
+
+## [1.26.11] - 2021-02-11
+
+### Changed
+- Update SMD CT hardware inventory test for Drives, the latest Processor and Memory schemas, and NodeHsnNic configurations.
+
+## [1.26.10] - 2021-02-08
+
+### Changed
+- added licenses
+
+## [1.26.9] - 2021-01-25
+
+### Changed
+- CASMHMS-4334 - Update to Processor discovery logic.
+
+# [1.26.8] - 2020-12-10
 
 ### Changed
 - CASMHMS-4278 - Update to loftsman/docker-kubectl image to production version.

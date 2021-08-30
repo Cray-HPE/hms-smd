@@ -1,4 +1,26 @@
-// Copyright 2020 Hewlett Packard Enterprise Development LP
+/*
+ * MIT License
+ *
+ * (C) Copyright [2018-2021] Hewlett Packard Enterprise Development LP
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ */
 
 package hbtdapi
 
@@ -7,6 +29,8 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/go-retryablehttp"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -17,7 +41,7 @@ const DefaultHbtdUrl string = "http://cray-hbtd/hmi/v1"
 
 type HBTD struct {
 	Url    *url.URL
-	Client *http.Client
+	Client *retryablehttp.Client
 }
 
 type HBState struct {
@@ -34,7 +58,7 @@ type HBStatusPayload struct {
 }
 
 // Allocate and initialize new HBTD struct.
-func NewHBTD(hbtdUrl string, httpClient *http.Client) *HBTD {
+func NewHBTD(hbtdUrl string, httpClient *retryablehttp.Client) *HBTD {
 	var err error
 	hbtd := new(HBTD)
 	if hbtd.Url, err = url.Parse(hbtdUrl); err != nil {
@@ -48,15 +72,14 @@ func NewHBTD(hbtdUrl string, httpClient *http.Client) *HBTD {
 
 	// Create an httpClient if one was not given
 	if httpClient == nil {
-		transport := &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		}
-		hbtd.Client = &http.Client{
-			Transport: transport,
-			Timeout:   30 * time.Second,
-		}
+		hbtd.Client = retryablehttp.NewClient()
+		hbtd.Client.HTTPClient.Transport = &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
+		hbtd.Client.RetryMax = 5
+		hbtd.Client.HTTPClient.Timeout = time.Second * 40
+		//turn off the http client loggin!
+		tmpLogger := logrus.New()
+		tmpLogger.SetLevel(logrus.PanicLevel)
+		hbtd.Client.Logger = tmpLogger
 	} else {
 		hbtd.Client = httpClient
 	}
@@ -111,8 +134,14 @@ func (hbtd *HBTD) doRequest(req *http.Request) ([]byte, error) {
 		return nil, fmt.Errorf("HBTD struct has no HTTP Client")
 	}
 
+	newRequest, err := retryablehttp.FromRequest(req)
+	if err != nil {
+        return nil, err
+    }
+    newRequest.Header.Set("Content-Type", "application/json")
+
 	// Send the request
-	rsp, err := hbtd.Client.Do(req)
+	rsp, err := hbtd.Client.Do(newRequest)
 	if err != nil {
 		return nil, err
 	}

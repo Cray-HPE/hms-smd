@@ -1,16 +1,36 @@
-// Copyright 2018-2020 Hewlett Packard Enterprise Development LP
+/*
+ * MIT License
+ *
+ * (C) Copyright [2018-2021] Hewlett Packard Enterprise Development LP
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ */
 
 package main
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net/http"
 	base "stash.us.cray.com/HMS/hms-base"
 	"stash.us.cray.com/HMS/hms-smd/pkg/sm"
 	"strings"
@@ -118,15 +138,7 @@ func (j *JobSCN) Run() {
 		return
 	}
 	// j.s.LogAlways("Sending SCN Payload: %v\n", string(payload))
-	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-		},
-	}
-	client := http.Client{
-		Transport: transport,
-		Timeout:   30 * time.Second,
-	}
+	client := j.s.GetHTTPClient()
 
 	// Get a the state that triggered this SCN
 	if len(scn.State) != 0 {
@@ -163,15 +175,20 @@ func (j *JobSCN) Run() {
 		go func(urlStr string) {
 			defer waitGroup.Done()
 			for retry := 0; retry < 3; retry++ {
+				var strbody []byte
 				rsp, err := client.Post(urlStr, "application/json", bytes.NewReader(payload))
 				if err != nil {
 					j.s.LogAlways("WARNING: SCN POST failed for %s: %v", urlStr, err)
-				} else if rsp.StatusCode != 200 {
-					strbody, _ := ioutil.ReadAll(rsp.Body)
-					j.s.LogAlways("WARNING: An error occurred uploading SCN to %s: %s %s", urlStr, rsp.Status, string(strbody))
-					rsp.Body.Close()
 				} else {
-					return
+					if rsp.Body != nil {
+						strbody, _ = ioutil.ReadAll(rsp.Body)
+						rsp.Body.Close()
+					}
+					if rsp.StatusCode != 200 {
+						j.s.LogAlways("WARNING: An error occurred uploading SCN to %s: %s %s", urlStr, rsp.Status, string(strbody))
+					} else {
+						return
+					}
 				}
 				time.Sleep(5 * time.Second)
 			}

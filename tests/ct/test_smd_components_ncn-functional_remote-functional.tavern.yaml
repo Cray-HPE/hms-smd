@@ -1,0 +1,1239 @@
+# MIT License
+
+# (C) Copyright [2019-2021] Hewlett Packard Enterprise Development LP
+
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
+
+# Tavern test cases for the Hardware State Manager (HSM) components API.
+# Author: Mitch Schooler, Isa Wazirzada
+# Service: Hardware State Manager
+
+# HMS test metrics test cases: 50
+# 1. GET /Components?type=Node API response code all Nodes
+# 2. GET /Components?type=Node API response body all Nodes
+# 3. GET /Components API response code
+# 4. GET /Components API response body
+# 5. GET /Components?id={xname} any API response code
+# 6. GET /Components?id={xname} any API response body
+# 7. GET /Components?type=NodeBMC API response code all NodeBMCs
+# 8. GET /Components?type=NodeBMC API response body all NodeBMCs
+# 9. GET /Components?type=NodeBMC API response code
+# 10. GET /Components?type=NodeBMC API response body
+# 11. GET /Components/{xname} nodeBMC API response code
+# 12. GET /Components/{xname} nodeBMC API response body
+# 13. GET /Components?type=Node API response code
+# 14. GET /Components?type=Node API response code
+# 15. GET /Components/{xname} node API response code
+# 16. GET /Components/{xname} node API response body
+# 17. GET /Components/ByNID/{nid} node API response code
+# 18. GET /Components/ByNID/{nid} node API response body
+# 19. GET /Components/{xname} node API response code
+# 20. GET /Components/{xname} node API response body
+# 21. GET /Components?type=Node API response code
+# 22. GET /Components?type=Node API response body
+# 23. GET /Components?type=Node&Flag={flag} API response code
+# 24. GET /Components?type=Node&Flag={flag} API response body
+# 25. GET /Components?type=Node&Arch=X86 API response code
+# 26. GET /Components?type=Node&Arch=X86 API response body
+# 27. GET /Components?type=Node&nid={nid} API response code
+# 28. GET /Components?type=Node&nid={nid} API response body
+# 29. GET /Components?role=Compute API response code
+# 30. GET /Components?role=Compute API response body
+# 31. GET /Components?type=Booster invalid API response code
+# 32. GET /Components?type=Booster invalid API response body
+# 33. GET /Components?state=Ready API response code
+# 34. GET /Components?state=Ready API response body
+# 35. GET /Components?stateonly=True API response code
+# 36. GET /Components?stateonly=True API response body
+# 37. GET /Components?flagonly=True API response code
+# 38. GET /Components?flagonly=True API response body
+# 39. GET /Components?roleonly=True API response code
+# 40. GET /Components?roleonly=True API response body
+# 41. GET /Components?nidonly=True API response code
+# 42. GET /Components?nidonly=True API response body
+# 43. GET /Components?type=Node API response code
+# 44. GET /Components?type=Node API response body
+# 45. GET /Components/Query/{xname} node API response code
+# 46. GET /Components/Query/{xname} node API response body
+# 47. GET /Components?type=NodeBMC API response code
+# 48. GET /Components?type=NodeBMC API response body
+# 49. GET /Components/Query/{xname} nodeBMC API response code
+# 50. GET /Components/Query/{xname} nodeBMC API response body
+---
+test_name: Ensure that we can conduct a query for all Nodes in the Component collection
+
+stages:
+  # 1. GET /Components?type=Node API response code all Nodes
+  # 2. GET /Components?type=Node API response body all Nodes
+  - name: Verify the expected response fields for all Nodes
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components?type=Node"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              Components:
+                type: seq
+                matching: all
+                required: True
+                sequence:
+                  - type: map
+                    required: True
+                    mapping:
+                      ID:
+                        type: str
+                        required: True
+                        pattern: "x[0-9]+c[0-9]+s[0-9]+b[0-9]+n[0-9]+"
+                      Type:
+                        type: str
+                        required: True
+                        enum:
+                          - "Node"
+                      State:
+                        type: str
+                        required: True
+                        enum:
+                          - "Standby"
+                          - "Ready"
+                          - "Halt"
+                          - "On"
+                          - "Off"
+                      Flag:
+                        type: str
+                        required: True
+                        enum:
+                          - "OK"
+                      Enabled:
+                        type: bool
+                        required: True
+                      SoftwareStatus:
+                        type: str
+                        required: False
+                      Role:
+                        type: str
+                        required: True
+                        enum:
+                          - "Compute"
+                          - "Service"
+                          - "System"
+                          - "Application"
+                          - "Storage"
+                          - "Management"
+                      SubRole:
+                        type: str
+                        required: False
+                      NID:
+                        type: int
+                        required: True
+                      NetType:
+                        type: str
+                        required: True
+                      Arch:
+                        type: str
+                        required: True
+                      Class:
+                        type: str
+                        #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                        #required: True
+                        required: False
+                        enum:
+                          - "River"
+                          - "Mountain"
+                          - "Hill"
+
+---
+test_name: Verify the Components collection
+
+stages:
+  # 3. GET /Components API response code
+  # 4. GET /Components API response body
+  - name: Make sure that a list of Components is returned
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      json:
+        Components: !anything
+      save:
+        json:
+          ID: Components[0].ID
+
+  # 5. GET /Components?id={xname} any API response code
+  # 6. GET /Components?id={xname} any API response body
+  - name: Make sure that the Component is returned
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components?id={ID}"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      json:
+        Components: !anything
+      save:
+        json:
+          ID: Components[0].ID
+
+---
+test_name: Ensure that we can conduct a query for all Node BMCs in the Component collection
+
+stages:
+  # 7. GET /Components?type=NodeBMC API response code all NodeBMCs
+  # 8. GET /Components?type=NodeBMC API response body all NodeBMCs
+  - name: Verify the expected response fields for all NodeBMCs
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components?type=NodeBMC"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              Components:
+                type: seq
+                matching: all
+                required: True
+                sequence:
+                  - type: map
+                    required: True
+                    mapping:
+                      ID:
+                        type: str
+                        required: True
+                        pattern: "x[0-9]+c[0-9]+s[0-9]+b[0-9]+"
+                      Type:
+                        type: str
+                        required: True
+                        enum:
+                          - "NodeBMC"
+                      State:
+                        type: str
+                        required: True
+                        enum:
+                          - "Ready"
+                      Flag:
+                        type: str
+                        required: True
+                        enum:
+                          - "OK"
+                      Enabled:
+                        type: bool
+                        required: True
+                      NetType:
+                        type: str
+                        required: True
+                      Arch:
+                        type: str
+                        required: True
+                      Class:
+                        type: str
+                        #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                        #required: True
+                        required: False
+                        enum:
+                          - "River"
+                          - "Mountain"
+                          - "Hill"
+
+---
+test_name: Ensure that we can conduct a query on the Node BMCs in the Component collection
+
+stages:
+  # 9. GET /Components?type=NodeBMC API response code
+  # 10. GET /Components?type=NodeBMC API response body
+  - name: Verify successfully querying for NodeBMCs and get an xname for a particular NodeBMC from the response
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components?type=NodeBMC"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      json:
+        Components: !anything
+      save:
+        json:
+          xname: Components[0].ID
+
+  # 11. GET /Components/{xname} nodeBMC API response code
+  # 12. GET /Components/{xname} nodeBMC API response body
+  - name: Ensure that we can conduct a query on a specific xname in the Component collection by looking for Node BMCs
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components/{xname}"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            mapping:
+              Arch:
+                type: str
+                required: True
+              Class:
+                type: str
+                #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                #required: True
+                required: False
+                enum:
+                  - "River"
+                  - "Mountain"
+                  - "Hill"
+              Enabled:
+                type: bool
+                required: True
+              Flag:
+                type: str
+                required: True
+              ID:
+                type: str
+                required: True
+                enum:
+                  - "{xname}"
+              NetType:
+                type: str
+                required: True
+              State:
+                type: str
+                required: True
+              Type:
+                type: str
+                required: True
+                enum:
+                  - "NodeBMC"
+
+---
+test_name: Ensure that we can conduct a variety of queries on the Components collection
+
+# Turn strict json key checking off since 'SubRole' field may not always be present, such as for compute nodes
+strict:
+  - json:off
+
+stages:
+  # 13. GET /Components?type=Node API response code
+  # 14. GET /Components?type=Node API response code
+  - name: Ensure that we can conduct a query on the Component collection by looking for Compute nodes
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components?type=Node"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      json:
+        Components: !anything
+      save:
+        json:
+          Arch: Components[0].Arch
+          #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+          #Class: Components[0].Class
+          Enabled: Components[0].Enabled
+          Flag: Components[0].Flag
+          xname: Components[0].ID
+          NID: Components[0].NID
+          NetType: Components[0].NetType
+          Role: Components[0].Role
+          State: Components[0].State
+          Type: Components[0].Type
+
+  # 15. GET /Components/{xname} node API response code
+  # 16. GET /Components/{xname} node API response body
+  - name: Ensure that we can conduct a query on a specific compute node xname in the Component collection
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components/{xname}"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      json:
+        Arch: !anything
+        #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+        #Class: "{Class:s}"
+        Enabled: !anybool
+        Flag: !anything
+        ID: "{xname:s}"
+        NID: !int "{NID:d}"
+        NetType: !anything
+        Role: !anything
+        State: !anything
+        Type: !anything
+
+  # 17. GET /Components/ByNID/{nid} node API response code
+  # 18. GET /Components/ByNID/{nid} node API response body
+  - name: Ensure that we can conduct a query on a specific NID in the Components collection
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components/ByNID/{NID}"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              Arch:
+                type: str
+              Class:
+                type: str
+                #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                #required: True
+                required: False
+                enum:
+                  - "River"
+                  - "Mountain"
+                  - "Hill"
+              Enabled:
+                type: bool
+              Flag:
+                type: str
+              ID:
+                type: str
+              NID:
+                type: int
+              NetType:
+                type: str
+              Role:
+                type: str
+              SoftwareStatus:
+                type: str
+                required: False
+              State:
+                type: str
+                enum:
+                  - "Standby"
+                  - "Ready"
+                  - "Halt"
+                  - "On"
+                  - "Off"
+              SubRole:
+                type: str
+                required: False
+              Subtype:
+                type: str
+                required: False
+              Type:
+                type: str
+
+  # 19. GET /Components/{xname} node API response code
+  # 20. GET /Components/{xname} node API response body
+  - name: GET the State for a given xname
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components/{xname}"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              Arch:
+                type: str
+              Class:
+                type: str
+                #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                #required: True
+                required: False
+                enum:
+                  - "River"
+                  - "Mountain"
+                  - "Hill"
+              Enabled:
+                type: bool
+              Flag:
+                type: str
+              ID:
+                type: str
+              NID:
+                type: int
+              NetType:
+                type: str
+              Role:
+                type: str
+              SoftwareStatus:
+                type: str
+                required: False
+              State:
+                type: str
+                enum:
+                  - "Standby"
+                  - "Ready"
+                  - "Halt"
+                  - "On"
+                  - "Off"
+              SubRole:
+                type: str
+                required: False
+              Subtype:
+                type: str
+                required: False
+              Type:
+                type: str
+
+  # 21. GET /Components?type=Node API response code
+  # 22. GET /Components?type=Node API response body
+  - name: Conduct a query using the type parameter to look for hardware of the Node type
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components?type=Node"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              Components:
+                type: seq
+                matching: all
+                sequence:
+                  - type: map
+                    matching: all
+                    mapping:
+                      Arch:
+                        type: str
+                      Class:
+                        type: str
+                        #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                        #required: True
+                        required: False
+                        enum:
+                          - "River"
+                          - "Mountain"
+                          - "Hill"
+                      Enabled:
+                        type: bool
+                      Flag:
+                        type: str
+                      ID:
+                        type: str
+                      NID:
+                        type: int
+                      NetType:
+                        type: str
+                      Role:
+                        type: str
+                      SoftwareStatus:
+                        type: str
+                        required: False
+                      State:
+                        type: str
+                        enum:
+                          - "Standby"
+                          - "Ready"
+                          - "Halt"
+                          - "On"
+                          - "Off"
+                      SubRole:
+                        type: str
+                        required: False
+                      Subtype:
+                        type: str
+                        required: False
+                      Type:
+                        type: str
+                        enum:
+                          - "Node"
+
+  # 23. GET /Components?type=Node&Flag={flag} API response code
+  # 24. GET /Components?type=Node&Flag={flag} API response body
+  - name: Conduct a query using the type & flag parameters to look for hardware of the Node type with a certain Flag
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components?type=Node&Flag={Flag}"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              Components:
+                type: seq
+                matching: all
+                sequence:
+                  - type: map
+                    matching: all
+                    mapping:
+                      Arch:
+                        type: str
+                      Class:
+                        type: str
+                        #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                        #required: True
+                        required: False
+                        enum:
+                          - "River"
+                          - "Mountain"
+                          - "Hill"
+                      Enabled:
+                        type: bool
+                      Flag:
+                        type: str
+                        enum:
+                          - "{Flag}"
+                      ID:
+                        type: str
+                      NID:
+                        type: int
+                      NetType:
+                        type: str
+                      Role:
+                        type: str
+                      SoftwareStatus:
+                        type: str
+                        required: False
+                      State:
+                        type: str
+                        enum:
+                          - "Standby"
+                          - "Ready"
+                          - "Halt"
+                          - "On"
+                          - "Off"
+                      SubRole:
+                        type: str
+                        required: False
+                      Subtype:
+                        type: str
+                        required: False
+                      Type:
+                        type: str
+                        enum:
+                          - "Node"
+
+  # 25. GET /Components?type=Node&Arch=X86 API response code
+  # 26. GET /Components?type=Node&Arch=X86 API response body
+  - name: Conduct a query using the type & flag parameters to look for hardware of the X86 Arch type
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components?type=Node&Arch=X86"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              Components:
+                type: seq
+                matching: all
+                sequence:
+                  - type: map
+                    matching: all
+                    mapping:
+                      Arch:
+                        type: str
+                        enum:
+                          - "X86"
+                      Class:
+                        type: str
+                        #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                        #required: True
+                        required: False
+                        enum:
+                          - "River"
+                          - "Mountain"
+                          - "Hill"
+                      Enabled:
+                        type: bool
+                      Flag:
+                        type: str
+                      ID:
+                        type: str
+                      NID:
+                        type: int
+                      NetType:
+                        type: str
+                      Role:
+                        type: str
+                      SoftwareStatus:
+                        type: str
+                        required: False
+                      State:
+                        type: str
+                        enum:
+                          - "Standby"
+                          - "Ready"
+                          - "Halt"
+                          - "On"
+                          - "Off"
+                      SubRole:
+                        type: str
+                        required: False
+                      Subtype:
+                        type: str
+                        required: False
+                      Type:
+                        type: str
+                        enum:
+                          - "Node"
+
+  # 27. GET /Components?type=Node&nid={nid} API response code
+  # 28. GET /Components?type=Node&nid={nid} API response body
+  - name: Conduct a query using the type & nid query parameters
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components?type=Node&nid={NID}"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              Components:
+                type: seq
+                matching: all
+                sequence:
+                  - type: map
+                    matching: all
+                    mapping:
+                      Arch:
+                        type: str
+                        enum:
+                          - "X86"
+                      Class:
+                        type: str
+                        #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                        #required: True
+                        required: False
+                        enum:
+                          - "River"
+                          - "Mountain"
+                          - "Hill"
+                      Enabled:
+                        type: bool
+                      Flag:
+                        type: str
+                      ID:
+                        type: str
+                      NID:
+                        type: int
+                        enum:
+                          - !int "{NID:d}"
+                      NetType:
+                        type: str
+                      Role:
+                        type: str
+                      SoftwareStatus:
+                        type: str
+                        required: False
+                      State:
+                        type: str
+                        enum:
+                          - "Standby"
+                          - "Ready"
+                          - "Halt"
+                          - "On"
+                          - "Off"
+                      SubRole:
+                        type: str
+                        required: False
+                      Subtype:
+                        type: str
+                        required: False
+                      Type:
+                        type: str
+                        enum:
+                          - "Node"
+
+  # 29. GET /Components?role=Compute API response code
+  # 30. GET /Components?role=Compute API response body
+  - name: Conduct a query using the role query parameter
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components?role=Compute"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              Components:
+                type: seq
+                matching: all
+                sequence:
+                  - type: map
+                    matching: all
+                    mapping:
+                      Arch:
+                        type: str
+                      Class:
+                        type: str
+                        #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                        #required: True
+                        required: False
+                        enum:
+                          - "River"
+                          - "Mountain"
+                          - "Hill"
+                      Enabled:
+                        type: bool
+                      Flag:
+                        type: str
+                      ID:
+                        type: str
+                      NID:
+                        type: int
+                      NetType:
+                        type: str
+                      Role:
+                        type: str
+                        enum:
+                          - "Compute"
+                      SoftwareStatus:
+                        type: str
+                        required: False
+                      State:
+                        type: str
+                        enum:
+                          - "Standby"
+                          - "Ready"
+                          - "Halt"
+                          - "On"
+                          - "Off"
+                      SubRole:
+                        type: str
+                        required: False
+                      Subtype:
+                        type: str
+                        required: False
+                      Type:
+                        type: str
+                        enum:
+                          - "Node"
+
+  # 31. GET /Components?type=Booster invalid API response code
+  # 32. GET /Components?type=Booster invalid API response body
+  - name: Verify failure when conducting a query on the Component collection by looking for a fictitious type of hardware (Booster)
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components?type=Booster"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 400
+      json:
+        detail: "bad query param: Argument was not a valid HMS Type"
+        status: 400
+        title: "Bad Request"
+        type: "about:blank"
+
+  # 33. GET /Components?state=Ready API response code
+  # 34. GET /Components?state=Ready API response body
+  - name: Conduct a query on the Components collection using the State query parameter
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components?state=Ready"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      json:
+        Components: !anything
+      save:
+        json:
+          ID: Components[0].ID
+
+  # 35. GET /Components?stateonly=True API response code
+  # 36. GET /Components?stateonly=True API response body
+  - name: Conduct a query on the Components collection using the StateOnly query parameter
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components?stateonly=True"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            mapping:
+              Components:
+                type: seq
+                required: True
+                sequence:
+                  - type: map
+                    mapping:
+                      Flag:
+                        type: str
+                        required: True
+                      ID:
+                        type: str
+                        required: True
+                      State:
+                        type: str
+                        required: True
+                      Type:
+                        type: str
+                        required: True
+
+  # 37. GET /Components?flagonly=True API response code
+  # 38. GET /Components?flagonly=True API response body
+  - name: Conduct a query on the Components collection using the FlagOnly query parameter
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components?flagonly=True"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            mapping:
+              Components:
+                type: seq
+                required: True
+                sequence:
+                  - type: map
+                    mapping:
+                      Flag:
+                        type: str
+                        required: True
+                      ID:
+                        type: str
+                        required: True
+                      Type:
+                        type: str
+                        required: True
+
+  # 39. GET /Components?roleonly=True API response code
+  # 40. GET /Components?roleonly=True API response body
+  - name: Conduct a query on the Components collection using the RoleOnly query parameter
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components?roleonly=True"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            mapping:
+              Components:
+                type: seq
+                required: True
+                sequence:
+                  - type: map
+                    mapping:
+                      ID:
+                        type: str
+                        required: True
+                      Role:
+                        type: str
+                        required: False
+                      SubRole:
+                        type: str
+                        required: False
+                      Type:
+                        type: str
+                        required: True
+
+  # 41. GET /Components?nidonly=True API response code
+  # 42. GET /Components?nidonly=True API response body
+  - name: Conduct a query on the Components collection using the NidOnly query parameter
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components?nidonly=True"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            mapping:
+              Components:
+                type: seq
+                required: True
+                sequence:
+                  - type: map
+                    mapping:
+                      ID:
+                        type: str
+                        required: True
+                      NID:
+                        type: int
+                        required: False
+                      Type:
+                        type: str
+                        required: True
+
+---
+test_name: Ensure that we can call the Component Query API with node xnames
+
+stages:
+  # 43. GET /Components?type=Node API response code
+  # 44. GET /Components?type=Node API response body
+  - name: Verify successfully querying for Nodes and get an xname for a particular Node from the response
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components?type=Node"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      json:
+        Components: !anything
+      save:
+        json:
+          xname: Components[0].ID
+
+  # 45. GET /Components/Query/{xname} node API response code
+  # 46. GET /Components/Query/{xname} node API response body
+  - name: Ensure that we can conduct a query for a specific Node xname using the Component Query API
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components/Query/{xname}"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            mapping:
+              Components:
+                type: seq
+                required: True
+                sequence:
+                  - type: map
+                    mapping:
+                      Arch:
+                        type: str
+                        required: True
+                      Class:
+                        type: str
+                        #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                        #required: True
+                        required: False
+                        enum:
+                          - "River"
+                          - "Mountain"
+                          - "Hill"
+                      Enabled:
+                        type: bool
+                        required: True
+                      Flag:
+                        type: str
+                        required: True
+                      ID:
+                        type: str
+                        required: True
+                        enum:
+                          - "{xname}"
+                      NID:
+                        type: int
+                        required: True
+                      NetType:
+                        type: str
+                        required: True
+                      Role:
+                        type: str
+                        required: True
+                        enum:
+                          - "Compute"
+                          - "Service"
+                          - "System"
+                          - "Application"
+                          - "Storage"
+                          - "Management"
+                      SoftwareStatus:
+                        type: str
+                        required: False
+                      State:
+                        type: str
+                        required: True
+                      SubRole:
+                        type: str
+                        required: False
+                      Subtype:
+                        type: str
+                        required: False
+                      Type:
+                        type: str
+                        required: True
+                        enum:
+                          - "Node"
+
+---
+test_name: Ensure that we can call the Component Query API with node BMC xnames
+
+stages:
+  # 47. GET /Components?type=NodeBMC API response code
+  # 48. GET /Components?type=NodeBMC API response body
+  - name: Verify successfully querying for NodeBMCs and get an xname for a particular NodeBMC from the response
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components?type=NodeBMC"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      json:
+        Components: !anything
+      save:
+        json:
+          xname: Components[0].ID
+
+  # 49. GET /Components/Query/{xname} nodeBMC API response code
+  # 50. GET /Components/Query/{xname} nodeBMC API response body
+  - name: Ensure that we can conduct a query for a specific NodeBMC xname using the Component Query API
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components/Query/{xname}"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            mapping:
+              Components:
+                type: seq
+                required: True
+                sequence:
+                  - type: map
+                    mapping:
+                      Arch:
+                        type: str
+                        required: True
+                      Class:
+                        type: str
+                        #TODO: workaround CAN NCNs in HSM issue CASMHMS-2913
+                        #required: True
+                        required: False
+                        enum:
+                          - "River"
+                          - "Mountain"
+                          - "Hill"
+                      Enabled:
+                        type: bool
+                        required: True
+                      Flag:
+                        type: str
+                        required: True
+                      ID:
+                        type: str
+                        required: True
+                        enum:
+                          - "{xname}"
+                      NetType:
+                        type: str
+                        required: True
+                      State:
+                        type: str
+                        required: True
+                      Type:
+                        type: str
+                        required: True
+                        enum:
+                          - "NodeBMC"

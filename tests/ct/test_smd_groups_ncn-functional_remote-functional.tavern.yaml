@@ -1,0 +1,830 @@
+# MIT License
+
+# (C) Copyright [2019-2021] Hewlett Packard Enterprise Development LP
+
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
+
+# Tavern test cases for the Hardware State Manager (HSM) groups API.
+# Author: Mitch Schooler
+# Service: Hardware State Manager
+
+# HMS test metrics test cases: 39
+# 1. POST /groups group1 API response code
+# 2. GET /groups/{group1} API response code
+# 3. GET /groups/{group1} API response body
+# 4. GET /groups?group={group1} API response code
+# 5. GET /groups?group={group1} API response body
+# 6. GET /groups?tag={tag1} API response code
+# 7. GET /groups?tag={tag1} API response body
+# 8. GET /groups?tag={tag2} API response code
+# 9. GET /groups?tag={tag2} API response body
+# 10. PATCH /groups/{group1} API response code
+# 11. GET /groups/{group1} updated API response code
+# 12. GET /groups/{group1} updated API response body
+# 13. POST /groups group2 API response code
+# 14. GET /groups/{group2} API response code
+# 15. GET /groups/{group2} API response body
+# 16. GET /groups/labels API response code
+# 17. GET /groups/labels API response body
+# 18. GET /groups/{group1}/members API response code
+# 19. GET /groups/{group1}/members API response body
+# 20. POST /groups/{group1}/members API response code
+# 21. GET /groups/{group1}/members API response code
+# 22. GET /groups/{group1}/members API response body
+# 23. DELETE /groups/{group1}/members/{xname} API response code
+# 24. DELETE /groups/{group1}/members/{xname} API response body
+# 25. GET /groups/{group1}/members updated API response code
+# 26. GET /groups/{group1}/members updated API response body
+# 27. POST /partitions API response code
+# 28. GET /partitions/{partition} API response code
+# 29. GET /partitions/{partition} API response body
+# 30. GET /groups/{group1}?partition={partition} API response code
+# 31. GET /groups/{group1}?partition={partition} API response body
+# 32. GET /groups/{group1}/members?partition={partition} API response code
+# 33. GET /groups/{group1}/members?partition={partition} API response body
+# 34. DELETE /partitions/{partition} API response code
+# 35. DELETE /partitions/{partition} API response body
+# 36. DELETE /groups/{group1} API response code
+# 37. DELETE /groups/{group1} API response body
+# 38. DELETE /groups/{group2} API response code
+# 39. DELETE /groups/{group2} API response body
+---
+test_name: Verify POST, GET, PATCH, and DELETE methods for various /groups APIs
+
+stages:
+  - name: Get four Node xnames from the HSM Components collection to use in upcoming stages
+    request:
+      url: "{base_url}/smd/hsm/v1/State/Components?type=Node"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      save:
+        json:
+          xname1: Components[0].ID
+          xname2: Components[1].ID
+          xname3: Components[2].ID
+          xname4: Components[3].ID
+
+  - name: Delete existing test group1 in HSM (if present) to prevent conflict
+    request:
+      url: "{base_url}/smd/hsm/v1/groups/hsmtestgroup1"
+      method: DELETE
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+
+  # 1. POST /groups group1 API response code
+  - name: Verify /groups POST method group1
+    request:
+      url: "{base_url}/smd/hsm/v1/groups"
+      json: {"label":"hsmtestgroup1","description":"Test group 1 for HSM API testing in CT framework.","tags":["hsmtestgroup1_tag1","hsmtestgroup1_tag2"],"members":{"ids":["{xname1}","{xname2}"]}}
+      method: POST
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 201
+
+  # 2. GET /groups/{group1} API response code
+  # 3. GET /groups/{group1} API response body
+  - name: Verify /groups/{label} GET method
+    request:
+      url: "{base_url}/smd/hsm/v1/groups/hsmtestgroup1"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              label:
+                type: str
+                required: True
+                enum:
+                  - "hsmtestgroup1"
+              description:
+                type: str
+                required: True
+                enum:
+                  - "Test group 1 for HSM API testing in CT framework."
+              tags:
+                type: seq
+                required: True
+                matching: all
+                sequence:
+                  - type: str
+                    required: True
+                    enum:
+                      - "hsmtestgroup1_tag1"
+                      - "hsmtestgroup1_tag2"
+              members:
+                type: map
+                required: True
+                mapping:
+                  ids:
+                    type: seq
+                    required: True
+                    matching: all
+                    sequence:
+                      - type: str
+                        required: True
+                        enum:
+                          - "{xname1}"
+                          - "{xname2}"
+
+  # 4. GET /groups?group={group1} API response code
+  # 5. GET /groups?group={group1} API response body
+  - name: Verify /groups GET method with group parameter
+    request:
+      # this "group" parameter name should change, see CASMHMS-2504
+      url: "{base_url}/smd/hsm/v1/groups?group=hsmtestgroup1"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      save:
+        json:
+          label: "[0].label"
+          description: "[0].description"
+          tag1: "[0].tags[0]"
+          tag2: "[0].tags[1]"
+          member1: "[0].members.ids[0]"
+          member2: "[0].members.ids[1]"
+
+  # 6. GET /groups?tag={tag1} API response code
+  # 7. GET /groups?tag={tag1} API response body
+  - name: Verify /groups GET method with tag parameter (1)
+    request:
+      url: "{base_url}/smd/hsm/v1/groups?tag=hsmtestgroup1_tag1"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      save:
+        json:
+          label: "[0].label"
+          description: "[0].description"
+          tag1: "[0].tags[0]"
+          tag2: "[0].tags[1]"
+          member1: "[0].members.ids[0]"
+          member2: "[0].members.ids[1]"
+
+  # 8. GET /groups?tag={tag2} API response code
+  # 9. GET /groups?tag={tag2} API response body
+  - name: Verify /groups GET method with tag parameter (2)
+    request:
+      url: "{base_url}/smd/hsm/v1/groups?tag=hsmtestgroup1_tag2"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      save:
+        json:
+          label: "[0].label"
+          description: "[0].description"
+          tag1: "[0].tags[0]"
+          tag2: "[0].tags[1]"
+          member1: "[0].members.ids[0]"
+          member2: "[0].members.ids[1]"
+
+  # 10. PATCH /groups/{group1} API response code
+  - name: Verify /groups/{label} PATCH method
+    request:
+      url: "{base_url}/smd/hsm/v1/groups/hsmtestgroup1"
+      json: {"description":"Test group 1 for HSM API testing in CT framework (UPDATED).","tags":["hsmtestgroup1_tag3","hsmtestgroup1_tag4"]}
+      method: PATCH
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 204
+
+  # 11. GET /groups/{group1} updated API response code
+  # 12. GET /groups/{group1} updated API response body
+  - name: Verify /groups/{label} GET method
+    request:
+      url: "{base_url}/smd/hsm/v1/groups/hsmtestgroup1"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              label:
+                type: str
+                required: True
+                enum:
+                  - "hsmtestgroup1"
+              description:
+                type: str
+                required: True
+                enum:
+                  - "Test group 1 for HSM API testing in CT framework (UPDATED)."
+              tags:
+                type: seq
+                required: True
+                matching: all
+                sequence:
+                  - type: str
+                    required: True
+                    enum:
+                      - "hsmtestgroup1_tag3"
+                      - "hsmtestgroup1_tag4"
+              members:
+                type: map
+                required: True
+                mapping:
+                  ids:
+                    type: seq
+                    required: True
+                    matching: all
+                    sequence:
+                      - type: str
+                        required: True
+                        enum:
+                          - "{xname1}"
+                          - "{xname2}"
+
+  - name: Delete existing test group2 in HSM (if present) to prevent conflict
+    request:
+      url: "{base_url}/smd/hsm/v1/groups/hsmtestgroup2"
+      method: DELETE
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+
+  # 13. POST /groups group2 API response code
+  - name: Verify /groups POST method group2
+    request:
+      url: "{base_url}/smd/hsm/v1/groups"
+      json: {"label":"hsmtestgroup2","description":"Test group 2 for HSM API testing in CT framework.","tags":["hsmtestgroup2_tag1","hsmtestgroup2_tag2"],"members":{"ids":["{xname2}","{xname3}"]}}
+      method: POST
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 201
+
+  # 14. GET /groups/{group2} API response code
+  # 15. GET /groups/{group2} API response body
+  - name: Verify /groups/{label} GET method
+    request:
+      url: "{base_url}/smd/hsm/v1/groups/hsmtestgroup2"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              label:
+                type: str
+                required: True
+                enum:
+                  - "hsmtestgroup2"
+              description:
+                type: str
+                required: True
+                enum:
+                  - "Test group 2 for HSM API testing in CT framework."
+              tags:
+                type: seq
+                required: True
+                matching: all
+                sequence:
+                  - type: str
+                    required: True
+                    enum:
+                      - "hsmtestgroup2_tag1"
+                      - "hsmtestgroup2_tag2"
+              members:
+                type: map
+                required: True
+                mapping:
+                  ids:
+                    type: seq
+                    required: True
+                    matching: all
+                    sequence:
+                      - type: str
+                        required: True
+                        enum:
+                          - "{xname2}"
+                          - "{xname3}"
+
+  # 16. GET /groups/labels API response code
+  # 17. GET /groups/labels API response body
+  - name: Verify /groups/labels GET method
+    request:
+      url: "{base_url}/smd/hsm/v1/groups/labels"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: seq
+            required: True
+            matching: all
+            sequence:
+              - type: str
+                enum:
+                  - "hsmtestgroup1"
+                  - "hsmtestgroup2"
+        function: tavern.testutils.helpers:validate_content
+        extra_kwargs:
+          comparisons:
+            - jmespath: "length(@)"
+              operator: "gt"
+              expected: 1
+
+  # 18. GET /groups/{group1}/members API response code
+  # 19. GET /groups/{group1}/members API response body
+  - name: Verify /groups/{label}/members GET method
+    request:
+      url: "{base_url}/smd/hsm/v1/groups/hsmtestgroup1/members"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              ids:
+                type: seq
+                required: True
+                uniq: True
+                matching: all
+                sequence:
+                  - type: str
+                    enum:
+                      - "{xname1}"
+                      - "{xname2}"
+        function: tavern.testutils.helpers:validate_content
+        extra_kwargs:
+          comparisons:
+            - jmespath: "length(values(@)[0])"
+              operator: "eq"
+              expected: 2
+            - jmespath: "contains(values(@)[0], '{xname1}')"
+              operator: "eq"
+              expected: True
+            - jmespath: "contains(values(@)[0], '{xname2}')"
+              operator: "eq"
+              expected: True
+
+  # 20. POST /groups/{group1}/members API response code
+  - name: Verify /groups/{label}/members POST method
+    request:
+      url: "{base_url}/smd/hsm/v1/groups/hsmtestgroup1/members"
+      json: {"id":"{xname4}"}
+      method: POST
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 201
+
+  # 21. GET /groups/{group1}/members API response code
+  # 22. GET /groups/{group1}/members API response body
+  - name: Verify /groups/{label}/members GET method
+    request:
+      url: "{base_url}/smd/hsm/v1/groups/hsmtestgroup1/members"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              ids:
+                type: seq
+                required: True
+                unique: True
+                matching: all
+                sequence:
+                  - type: str
+                    enum:
+                      - "{xname1}"
+                      - "{xname2}"
+                      - "{xname4}"
+        function: tavern.testutils.helpers:validate_content
+        extra_kwargs:
+          comparisons:
+            - jmespath: "length(values(@)[0])"
+              operator: "eq"
+              expected: 3
+            - jmespath: "contains(values(@)[0], '{xname1}')"
+              operator: "eq"
+              expected: True
+            - jmespath: "contains(values(@)[0], '{xname2}')"
+              operator: "eq"
+              expected: True
+            - jmespath: "contains(values(@)[0], '{xname4}')"
+              operator: "eq"
+              expected: True
+
+  # 23. DELETE /groups/{group1}/members/{xname} API response code
+  # 24. DELETE /groups/{group1}/members/{xname} API response body
+  - name: Verify /groups/{label}/members/{xname} DELETE method
+    request:
+      url: "{base_url}/smd/hsm/v1/groups/hsmtestgroup1/members/{xname1}"
+      method: DELETE
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              code:
+                type: int
+                required: True
+                enum:
+                  - 0
+              message:
+                type: str
+                required: True
+                enum:
+                  - "deleted 1 entry"
+
+  # 25. GET /groups/{group1}/members updated API response code
+  # 26. GET /groups/{group1}/members updated API response body
+  - name: Verify /groups/{label}/members GET method
+    request:
+      url: "{base_url}/smd/hsm/v1/groups/hsmtestgroup1/members"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              ids:
+                type: seq
+                required: True
+                unique: True
+                matching: all
+                sequence:
+                  - type: str
+                    enum:
+                      - "{xname2}"
+                      - "{xname4}"
+        function: tavern.testutils.helpers:validate_content
+        extra_kwargs:
+          comparisons:
+            - jmespath: "length(values(@)[0])"
+              operator: "eq"
+              expected: 2
+            - jmespath: "contains(values(@)[0], '{xname1}')"
+              operator: "eq"
+              expected: False
+            - jmespath: "contains(values(@)[0], '{xname2}')"
+              operator: "eq"
+              expected: True
+            - jmespath: "contains(values(@)[0], '{xname4}')"
+              operator: "eq"
+              expected: True
+
+  - name: Delete existing test partition in HSM (if present) to prevent conflict
+    request:
+      url: "{base_url}/smd/hsm/v1/partitions/hsmtestpartition1"
+      method: DELETE
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+
+  # 27. POST /partitions API response code
+  - name: Verify /partitions POST method
+    request:
+      url: "{base_url}/smd/hsm/v1/partitions"
+      json: {"name":"hsmtestpartition1","description":"Test partition 1 for HSM API testing in CT framework.","tags":["hsmtestpartition1_tag1","hsmtestpartition1_tag2"],"members":{"ids":["{xname4}"]}}
+      method: POST
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 201
+
+  # 28. GET /partitions/{partition} API response code
+  # 29. GET /partitions/{partition} API response body
+  - name: Verify /partitions/{partition} GET method
+    request:
+      url: "{base_url}/smd/hsm/v1/partitions/hsmtestpartition1"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              name:
+                type: str
+                required: True
+                enum:
+                  - "hsmtestpartition1"
+              description:
+                type: str
+                required: True
+                enum:
+                  - "Test partition 1 for HSM API testing in CT framework."
+              tags:
+                type: seq
+                required: True
+                matching: all
+                sequence:
+                  - type: str
+                    required: True
+                    enum:
+                      - "hsmtestpartition1_tag1"
+                      - "hsmtestpartition1_tag2"
+              members:
+                type: map
+                required: True
+                mapping:
+                  ids:
+                    type: seq
+                    required: True
+                    matching: all
+                    sequence:
+                      - type: str
+                        required: True
+                        enum:
+                          - "{xname4}"
+        function: tavern.testutils.helpers:validate_content
+        extra_kwargs:
+          comparisons:
+            - jmespath: "length(@.members.ids)"
+              operator: "eq"
+              expected: 1
+            - jmespath: "@.members.ids[0]"
+              operator: "eq"
+              expected: "{xname4}"
+
+  # 30. GET /groups/{group1}?partition={partition} API response code
+  # 31. GET /groups/{group1}?partition={partition} API response body
+  - name: Verify /groups/{label} GET method with partition parameter
+    request:
+      url: "{base_url}/smd/hsm/v1/groups/hsmtestgroup1?partition=hsmtestpartition1"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              label:
+                type: str
+                required: True
+                enum:
+                  - "hsmtestgroup1"
+              description:
+                type: str
+                required: True
+                enum:
+                  - "Test group 1 for HSM API testing in CT framework (UPDATED)."
+              tags:
+                type: seq
+                required: True
+                matching: all
+                sequence:
+                  - type: str
+                    required: True
+                    enum:
+                      - "hsmtestgroup1_tag3"
+                      - "hsmtestgroup1_tag4"
+              members:
+                type: map
+                required: True
+                mapping:
+                  ids:
+                    type: seq
+                    required: True
+                    matching: all
+                    sequence:
+                      - type: str
+                        required: True
+                        enum:
+                          - "{xname4}"
+        function: tavern.testutils.helpers:validate_content
+        extra_kwargs:
+          comparisons:
+            - jmespath: "length(@.members.ids)"
+              operator: "eq"
+              expected: 1
+            - jmespath: "@.members.ids[0]"
+              operator: "eq"
+              expected: "{xname4}"
+
+  # 32. GET /groups/{group1}/members?partition={partition} API response code
+  # 33. GET /groups/{group1}/members?partition={partition} API response body
+  - name: Verify /groups/{label}/members GET method with partition parameter
+    request:
+      url: "{base_url}/smd/hsm/v1/groups/hsmtestgroup1/members?partition=hsmtestpartition1"
+      method: GET
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              ids:
+                type: seq
+                required: True
+                unique: True
+                matching: all
+                sequence:
+                  - type: str
+                    enum:
+                      - "{xname4}"
+        function: tavern.testutils.helpers:validate_content
+        extra_kwargs:
+          comparisons:
+            - jmespath: "length(values(@)[0])"
+              operator: "eq"
+              expected: 1
+            - jmespath: "contains(values(@)[0], '{xname1}')"
+              operator: "eq"
+              expected: False
+            - jmespath: "contains(values(@)[0], '{xname2}')"
+              operator: "eq"
+              expected: False
+            - jmespath: "contains(values(@)[0], '{xname4}')"
+              operator: "eq"
+              expected: True
+
+  # 34. DELETE /partitions/{partition} API response code
+  # 35. DELETE /partitions/{partition} API response body
+  - name: Verify /partitions/{partition} DELETE method
+    request:
+      url: "{base_url}/smd/hsm/v1/partitions/hsmtestpartition1"
+      method: DELETE
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              code:
+                type: int
+                required: True
+                enum:
+                  - 0
+              message:
+                type: str
+                required: True
+                enum:
+                  - "deleted 1 entry"
+
+  # 36. DELETE /groups/{group1} API response code
+  # 37. DELETE /groups/{group1} API response body
+  - name: Verify /groups/{label} DELETE method
+    request:
+      url: "{base_url}/smd/hsm/v1/groups/hsmtestgroup1"
+      method: DELETE
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              code:
+                type: int
+                required: True
+                enum:
+                  - 0
+              message:
+                type: str
+                required: True
+                enum:
+                  - "deleted 1 entry"
+
+  # 38. DELETE /groups/{group2} API response code
+  # 39. DELETE /groups/{group2} API response body
+  - name: Verify /groups/{label} DELETE method
+    request:
+      url: "{base_url}/smd/hsm/v1/groups/hsmtestgroup2"
+      method: DELETE
+      headers:
+        Authorization: "Bearer {access_token}"
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              code:
+                type: int
+                required: True
+                enum:
+                  - 0
+              message:
+                type: str
+                required: True
+                enum:
+                  - "deleted 1 entry"

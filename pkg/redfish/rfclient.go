@@ -1,4 +1,26 @@
-// Copyright 2019,2020 Hewlett Packard Enterprise Development LP
+/*
+ * MIT License
+ *
+ * (C) Copyright [2018-2021] Hewlett Packard Enterprise Development LP
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ */
 
 package rf
 
@@ -7,6 +29,7 @@ import (
 	"stash.us.cray.com/HMS/hms-certs/pkg/hms_certs"
 )
 
+var httpRFClient *hms_certs.HTTPClientPair
 var httpClientTimeout = 30
 //var httpClientProxyURL = ""
 //var httpClientInsecureSkipVerify = true
@@ -56,19 +79,21 @@ func GetHTTPClientInsecureSkipVerify() bool {
 
 // Returns default-configuration HTTP Client
 func RfDefaultClient() *hms_certs.HTTPClientPair {
-	uri := os.Getenv("SMD_CA_URI")
-	epClient,cerr := hms_certs.CreateHTTPClientPair(uri,httpClientTimeout)
-	if (cerr != nil) {
-		errlog.Printf("Can't create TLS cert-enabled HTTP transport, reverting to less secure transport.")
-		epClient,cerr = hms_certs.CreateHTTPClientPair("",httpClientTimeout)
+	var cerr error
+	if httpRFClient == nil {
+		uri := os.Getenv("SMD_CA_URI")
+		httpRFClient, cerr = hms_certs.CreateHTTPClientPair(uri,httpClientTimeout)
 		if (cerr != nil) {
-			errlog.Printf("Can't create any HTTP transport!")
-			epClient = nil
-			return nil
+			errlog.Printf("Can't create TLS cert-enabled HTTP transport, reverting to less secure transport.")
+			httpRFClient, cerr = hms_certs.CreateHTTPClientPair("",httpClientTimeout)
+			if (cerr != nil) {
+				errlog.Printf("Can't create any HTTP transport!")
+				httpRFClient = nil
+				return nil
+			}
 		}
 	}
-
-	return epClient
+	return httpRFClient
 }
 
 /*

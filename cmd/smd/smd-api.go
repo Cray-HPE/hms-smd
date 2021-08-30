@@ -1,4 +1,26 @@
-// Copyright 2018-2020 Hewlett Packard Enterprise Development LP
+/*
+ * MIT License
+ *
+ * (C) Copyright [2018-2021] Hewlett Packard Enterprise Development LP
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ */
 
 package main
 
@@ -1399,7 +1421,7 @@ func (s *SmD) doHWInvByLocationPost(w http.ResponseWriter, r *http.Request) {
 		sendJsonDBError(w, "", "operation 'POST' failed during store.", err)
 		return
 	}
-	s.GenerateHWInvHist(hwlocs, "")
+	s.GenerateHWInvHist(hwlocs, sm.HWInvHistEventTypeDetected)
 
 	numStr := strconv.Itoa(len(hwlocs))
 	sendJsonError(w, http.StatusOK, "Created "+numStr+" entries")
@@ -3428,25 +3450,13 @@ func (s *SmD) doInventoryDiscoverPost(w http.ResponseWriter, r *http.Request) {
 	var id uint = 0
 
 	// TODO: This should be atomic and set the state to pending
-	stat, err := s.db.GetDiscoveryStatusByID(id)
-	if err != nil {
-		sendJsonError(w, http.StatusInternalServerError,
-			"Failed due to DB access issue.")
-		s.lg.Printf("GetDiscoveryStatusByID failed: %s: %s", r.RemoteAddr, err)
-		return
-	}
 	body, err := ioutil.ReadAll(r.Body)
 	err = json.Unmarshal(body, &discIn)
 	if err != nil {
 		sendJsonError(w, http.StatusBadRequest, "POST body was not understood")
 		return
 	}
-	if stat.Status == sm.DiscInProgress && discIn.Force == false {
-		sendJsonError(w, http.StatusConflict,
-			"Discovery with id 0 already in progress.")
-		s.lg.Printf("stat.Status == sm.DiscInProgress and Force == false")
-		return
-	}
+
 	// We got an array of one or more xnames.  If they are valid
 	// RedfishEndpoints, discover just this set.
 	if len(discIn.XNames) > 0 {

@@ -19,6 +19,21 @@ cray-service:
   nameOverride: "cray-smd"
   fullnameOverride: "cray-smd"
   replicaCount: 3
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - istio-ingressgateway
+                  - istio-ingressgateway-hmn
+            topologyKey: "kubernetes.io/hostname"
+            namespaces:
+              - istio-system
   containers:
     cray-smd:
       name: "cray-smd"
@@ -26,10 +41,10 @@ cray-service:
         repository: "cray/cray-smd"
       resources:
         limits:
-          cpu: "4"
+          cpu: "16"
           memory: 4Gi
         requests:
-          cpu: 500m
+          cpu: "4"
           memory: 256Mi
       env:
         # NOTE: overridden if POSTGRES_HOST is set
@@ -81,6 +96,8 @@ cray-service:
               key: CA_URI
         - name: SMD_HBTD_HOST
           value: "http://cray-hbtd/hmi/v1"
+        - name: GOMAXPROCS
+          value: "8"
       ports:
         - name: http
           containerPort: 27779
@@ -96,6 +113,7 @@ cray-service:
           path: /hsm/v1/service/ready
         initialDelaySeconds: 15
         periodSeconds: 30
+        timeoutSeconds: 10
       volumeMounts:
         - name: hms-config-vol
           mountPath: /hms_config/
@@ -121,11 +139,11 @@ cray-service:
     volumeSize: 30Gi
     resources:
       limits:
-        cpu: "16"
-        memory: 8Gi
+        cpu: "32"
+        memory: 32Gi
       requests:
-        cpu: 100m
-        memory: 100Mi
+        cpu: "16"
+        memory: 8Mi
   ingress:
     enabled: true
     prefix: "/apis/smd/"
