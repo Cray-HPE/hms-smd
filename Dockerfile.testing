@@ -20,10 +20,32 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 
-FROM cray/smd-base
 
+### Build Base Stage ###
+FROM arti.dev.cray.com/baseos-docker-master-local/golang:1.16-alpine3.13 AS build-base
+
+RUN set -ex \
+    && apk -U upgrade \
+    && apk add build-base
+
+
+### Base Stage ###
+# Base copies in the files we need to test/build.
+FROM build-base AS base
+
+RUN go env -w GO111MODULE=auto
+
+# Copy all the necessary files to the image.
+COPY cmd $GOPATH/src/github.com/Cray-HPE/hms-smd/cmd
+COPY internal $GOPATH/src/github.com/Cray-HPE/hms-smd/internal
+COPY pkg $GOPATH/src/github.com/Cray-HPE/hms-smd/pkg
+COPY vendor $GOPATH/src/github.com/Cray-HPE/hms-smd/vendor
+
+
+### Final Stage ###
+FROM base
 # Run unit tests...
 RUN set -ex && \
-    go test -v github.com/Cray-HPE/hms-smd/cmd/smd && \
-    go test -v github.com/Cray-HPE/hms-smd/internal/./... && \
-    go test -v github.com/Cray-HPE/hms-smd/pkg/./...
+    go test -cover -v github.com/Cray-HPE/hms-smd/cmd/smd && \
+    go test -cover -v github.com/Cray-HPE/hms-smd/internal/./... && \
+    go test -cover -v github.com/Cray-HPE/hms-smd/pkg/./...
