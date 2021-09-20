@@ -108,7 +108,9 @@ COPY configs /configs
 RUN set -ex \
     && apk -U upgrade \
     && apk add --no-cache \
-        postgresql-client
+        postgresql-client \
+    && mkdir -p /persistent_migrations \
+    && chmod 777 /persistent_migrations
 
 # nobody 65534:65534
 USER 65534:65534
