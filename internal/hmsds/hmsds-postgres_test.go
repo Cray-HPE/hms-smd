@@ -34,9 +34,9 @@ import (
 	"time"
 
 	base "github.com/Cray-HPE/hms-base"
-	rf "github.com/Cray-HPE/hms-smd/pkg/redfish"
-	stest "github.com/Cray-HPE/hms-smd/pkg/sharedtest"
-	"github.com/Cray-HPE/hms-smd/pkg/sm"
+	rf "github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
+	stest "github.com/Cray-HPE/hms-smd/v2/pkg/sharedtest"
+	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	sq "github.com/Masterminds/squirrel"
@@ -540,7 +540,7 @@ func TestPgUpsertComponents(t *testing.T) {
 		compSubTypeCol + " = EXCLUDED." + compSubTypeCol + ", " +
 		compNetTypeCol + " = EXCLUDED." + compNetTypeCol + ", " +
 		compArchCol + " = EXCLUDED." + compArchCol + ", " +
-		compClassCol + " = EXCLUDED." + compClassCol + 
+		compClassCol + " = EXCLUDED." + compClassCol +
 		" RETURNING " + compIdCol
 
 	sqq := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
@@ -582,7 +582,7 @@ func TestPgUpsertComponents(t *testing.T) {
 		expectedPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedArgs:    []driver.Value{"x0c0s0b0n0"},
 		expectedInsert:  regexp.QuoteMeta(insert1),
-		expectedRows:    [][]driver.Value{
+		expectedRows: [][]driver.Value{
 			[]driver.Value{"x0c0s0b0n0"},
 		},
 		expectedInArgs: []driver.Value{
@@ -607,7 +607,7 @@ func TestPgUpsertComponents(t *testing.T) {
 		}},
 		force:     false,
 		dbColumns: []string{"id", "type", "state", "flag", "enabled", "admin", "role", "subrole", "nid", "subtype", "nettype", "arch", "class", "reservation_disabled", "locked"},
-		dbRows:    [][]driver.Value{
+		dbRows: [][]driver.Value{
 			[]driver.Value{"x0c0s0b0n0", "Node", "On", "OK", true, "AdminStatus", "Compute", "", 832, "", "Sling", "X86", "", false, false},
 		},
 		dbError:         nil,
@@ -627,7 +627,7 @@ func TestPgUpsertComponents(t *testing.T) {
 		}},
 		force:     true,
 		dbColumns: []string{"id", "type", "state", "flag", "enabled", "admin", "role", "subrole", "nid", "subtype", "nettype", "arch", "class", "reservation_disabled", "locked"},
-		dbRows:    [][]driver.Value{
+		dbRows: [][]driver.Value{
 			[]driver.Value{"x0c0s0b0n0", "Node", "On", "OK", true, "AdminStatus", "Compute", "", 832, "", "Sling", "X86", "", false, false},
 		},
 		dbError:         nil,
@@ -635,7 +635,7 @@ func TestPgUpsertComponents(t *testing.T) {
 		expectedPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedArgs:    []driver.Value{"x0c0s0b0n0"},
 		expectedInsert:  regexp.QuoteMeta(insert1),
-		expectedRows:    [][]driver.Value{
+		expectedRows: [][]driver.Value{
 			[]driver.Value{"x0c0s0b0n0"},
 		},
 		expectedInArgs: []driver.Value{
@@ -669,7 +669,7 @@ func TestPgUpsertComponents(t *testing.T) {
 		expectedPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1,$2)"),
 		expectedArgs:    []driver.Value{"x0c0s0b0n0", "x0c0s0b0n1"},
 		expectedInsert:  regexp.QuoteMeta(insert2),
-		expectedRows:    [][]driver.Value{
+		expectedRows: [][]driver.Value{
 			[]driver.Value{"x0c0s0b0n0"},
 			[]driver.Value{"x0c0s0b0n1"},
 		},
@@ -732,7 +732,7 @@ func TestPgUpsertComponents(t *testing.T) {
 		expectedPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedArgs:    []driver.Value{"x0c0s0b0n0"},
 		expectedInsert:  regexp.QuoteMeta(insert1),
-		expectedRows:    [][]driver.Value{
+		expectedRows: [][]driver.Value{
 			[]driver.Value{"x0c0s0b0n0"},
 		},
 		expectedInArgs: []driver.Value{
@@ -1552,14 +1552,14 @@ func TestPgBulkUpdateCompClass(t *testing.T) {
 func TestPgBulkUpdateCompNID(t *testing.T) {
 
 	sqq := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	update, _, _ := sqq.Update(compTable + " " + compTableJoinAlias).
-		Set(compNIDCol, sq.Expr(compTableSubAlias + "." + compNIDCol)).
-		Suffix("FROM (VALUES (?,?::BIGINT),(?,?::BIGINT)) AS " + compTableSubAlias +
-		"(" + compIdCol + ", " + compNIDCol +
-		") WHERE " + compTableJoinAlias + "." + compIdCol + " = " + compTableSubAlias + "." + compIdCol,
-		"x0c0s25b0n0", 800, "x0c0s27b0n0", 864).ToSql()
+	update, _, _ := sqq.Update(compTable+" "+compTableJoinAlias).
+		Set(compNIDCol, sq.Expr(compTableSubAlias+"."+compNIDCol)).
+		Suffix("FROM (VALUES (?,?::BIGINT),(?,?::BIGINT)) AS "+compTableSubAlias+
+			"("+compIdCol+", "+compNIDCol+
+			") WHERE "+compTableJoinAlias+"."+compIdCol+" = "+compTableSubAlias+"."+compIdCol,
+			"x0c0s25b0n0", 800, "x0c0s27b0n0", 864).ToSql()
 	tests := []struct {
-		comps                *[]base.Component
+		comps                 *[]base.Component
 		dbUpdateError         error
 		expectedUpdatePrepare string
 		expectedUpdateArgs    []driver.Value
@@ -2161,7 +2161,7 @@ func TestInsertHWInvHists(t *testing.T) {
 	}{{
 		hhs:             []*sm.HWInvHist{&testHWInvHist1, &testHWInvHist2},
 		expectedPrepare: regexp.QuoteMeta(insert1),
-		expectedArgs:    []driver.Value{
+		expectedArgs: []driver.Value{
 			testHWInvHist1.ID, testHWInvHist1.FruId, testHWInvHist1.EventType,
 			testHWInvHist2.ID, testHWInvHist2.FruId, testHWInvHist2.EventType,
 		},
@@ -2174,7 +2174,7 @@ func TestInsertHWInvHists(t *testing.T) {
 	}, {
 		hhs:             []*sm.HWInvHist{&testHWInvHist1, &testHWInvHist2},
 		expectedPrepare: regexp.QuoteMeta(insert1),
-		expectedArgs:    []driver.Value{
+		expectedArgs: []driver.Value{
 			testHWInvHist1.ID, testHWInvHist1.FruId, testHWInvHist1.EventType,
 			testHWInvHist2.ID, testHWInvHist2.FruId, testHWInvHist2.EventType,
 		},
@@ -3030,7 +3030,7 @@ func TestPgUpsertServiceEndpoint(t *testing.T) {
 }
 
 func TestPgUpsertServiceEndpoints(t *testing.T) {
-	upsertSuffix := "ON CONFLICT(" + serviceEPsRFEndpointIDCol + ", "+ serviceEPsRedfishTypeCol + ") DO UPDATE SET " +
+	upsertSuffix := "ON CONFLICT(" + serviceEPsRFEndpointIDCol + ", " + serviceEPsRedfishTypeCol + ") DO UPDATE SET " +
 		serviceEPsRedfishSubtypeCol + " = EXCLUDED." + serviceEPsRedfishSubtypeCol + ", " +
 		serviceEPsUUIDCol + " = EXCLUDED." + serviceEPsUUIDCol + ", " +
 		serviceEPsODataIDCol + " = EXCLUDED." + serviceEPsODataIDCol + ", " +
@@ -3058,7 +3058,7 @@ func TestPgUpsertServiceEndpoints(t *testing.T) {
 		seps:            &stest.TestServiceEndpointArrayUpdates,
 		dbError:         nil,
 		expectedPrepare: regexp.QuoteMeta(insert2),
-		expectedArgs:    []driver.Value{
+		expectedArgs: []driver.Value{
 			stest.TestServiceEndpointArrayUpdates.ServiceEndpoints[0].RfEndpointID,
 			stest.TestServiceEndpointArrayUpdates.ServiceEndpoints[0].RedfishType,
 			stest.TestServiceEndpointArrayUpdates.ServiceEndpoints[0].RedfishSubtype,
@@ -3077,7 +3077,7 @@ func TestPgUpsertServiceEndpoints(t *testing.T) {
 		seps:            &stest.TestServiceEndpointArrayUpdate1,
 		dbError:         nil,
 		expectedPrepare: regexp.QuoteMeta(insert1),
-		expectedArgs:    []driver.Value{
+		expectedArgs: []driver.Value{
 			stest.TestServiceEndpointArrayUpdate1.ServiceEndpoints[0].RfEndpointID,
 			stest.TestServiceEndpointArrayUpdate1.ServiceEndpoints[0].RedfishType,
 			stest.TestServiceEndpointArrayUpdate1.ServiceEndpoints[0].RedfishSubtype,
@@ -3090,7 +3090,7 @@ func TestPgUpsertServiceEndpoints(t *testing.T) {
 		seps:            &stest.TestServiceEndpointArrayUpdate1,
 		dbError:         sql.ErrNoRows,
 		expectedPrepare: regexp.QuoteMeta(insert1),
-		expectedArgs:    []driver.Value{
+		expectedArgs: []driver.Value{
 			stest.TestServiceEndpointArrayUpdate1.ServiceEndpoints[0].RfEndpointID,
 			stest.TestServiceEndpointArrayUpdate1.ServiceEndpoints[0].RedfishType,
 			stest.TestServiceEndpointArrayUpdate1.ServiceEndpoints[0].RedfishSubtype,
@@ -3438,7 +3438,7 @@ func TestInsertCompEthInterfaces(t *testing.T) {
 	}{{ // Test 0 - Insert 2 new rows
 		in:              []*sm.CompEthInterfaceV2{&testCompEth1, &testCompEth2},
 		expectedPrepare: regexp.QuoteMeta(insert1),
-		expectedArgs:    []driver.Value{
+		expectedArgs: []driver.Value{
 			testCompEth1.ID, testCompEth1.Desc, testCompEth1.MACAddr, "NOW()", testCompEth1.CompID, testCompEth1.Type, testCompEth1IPAddrsRaw,
 			"a4bf0138ee67", testCompEth2.Desc, testCompEth2.MACAddr, "NOW()", testCompEth2.CompID, testCompEth2.Type, testCompEth2IPAddrsRaw,
 		},
@@ -3446,7 +3446,7 @@ func TestInsertCompEthInterfaces(t *testing.T) {
 	}, { // Test 1 - Test that database error is passed back
 		in:              []*sm.CompEthInterfaceV2{&testCompEth1, &testCompEth2},
 		expectedPrepare: regexp.QuoteMeta(insert1),
-		expectedArgs:    []driver.Value{
+		expectedArgs: []driver.Value{
 			testCompEth1.ID, testCompEth1.Desc, testCompEth1.MACAddr, "NOW()", testCompEth1.CompID, testCompEth1.Type, testCompEth1IPAddrsRaw,
 			"a4bf0138ee67", testCompEth2.Desc, testCompEth2.MACAddr, "NOW()", testCompEth2.CompID, testCompEth2.Type, testCompEth2IPAddrsRaw,
 		},
@@ -5861,7 +5861,7 @@ func TestPgInsertCompLock(t *testing.T) {
 		expectedGetCompIDsPrepare: regexp.QuoteMeta(dLock1GetCompIDs),
 		expectedGetCompIDsArgs:    []driver.Value{dLock1.Xnames[0]},
 		dbGetCompIDsReturnCols:    []string{"id"},
-		dbGetCompIDsReturnRows:    [][]driver.Value{
+		dbGetCompIDsReturnRows: [][]driver.Value{
 			[]driver.Value{dLock1.Xnames[0]},
 		},
 		dbUpdateFlagError:         nil,
@@ -5871,17 +5871,17 @@ func TestPgInsertCompLock(t *testing.T) {
 		expectedGetCompsPrepare:   regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedGetCompsArgs:      []driver.Value{dLock1.Xnames[0]},
 		dbGetCompsReturnCols:      []string{"id", "type", "state", "flag", "enabled", "admin", "role", "subrole", "nid", "subtype", "nettype", "arch", "class", "reservation_disabled", "locked"},
-		dbGetCompsReturnRows:      [][]driver.Value{
+		dbGetCompsReturnRows: [][]driver.Value{
 			[]driver.Value{dLock1.Xnames[0], "Node", "Ready", "OK", true, "", "Compute", "", 42, "", "Sling", "X86", "Mountain", false, false},
 		},
 		dbInsertResError:         nil,
 		expectedInsertResPrepare: regexp.QuoteMeta(resInsertReservation),
 		expectedInsertResArgs:    []driver.Value{dLock1.Xnames[0], AnyTime{}, AnyTime{}, AnyUUID{}, AnyUUID{}, AnyString{}},
 		dbInsertResReturnCols:    []string{"component_id", "deputy_key", "reservation_key"},
-		dbInsertResReturnRows:    [][]driver.Value{
+		dbInsertResReturnRows: [][]driver.Value{
 			[]driver.Value{dLock1.Xnames[0], resInsert.deputy_key, resInsert.reservation_key},
 		},
-		expectErr:                false,
+		expectErr: false,
 	}, {
 		cl:                        dLock1,
 		dbInsertCLError:           nil,
@@ -5894,7 +5894,7 @@ func TestPgInsertCompLock(t *testing.T) {
 		expectedGetCompIDsPrepare: regexp.QuoteMeta(dLock1GetCompIDs),
 		expectedGetCompIDsArgs:    []driver.Value{dLock1.Xnames[0]},
 		dbGetCompIDsReturnCols:    []string{"id"},
-		dbGetCompIDsReturnRows:    [][]driver.Value{
+		dbGetCompIDsReturnRows: [][]driver.Value{
 			[]driver.Value{dLock1.Xnames[0]},
 		},
 		dbUpdateFlagError:         ErrHMSDSArgBadID,
@@ -6796,7 +6796,7 @@ func TestPgInsertCompReservations(t *testing.T) {
 		expectedGetCompIDsPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedGetCompIDsArgs:    []driver.Value{"x3000c0s9b0n0"},
 		dbGetCompIDsReturnCols:    []string{"id", "type", "state", "flag", "enabled", "admin", "role", "subrole", "nid", "subtype", "nettype", "arch", "class", "reservation_disabled", "locked"},
-		dbGetCompIDsReturnRows:    [][]driver.Value{
+		dbGetCompIDsReturnRows: [][]driver.Value{
 			[]driver.Value{"x3000c0s9b0n0", "Node", "Ready", "OK", true, "", "Compute", "", 42, "", "Sling", "X86", "Mountain", false, false},
 		},
 		dbInsertError:           nil,
@@ -6806,9 +6806,9 @@ func TestPgInsertCompReservations(t *testing.T) {
 		dbInsertV2ResReturnRows: [][]driver.Value{
 			[]driver.Value{"x3000c0s9b0n0", "x3000c0s9b0n0:dk:de1a20c2-efc9-41ad-b839-1e3cef197d17", "x3000c0s9b0n0:rk:cbff2077-952f-4536-a102-c442227fdc5d"},
 		},
-		expectedSuccess:       1,
-		expectedFailure:       0,
-		expectErr:             false,
+		expectedSuccess: 1,
+		expectedFailure: 0,
+		expectErr:       false,
 	}, {
 		f: sm.CompLockV2Filter{
 			ID:                  []string{"x3000c0s9b0n0"},
@@ -6819,7 +6819,7 @@ func TestPgInsertCompReservations(t *testing.T) {
 		expectedGetCompIDsPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedGetCompIDsArgs:    []driver.Value{"x3000c0s9b0n0"},
 		dbGetCompIDsReturnCols:    []string{"id", "type", "state", "flag", "enabled", "admin", "role", "subrole", "nid", "subtype", "nettype", "arch", "class", "reservation_disabled", "locked"},
-		dbGetCompIDsReturnRows:    [][]driver.Value{
+		dbGetCompIDsReturnRows: [][]driver.Value{
 			[]driver.Value{"x3000c0s9b0n0", "Node", "Ready", "OK", true, "", "Compute", "", 42, "", "Sling", "X86", "Mountain", false, true},
 		},
 		dbInsertError:           nil,
@@ -6839,7 +6839,7 @@ func TestPgInsertCompReservations(t *testing.T) {
 		expectedGetCompIDsPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedGetCompIDsArgs:    []driver.Value{"x3000c0s9b0n0"},
 		dbGetCompIDsReturnCols:    []string{"id", "type", "state", "flag", "enabled", "admin", "role", "subrole", "nid", "subtype", "nettype", "arch", "class", "reservation_disabled", "locked"},
-		dbGetCompIDsReturnRows:    [][]driver.Value{
+		dbGetCompIDsReturnRows: [][]driver.Value{
 			[]driver.Value{"x3000c0s9b0n0", "Node", "Ready", "OK", true, "", "Compute", "", 42, "", "Sling", "X86", "Mountain", false, false},
 		},
 		dbInsertError:           nil,
@@ -6859,7 +6859,7 @@ func TestPgInsertCompReservations(t *testing.T) {
 		expectedGetCompIDsPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedGetCompIDsArgs:    []driver.Value{"x3000c0s9b0n0"},
 		dbGetCompIDsReturnCols:    []string{"id", "type", "state", "flag", "enabled", "admin", "role", "subrole", "nid", "subtype", "nettype", "arch", "class", "reservation_disabled", "locked"},
-		dbGetCompIDsReturnRows:    [][]driver.Value{
+		dbGetCompIDsReturnRows: [][]driver.Value{
 			[]driver.Value{"x3000c0s9b0n0", "Node", "Ready", "OK", true, "", "Compute", "", 42, "", "Sling", "X86", "Mountain", true, false},
 		},
 		dbInsertError:           nil,
@@ -6973,14 +6973,14 @@ func TestPgDeleteCompReservationsForce(t *testing.T) {
 		expectedGetCompIDsPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedGetCompIDsArgs:    []driver.Value{"x3000c0s9b0n0"},
 		dbGetCompIDsReturnCols:    []string{"id", "type", "state", "flag", "enabled", "admin", "role", "subrole", "nid", "subtype", "nettype", "arch", "class", "reservation_disabled", "locked"},
-		dbGetCompIDsReturnRows:    [][]driver.Value{
+		dbGetCompIDsReturnRows: [][]driver.Value{
 			[]driver.Value{"x3000c0s9b0n0", "Node", "Ready", "OK", true, "", "Compute", "", 42, "", "Sling", "X86", "Mountain", false, false},
 		},
 		dbDeleteError:         nil,
 		expectedDeletePrepare: regexp.QuoteMeta(resDeleteReservation),
 		expectedDeleteArgs:    []driver.Value{"x3000c0s9b0n0"},
 		dbDeleteReturnCols:    []string{"component_id", "v1_lock_id"},
-		dbDeleteReturnRows:    [][]driver.Value{
+		dbDeleteReturnRows: [][]driver.Value{
 			[]driver.Value{"x3000c0s9b0n0", nil},
 		},
 		expectedSuccess: 1,
@@ -6995,7 +6995,7 @@ func TestPgDeleteCompReservationsForce(t *testing.T) {
 		expectedGetCompIDsPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedGetCompIDsArgs:    []driver.Value{"x3000c0s9b0n0"},
 		dbGetCompIDsReturnCols:    []string{"id", "type", "state", "flag", "enabled", "admin", "role", "subrole", "nid", "subtype", "nettype", "arch", "class", "reservation_disabled", "locked"},
-		dbGetCompIDsReturnRows:    [][]driver.Value{
+		dbGetCompIDsReturnRows: [][]driver.Value{
 			[]driver.Value{"x3000c0s9b0n0", "Node", "Ready", "OK", true, "", "Compute", "", 42, "", "Sling", "X86", "Mountain", false, false},
 		},
 		dbDeleteError:         nil,
@@ -7111,7 +7111,7 @@ func TestPgDeleteCompReservations(t *testing.T) {
 		expectedDeletePrepare: regexp.QuoteMeta(resDeleteReservation),
 		expectedDeleteArgs:    []driver.Value{"x3000c0s9b0n0:rk:cbff2077-952f-4536-a102-c442227fdc5d"},
 		dbDeleteReturnCols:    []string{"component_id", "v1_lock_id"},
-		dbDeleteReturnRows:    [][]driver.Value{
+		dbDeleteReturnRows: [][]driver.Value{
 			[]driver.Value{"x3000c0s9b0n0", nil},
 		},
 		dbDeleteReturnv1ID: false,
@@ -7132,7 +7132,7 @@ func TestPgDeleteCompReservations(t *testing.T) {
 		expectedDeletePrepare: regexp.QuoteMeta(resDeleteReservation),
 		expectedDeleteArgs:    []driver.Value{"x3000c0s9b0n0:rk:cbff2077-952f-4536-a102-c442227fdc5d"},
 		dbDeleteReturnCols:    []string{"component_id", "v1_lock_id"},
-		dbDeleteReturnRows:    [][]driver.Value{
+		dbDeleteReturnRows: [][]driver.Value{
 			[]driver.Value{"x3000c0s9b0n0", res.v1_lock_id.String},
 		},
 		dbDeleteReturnv1ID: true,
@@ -7258,7 +7258,7 @@ func TestPgDeleteCompReservationsExpired(t *testing.T) {
 		dbDeleteError:         nil,
 		expectedDeletePrepare: regexp.QuoteMeta(resDeleteReservation),
 		dbDeleteReturnCols:    []string{"component_id", "v1_lock_id"},
-		dbDeleteReturnRows:    [][]driver.Value{
+		dbDeleteReturnRows: [][]driver.Value{
 			[]driver.Value{"x3000c0s9b0n0", nil},
 		},
 		dbDeleteReturnv1ID: false,
@@ -7268,7 +7268,7 @@ func TestPgDeleteCompReservationsExpired(t *testing.T) {
 		dbDeleteError:         nil,
 		expectedDeletePrepare: regexp.QuoteMeta(resDeleteReservation),
 		dbDeleteReturnCols:    []string{"component_id", "v1_lock_id"},
-		dbDeleteReturnRows:    [][]driver.Value{
+		dbDeleteReturnRows: [][]driver.Value{
 			[]driver.Value{"x3000c0s9b0n0", res.v1_lock_id.String},
 		},
 		dbDeleteReturnv1ID: true,

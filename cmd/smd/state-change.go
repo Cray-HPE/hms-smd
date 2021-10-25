@@ -25,9 +25,9 @@ package main
 import (
 	"encoding/json"
 	base "github.com/Cray-HPE/hms-base"
-	"github.com/Cray-HPE/hms-smd/internal/hmsds"
-	"github.com/Cray-HPE/hms-smd/pkg/redfish"
-	"github.com/Cray-HPE/hms-smd/pkg/sm"
+	"github.com/Cray-HPE/hms-smd/v2/internal/hmsds"
+	"github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
+	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
 	"strconv"
 	"strings"
 	"time"

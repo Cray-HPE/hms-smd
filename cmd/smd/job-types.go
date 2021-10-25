@@ -36,7 +36,7 @@ import (
 	"time"
 
 	base "github.com/Cray-HPE/hms-base"
-	"github.com/Cray-HPE/hms-smd/pkg/sm"
+	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
 )
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -178,14 +178,14 @@ func (j *JobSCN) Run() {
 			for retry := 0; retry < 3; retry++ {
 				var strbody []byte
 				req, rerr := http.NewRequest("POST", urlStr, bytes.NewReader(payload))
-				if (err != nil) {
+				if err != nil {
 					j.s.LogAlways("WARNING: can't create an HTTP request: %v",
 						rerr)
 					time.Sleep(5 * time.Second)
 					continue
 				}
 				base.SetHTTPUserAgent(req, serviceName)
-				req.Header.Add("Content-Type","application/json")
+				req.Header.Add("Content-Type", "application/json")
 				newRequest, rerr := retryablehttp.FromRequest(req)
 				if err != nil {
 					j.s.LogAlways("WARNING: can't create an HTTP request: %v",

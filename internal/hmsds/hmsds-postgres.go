@@ -35,8 +35,8 @@ import (
 	"time"
 
 	base "github.com/Cray-HPE/hms-base"
-	rf "github.com/Cray-HPE/hms-smd/pkg/redfish"
-	"github.com/Cray-HPE/hms-smd/pkg/sm"
+	rf "github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
+	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/lib/pq"
@@ -4848,9 +4848,9 @@ func (d *hmsdbPg) GetCompLocksV2(f sm.CompLockV2Filter) ([]sm.CompLockV2, error)
 // best try.
 func (d *hmsdbPg) UpdateCompLocksV2(f sm.CompLockV2Filter, action string) (sm.CompLockV2UpdateResult, error) {
 	var (
-		result          sm.CompLockV2UpdateResult
-		affectedIds     []string
-		lockKeys        []sm.CompLockV2Key
+		result      sm.CompLockV2UpdateResult
+		affectedIds []string
+		lockKeys    []sm.CompLockV2Key
 	)
 	result.Success.ComponentIDs = make([]string, 0, 1)
 	result.Failure = make([]sm.CompLockV2Failure, 0, 1)

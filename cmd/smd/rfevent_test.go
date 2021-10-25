@@ -24,15 +24,15 @@ package main
 
 import (
 	"encoding/json"
+	compcreds "github.com/Cray-HPE/hms-compcredentials"
+	sstorage "github.com/Cray-HPE/hms-securestorage"
+	"github.com/Cray-HPE/hms-smd/v2/internal/hmsds"
+	rf "github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
+	st "github.com/Cray-HPE/hms-smd/v2/pkg/sharedtest"
+	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	compcreds "github.com/Cray-HPE/hms-compcredentials"
-	sstorage "github.com/Cray-HPE/hms-securestorage"
-	"github.com/Cray-HPE/hms-smd/internal/hmsds"
-	rf "github.com/Cray-HPE/hms-smd/pkg/redfish"
-	st "github.com/Cray-HPE/hms-smd/pkg/sharedtest"
-	"github.com/Cray-HPE/hms-smd/pkg/sm"
 	"testing"
 )
 
@@ -1200,7 +1200,6 @@ const testPayloadGigabyteSystems_SelfOff = `
 }
 `
 
-
 //////////////////////////////////////////////////////////////////////////////
 //                         HPE iLO - Payloads
 //////////////////////////////////////////////////////////////////////////////
@@ -1235,12 +1234,12 @@ var HPEiLOCompEPs = []*sm.ComponentEndpoint{
 			},
 			EthNICInfo: []*rf.EthernetNICInfo{
 				&rf.EthernetNICInfo{RedfishId: "1",
-					Oid:         "/redfish/v1/Systems/1/EthernetInterfaces/1",
-					MACAddress:  "68:05:ca:bb:c1:82",
+					Oid:        "/redfish/v1/Systems/1/EthernetInterfaces/1",
+					MACAddress: "68:05:ca:bb:c1:82",
 				},
 				&rf.EthernetNICInfo{RedfishId: "2",
-					Oid:         "/redfish/v1/Systems/1/EthernetInterfaces/2",
-					MACAddress:  "68:05:ca:bb:c1:83",
+					Oid:        "/redfish/v1/Systems/1/EthernetInterfaces/2",
+					MACAddress: "68:05:ca:bb:c1:83",
 				},
 			},
 		},
@@ -1273,12 +1272,12 @@ var HPEiLOCompEPs = []*sm.ComponentEndpoint{
 			},
 			EthNICInfo: []*rf.EthernetNICInfo{
 				&rf.EthernetNICInfo{RedfishId: "1",
-					Oid:         "/redfish/v1/Systems/1/EthernetInterfaces/1",
-					MACAddress:  "68:05:ca:bb:c1:82",
+					Oid:        "/redfish/v1/Systems/1/EthernetInterfaces/1",
+					MACAddress: "68:05:ca:bb:c1:82",
 				},
 				&rf.EthernetNICInfo{RedfishId: "2",
-					Oid:         "/redfish/v1/Systems/1/EthernetInterfaces/2",
-					MACAddress:  "68:05:ca:bb:c1:83",
+					Oid:        "/redfish/v1/Systems/1/EthernetInterfaces/2",
+					MACAddress: "68:05:ca:bb:c1:83",
 				},
 			},
 		},

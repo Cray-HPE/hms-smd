@@ -33,7 +33,7 @@ import (
 	"time"
 
 	base "github.com/Cray-HPE/hms-base"
-	"github.com/Cray-HPE/hms-smd/pkg/sm"
+	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
@@ -795,7 +795,7 @@ func (t *hmsdbPgTx) InsertComponentsTx(comps []*base.Component) ([]string, error
 		compSubTypeCol + " = EXCLUDED." + compSubTypeCol + ", " +
 		compNetTypeCol + " = EXCLUDED." + compNetTypeCol + ", " +
 		compArchCol + " = EXCLUDED." + compArchCol + ", " +
-		compClassCol + " = EXCLUDED." + compClassCol + 
+		compClassCol + " = EXCLUDED." + compClassCol +
 		" RETURNING " + compIdCol)
 
 	query = query.PlaceholderFormat(sq.Dollar)
@@ -1398,7 +1398,7 @@ func (t *hmsdbPgTx) BulkUpdateCompNIDTx(comps []base.Component) error {
 	nidFromCol := compTableSubAlias + "." + compNIDCol
 	// Generate query
 	// Make the column name a sq.Sqlizer so sq will set it as a column name and not a value.
-	query := sq.Update(compTable + " " + compTableJoinAlias).
+	query := sq.Update(compTable+" "+compTableJoinAlias).
 		Set(compNIDCol, sq.Expr(nidFromCol))
 
 	// sq doesn't have a way to add a FROM statement to an UPDATE.
@@ -2083,7 +2083,7 @@ func (t *hmsdbPgTx) BulkInsertHWInvByLocTx(hls []*sm.HWInvByLoc) error {
 	// Generate query
 	query := sq.Insert(hwInvLocTable).
 		Columns(hwInvLocCols...)
-	
+
 	for _, hl := range hls {
 		// Normalize key
 		normID := base.NormalizeHMSCompID(hl.ID)
@@ -2203,7 +2203,7 @@ func (t *hmsdbPgTx) BulkInsertHWInvByFRUTx(hfs []*sm.HWInvByFRU) error {
 	// Generate query
 	query := sq.Insert(hwInvFruTable).
 		Columns(hwInvFruTblCols...)
-	
+
 	for _, hf := range hfs {
 		// Take out duplicates so that we don't get errors for modifying a row multiple times.
 		if _, ok := valueMap[hf.FRUID]; ok {
@@ -2495,7 +2495,7 @@ func (t *hmsdbPgTx) GetHWInvHistLastEventsTx(ids []string) ([]*sm.HWInvHist, err
 	if len(ids) > 0 {
 		query = query.Where(sq.Eq{hwInvHistIdColAlias: ids})
 	}
-	
+
 	query = query.OrderBy("" + hwInvHistIdColAlias + ", " + hwInvHistTimestampColAlias + " DESC")
 
 	// Execute
@@ -2792,7 +2792,7 @@ func (t *hmsdbPgTx) InsertRFEndpointsTx(eps []*sm.RedfishEndpoint) error {
 	// Generate query
 	query := sq.Insert(rfEPsTable).
 		Columns(rfEPsAllCols...)
-	
+
 	for _, ep := range eps {
 		// Ensure endpoint name is normalized and valid
 		normID := base.VerifyNormalizeCompID(ep.ID)
@@ -2922,7 +2922,7 @@ func (t *hmsdbPgTx) UpdateRFEndpointsTx(eps []*sm.RedfishEndpoint) ([]*sm.Redfis
 
 	// Generate query
 	// Make the column name a sq.Sqlizer so sq will set it as a column name and not a value.
-	query := sq.Update(rfEPsTable + " r").
+	query := sq.Update(rfEPsTable+" r").
 		Set(rfEPsTypeCol, sq.Expr(rfEPsTypeColAlias)).
 		Set(rfEPsNameCol, sq.Expr(rfEPsNameColAlias)).
 		Set(rfEPsHostnameCol, sq.Expr(rfEPsHostnameColAlias)).
@@ -3385,7 +3385,7 @@ func (t *hmsdbPgTx) UpsertCompEndpointsTx(ceps *sm.ComponentEndpointArray) error
 	// Generate query
 	query := sq.Insert(compEPsTable).
 		Columns(compEPsAllCols...)
-	
+
 	for _, cep := range ceps.ComponentEndpoints {
 		// Ensure endpoint name is normalized and valid
 		normID := base.VerifyNormalizeCompID(cep.ID)
@@ -3441,7 +3441,6 @@ func (t *hmsdbPgTx) UpsertCompEndpointsTx(ceps *sm.ComponentEndpointArray) error
 	t.Log(LOG_INFO, "Info: UpsertCompEndpointsTx() - %s", res)
 	return nil
 }
-
 
 // Delete ComponentEndpoint with matching xname id from database, if it
 // exists (in transaction)
@@ -3717,7 +3716,7 @@ func (t *hmsdbPgTx) UpsertServiceEndpointsTx(seps *sm.ServiceEndpointArray) erro
 	// Generate query
 	query := sq.Insert(serviceEPsTable).
 		Columns(serviceEPsCols...)
-	
+
 	for _, sep := range seps.ServiceEndpoints {
 		if sep == nil {
 			t.LogAlways("Error: UpsertServiceEndpointsTx(): Service Endpoint was nil.")
@@ -3741,7 +3740,7 @@ func (t *hmsdbPgTx) UpsertServiceEndpointsTx(seps *sm.ServiceEndpointArray) erro
 			sep.OdataID,
 			sep.ServiceInfo)
 	}
-	query = query.Suffix("ON CONFLICT(" + serviceEPsRFEndpointIDCol + ", "+ serviceEPsRedfishTypeCol + ") DO UPDATE SET " +
+	query = query.Suffix("ON CONFLICT(" + serviceEPsRFEndpointIDCol + ", " + serviceEPsRedfishTypeCol + ") DO UPDATE SET " +
 		serviceEPsRedfishSubtypeCol + " = EXCLUDED." + serviceEPsRedfishSubtypeCol + ", " +
 		serviceEPsUUIDCol + " = EXCLUDED." + serviceEPsUUIDCol + ", " +
 		serviceEPsODataIDCol + " = EXCLUDED." + serviceEPsODataIDCol + ", " +
@@ -3931,7 +3930,7 @@ func (t *hmsdbPgTx) InsertCompEthInterfacesTx(ceis []*sm.CompEthInterfaceV2) err
 	// Generate query
 	query := sq.Insert(compEthTable).
 		Columns(compEthCols...)
-	
+
 	for _, cei := range ceis {
 		cei.MACAddr = strings.ToLower(cei.MACAddr)
 		cei.ID = strings.ReplaceAll(cei.MACAddr, ":", "")
@@ -4049,7 +4048,7 @@ func (t *hmsdbPgTx) InsertCompEthInterfacesCompInfoTx(ceis []*sm.CompEthInterfac
 	// Generate query
 	query := sq.Insert(compEthTable).
 		Columns(compEthCols...)
-	
+
 	for _, cei := range ceis {
 		cei.MACAddr = strings.ToLower(cei.MACAddr)
 		cei.ID = strings.ReplaceAll(cei.MACAddr, ":", "")

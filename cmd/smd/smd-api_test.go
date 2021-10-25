@@ -38,9 +38,9 @@ import (
 	base "github.com/Cray-HPE/hms-base"
 	compcreds "github.com/Cray-HPE/hms-compcredentials"
 	sstorage "github.com/Cray-HPE/hms-securestorage"
-	"github.com/Cray-HPE/hms-smd/internal/hmsds"
-	stest "github.com/Cray-HPE/hms-smd/pkg/sharedtest"
-	"github.com/Cray-HPE/hms-smd/pkg/sm"
+	"github.com/Cray-HPE/hms-smd/v2/internal/hmsds"
+	stest "github.com/Cray-HPE/hms-smd/v2/pkg/sharedtest"
+	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
 
 	"github.com/gorilla/mux"
 )

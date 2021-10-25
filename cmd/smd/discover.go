@@ -30,8 +30,8 @@ import (
 
 	base "github.com/Cray-HPE/hms-base"
 	compcreds "github.com/Cray-HPE/hms-compcredentials"
-	rf "github.com/Cray-HPE/hms-smd/pkg/redfish"
-	"github.com/Cray-HPE/hms-smd/pkg/sm"
+	rf "github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
+	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
 )
 
 // When we discover a Redfish Endpoint, the data retrieved is processed
@@ -711,7 +711,7 @@ func (s *SmD) DiscoverHWInvByLocArray(rfEP *rf.RedfishEP) ([]*sm.HWInvByLoc, err
 			}
 			hwlocs = append(hwlocs, hwloc)
 		}
-		
+
 		for _, procEP := range sysEP.Processors.OIDs {
 			hwloc, err := s.DiscoverHWInvByLocProcessor(procEP)
 			if err != nil {
@@ -1437,10 +1437,10 @@ func (s *SmD) DiscoverHWInvByFRUHpeDevice(hpeDeviceEP *rf.EpHpeDevice) (*sm.HWIn
 
 	if hpeDeviceEP.Type == base.NodeAccel.String() {
 		accelInfo := rf.ProcessorFRUInfoRF{
-			Manufacturer: hpeDeviceEP.DeviceRF.Manufacturer,
-			Model: hpeDeviceEP.DeviceRF.Model,
-			SerialNumber: hpeDeviceEP.DeviceRF.SerialNumber,
-			PartNumber: hpeDeviceEP.DeviceRF.PartNumber,
+			Manufacturer:  hpeDeviceEP.DeviceRF.Manufacturer,
+			Model:         hpeDeviceEP.DeviceRF.Model,
+			SerialNumber:  hpeDeviceEP.DeviceRF.SerialNumber,
+			PartNumber:    hpeDeviceEP.DeviceRF.PartNumber,
 			ProcessorType: hpeDeviceEP.DeviceRF.DeviceType,
 		}
 		hwfru.HMSNodeAccelFRUInfo = &accelInfo
@@ -1481,7 +1481,6 @@ func (s *SmD) DiscoverHWInvByFRUProcessor(procEP *rf.EpProcessor) (*sm.HWInvByFR
 		hwfru.HMSProcessorFRUInfo = &procEP.ProcessorRF.ProcessorFRUInfoRF
 		hwfru.HWInventoryByFRUType = sm.HWInvByFRUProcessor
 	}
-
 
 	return hwfru, nil
 }
