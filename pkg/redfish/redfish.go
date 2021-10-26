@@ -65,6 +65,7 @@ type GenericCollection struct {
 	Otype         string       `json:"@odata.type"`
 	Description   string       `json:"Description"`
 	Members       []ResourceID `json:"Members"`
+	Outlets       []ResourceID `json:"Outlets"`             // For HPE PDU Outlets
 	MembersOCount int          `json:"Members@odata.count"` // Most schemas
 	Name          string       `json:"Name"`
 }
@@ -157,7 +158,8 @@ type ServiceRoot struct {
 	// TODO: Later stuff: StorageSystems, Fabrics, UpdateService, JsonSchemas
 
 	// PDU stuff
-	PowerEquipment ResourceID `json:"PowerEquipment"`
+	PowerEquipment    ResourceID `json:"PowerEquipment"`
+	PowerDistribution ResourceID `json:"PowerDistribution"`
 
 	Links ServiceRootLinks `json:"Links"`
 }
@@ -290,7 +292,7 @@ type Chassis struct {
 	Controls        ResourceID `json:"Controls"`
 
 	Links ChassisLinks `json:"Links"`
-	
+
 	OEM *ChassisOEM `json:"Oem,omitempty"`
 }
 

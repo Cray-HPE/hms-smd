@@ -155,8 +155,8 @@ const (
 
 const MaxFanout int = 1000
 
-var ErrRFDiscFQDNMissing   = errors.New("FQDN unexpectedly empty string")
-var ErrRFDiscURLNotFound   = errors.New("URL request returned 404: Not Found")
+var ErrRFDiscFQDNMissing = errors.New("FQDN unexpectedly empty string")
+var ErrRFDiscURLNotFound = errors.New("URL request returned 404: Not Found")
 var ErrRFDiscILOLicenseReq = errors.New("iLO License Required")
 
 /////////////////////////////////////////////////////////////////////////////
@@ -975,6 +975,11 @@ func (ep *RedfishEP) GetRootInfo() {
 	// Next, the PowerEquipment for the endpoint, if it exits.  For now,
 	// we just get the RackPDUs collection under it.
 	//
+	// HPE PDUs use PowerDistribution, so setup PowerEquipment path
+	if ep.ServiceRootRF.PowerDistribution.Oid != "" {
+		ep.ServiceRootRF.PowerEquipment.Oid = "/redfish/v1/PowerEquipment"
+	}
+
 	if ep.ServiceRootRF.PowerEquipment.Oid != "" {
 		path = ep.ServiceRootRF.PowerEquipment.Oid
 		powerJSON, err := ep.GETRelative(path)
