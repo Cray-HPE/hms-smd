@@ -4,3 +4,4 @@
 cmd/smd-loader/node_nid_map.json
 kubernetes/cray-hms-smd/helm
 .idea
+tests/redfishSimNode
