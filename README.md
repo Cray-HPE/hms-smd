@@ -217,6 +217,12 @@ Latest swagger.yaml (if you would prefer to use the OpenAPI viewer of your choic
 
 https://github.com/Cray-HPE/hms-smd/blob/master/api/swagger_v2.yaml (current)
 
+## SMD CT Testing
+
+This repository builds and publishes hms-smd-ct-test RPMs along with the service itself containing tests that verify SMD on the
+NCNs of live Shasta systems. The tests require the hms-ct-test-base RPM to also be installed on the NCNs in order to execute.
+The version of the test RPM installed on the NCNs should always match the version of SMD deployed on the system.
+
 
 
 ## smd Features
