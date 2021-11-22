@@ -17,8 +17,6 @@ pipeline {
         VERSION = getDockerBuildVersion(isStable: env.IS_STABLE)
         DOCKER_ARGS = getDockerBuildArgs(name: "hms-smd", description: env.DESCRIPTION, version: env.VERSION)
         NO_CACHE = "--no-cache"
-        CHART_NAME = "cray-hms-smd"
-        CHART_VERSION = getChartVersion(version: env.VERSION)
         DOCKERFILE = "Dockerfile.smd"
         TEST_NAME = "hms-smd-ct-test"
         TEST_SPEC_FILE = "hms-smd-ct-test.spec"
@@ -29,13 +27,6 @@ pipeline {
         stage("Image") {
             steps {
                 sh "make image"
-            }
-        }
-
-        stage("Chart") {
-            steps {
-                updateCsmHelmChartAppVersion(chartPath: "${WORKSPACE}/kubernetes/${CHART_NAME}", appVersion:  env.VERSION)
-                sh "make chart"
             }
         }
 
@@ -57,7 +48,6 @@ pipeline {
             steps {
                 script {
                     publishCsmDockerImage(image: env.NAME, tag: env.VERSION, isStable: env.IS_STABLE, snykTargetFile: env.DOCKERFILE, snykSeverity: 'high')
-                    publishCsmHelmCharts(component: env.CHART_NAME, chartsPath: "${WORKSPACE}/kubernetes/.packaged", isStable: env.IS_STABLE)
                     publishCsmRpms(component: env.TEST_NAME, pattern: "dist/smd-ct-test-rpmbuild/RPMS/x86_64/*.rpm", arch: "x86_64", isStable: env.IS_STABLE)
                     publishCsmRpms(component: env.TEST_NAME, pattern: "dist/smd-ct-test-rpmbuild/SRPMS/*.rpm", arch: "src", isStable: env.IS_STABLE)
                 }

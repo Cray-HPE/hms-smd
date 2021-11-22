@@ -3458,7 +3458,13 @@ func (s *SmD) doInventoryDiscoverPost(w http.ResponseWriter, r *http.Request) {
 	// RedfishEndpoints, discover just this set.
 	if len(discIn.XNames) > 0 {
 		epsTrimmed := make([]*sm.RedfishEndpoint, 0, 1)
+		idMap := make(map[string]bool)
 		for _, xname := range discIn.XNames {
+			if _, ok := idMap[xname]; ok {
+				// Ignore duplicates
+				continue
+			}
+			idMap[xname] = true
 			ep, err := s.db.GetRFEndpointByID(xname)
 			if err != nil {
 				sendJsonError(w, http.StatusInternalServerError,

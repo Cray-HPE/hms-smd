@@ -5,11 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.33.0] - 2021-11-05
+## [1.37.0] - 2021-11-05
 
 ### Added
 
 - Support for HPE PDUs
+
+## [1.36.0] - 2021-11-19
+
+### Changed
+
+- CASMHMS-5205 - Rename HSM CT smoke tests to swap execution order.
+
+## [1.35.0] - 2021-11-18
+
+### Changed
+
+- CASMHMS-5198 - Updated image refs in the chart.
+
+## [1.34.0] - 2021-11-16
+
+### Changed
+
+- CASMHMS-5272 - Added support for AuxiliaryController Redfish subtype to ComponentEndpoints CT test.
+
+## [1.33.0] - 2021-11-12
+
+### Changed
+
+- CASMHMS-5239 - HSM now kicks off re-discovery for nodeBMCs when a power on redfish event is received for its slot.
+
+### Fixed
+
+- CASMHMS-5233 - HSM correctly ignores duplicate xnames given as arguments to `POST /Inventory/Discover`
 
 ## [1.32.0] - 2021-10-27
 

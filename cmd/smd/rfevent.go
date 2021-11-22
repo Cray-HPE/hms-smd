@@ -441,6 +441,24 @@ func powerStateCMM(s *SmD, pe *processedRFEvent,
 		ids := generateRcChildIDs(s, xname, op)
 		u.ComponentIDs = append(u.ComponentIDs, ids...)
 	}
+
+	// Kick off rediscovery for any BMCs that are getting powered on.
+	// This may fail at first if the BMC isn't ready yet but the
+	// LastDiscoveryStatus will get changed to a failed state which will
+	// cause a retry later.
+	if u.State == base.StateOn.String() {
+		for _, id := range u.ComponentIDs {
+			if base.IsHMSTypeController(base.GetHMSType(id)) {
+				rep, err := s.db.GetRFEndpointByID(id)
+				if err != nil {
+					s.Log(LOG_INFO, "powerStateCMM(): Lookup failure on %s: %s", id, err)
+				} else if rep != nil {
+					go s.discoverFromEndpoint(rep, 0, false)
+				}
+			}
+		}
+	}
+
 	return u, nil
 }
 
@@ -561,7 +579,7 @@ func generateRcChildIDs(s *SmD, xname string, op ResourceOp) []string {
 			if err != ErrSmMsgBadID {
 				// Bad ID errors are expected here as we are talking about
 				// a child controller.
-				s.LogAlways("generateNcChildIDs(%s, %s): DB error: %s",
+				s.LogAlways("generateRcChildIDs(%s, %s): DB error: %s",
 					xname, id, err)
 			}
 			continue

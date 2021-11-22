@@ -24,11 +24,6 @@
 NAME ?= cray-smd
 VERSION ?= $(shell cat .version)
 
-# Helm Chart
-CHART_PATH ?= kubernetes
-CHART_NAME ?= cray-hms-smd
-CHART_VERSION ?= $(shell cat .version)
-
 # Common RPM variable
 BUILD_METADATA ?= "1~development~$(shell git rev-parse --short HEAD)"
 
@@ -40,15 +35,10 @@ TEST_SOURCE_NAME ?= ${TEST_SPEC_NAME}-${TEST_RPM_VERSION}
 TEST_BUILD_DIR ?= $(PWD)/dist/smd-ct-test-rpmbuild
 TEST_SOURCE_PATH := ${TEST_BUILD_DIR}/SOURCES/${TEST_SOURCE_NAME}.tar.bz2
 
-all: image chart unittest test_rpm
+all: image unittest test_rpm
 
 image:
 	docker build ${NO_CACHE} --pull ${DOCKER_ARGS} --tag '${NAME}:${VERSION}' -f Dockerfile.smd .
-
-chart:
-	helm repo add cray-algol60 https://artifactory.algol60.net/artifactory/csm-helm-charts
-	helm dep up ${CHART_PATH}/${CHART_NAME}
-	helm package ${CHART_PATH}/${CHART_NAME} -d ${CHART_PATH}/.packaged --version ${CHART_VERSION}
 
 unittest:
 	./runUnitTest.sh
@@ -68,3 +58,5 @@ test_rpm_build_source:
 
 test_rpm_build:
 	BUILD_METADATA=$(BUILD_METADATA) rpmbuild -ba $(TEST_SPEC_FILE) --define "_topdir $(TEST_BUILD_DIR)" --nodeps
+
+

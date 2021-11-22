@@ -52,7 +52,7 @@ if [[ ${JQ_CHECK_RET} -ne 0 ]] ; then
     exit 1
 fi
 
-echo "Running smd_discovery_status_test..."
+echo "Running smd_smoke_test_discovery_status..."
 
 # retrieve Keycloak authentication token for session
 TOKEN=$(get_auth_access_token)
@@ -104,7 +104,7 @@ done <<< "${PARSED_OUT}"
 PARSED_CHECK=$(echo "${PARSED_OUT}" | grep -E "ID.*LastDiscoveryStatus.*DiscoverOK")
 if [[ -z "${PARSED_CHECK}" ]] ; then
     echo "${PARSED_OUT}"
-    echo "FAIL: smd_discovery_status_test found no successfully discovered endpoints"
+    echo "FAIL: smd_smoke_test_discovery_status found no successfully discovered endpoints"
     exit 1
 fi
 
@@ -143,9 +143,9 @@ if [[ ${NUM_FAILS} -gt 1 ]] ; then
         echo "discovery operation ends and results in a new state being set."
         echo
     fi
-    echo "FAIL: smd_discovery_status_test found ${NUM_FAILS} endpoints that failed discovery, maximum allowable is 1"
+    echo "FAIL: smd_smoke_test_discovery_status found ${NUM_FAILS} endpoints that failed discovery, maximum allowable is 1"
     exit 1
 else
-    echo "PASS: smd_discovery_status_test passed!"
+    echo "PASS: smd_smoke_test_discovery_status passed!"
     exit 0
 fi
