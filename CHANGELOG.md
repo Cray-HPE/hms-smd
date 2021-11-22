@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support for HPE PDUs
 
+## [1.32.0] - 2021-10-27
+
+### Added
+
+- CASMHMS-5055 - Added SMD CT test RPM.
+
 ## [1.31.0] - 2021-10-19
 
 ### Changed
