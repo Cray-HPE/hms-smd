@@ -55,7 +55,13 @@ func (rs ResourceIDSlice) Less(i, j int) bool {
 	// For example OUTLET2 < OUTLET10
 	split1 := alphanum.FindStringSubmatch(rs[i].Oid)
 	split2 := alphanum.FindStringSubmatch(rs[j].Oid)
+	// split1/2 will return a slice of [OUTLET10 OUTLET 10]
+	// if in the correct format, otherwise emplty slice []
+	// If we did a successful split, check
 	if (len(split1) > 2) && (len(split2) > 2) &&
+		// split1/2[1] will contain the alpha string
+		// split1/2[2] will contain the numeric part
+		// If alpha strings the same, sort on numeric value
 		split1[1] == split2[1] {
 		num1, err := strconv.Atoi(split1[2])
 		if err == nil {
@@ -68,7 +74,7 @@ func (rs ResourceIDSlice) Less(i, j int) bool {
 			}
 		}
 	}
-	// Compare on strings
+	// Compare as strings
 	cmp := strings.Compare(rs[i].Oid, rs[j].Oid)
 	if cmp < 0 {
 		return true
