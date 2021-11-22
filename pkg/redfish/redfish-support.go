@@ -47,6 +47,17 @@ func (rs ResourceIDSlice) Len() int {
 	return len(rs)
 }
 
+/*
+If we have an alpha-numeric string (i.e. abcdefg123),
+we need to sort on the numeric part of the string if the alpha part of the strings are the same.
+In our case (OUTLET3 and OUTLET24)
+If we just did a string compare, OUTLET24 < OUTLET3 - We need to have it the so OUTLET3 < OUTLET24.
+
+Break sting into alpha part and numeric part [OUTLET 3] [OUTLET 24]
+Compare alpha parts (OUTLET) if same, then compare numeric part by converting to int before comparing.
+
+If not alpha-numeric string, or alpha portion different, just use regular string compare.
+*/
 var alphanum = regexp.MustCompile("([a-zA-Z]+)([0-9]+)$")
 
 // For sort interface, comparison operation
