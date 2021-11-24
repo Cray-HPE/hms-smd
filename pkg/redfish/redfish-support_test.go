@@ -22,6 +22,7 @@
 package rf
 
 import (
+	"sort"
 	"testing"
 )
 
@@ -129,5 +130,44 @@ func TestVersionFields(t *testing.T) {
 		} else {
 			t.Logf("Testcase %da: PASS Got '%s': %d", i, output, included)
 		}
+	}
+}
+
+func TestSort(t *testing.T) {
+	var ids = []ResourceID{{
+		Oid: "OUTLET24",
+	}, {
+		Oid: "OUTLET2",
+	}, {
+		Oid: "OUTLET1",
+	}, {
+		Oid: "OUTLET11",
+	}, {
+		Oid: "OUTLET5",
+	},
+	}
+	sort.Sort(ResourceIDSlice(ids))
+	if (ids[0].Oid == "OUTLET1") && (ids[1].Oid == "OUTLET2") && (ids[2].Oid == "OUTLET5") && (ids[3].Oid == "OUTLET11") && (ids[4].Oid == "OUTLET24") {
+		t.Logf("SORT PASS Got '%s, %s, %s, %s, %s", ids[0], ids[1], ids[2], ids[3], ids[4])
+	} else {
+		t.Errorf("SORT FAIL Got '%s, %s, %s, %s, %s", ids[0], ids[1], ids[2], ids[3], ids[4])
+	}
+	var ids2 = []ResourceID{{
+		Oid: "OUTLET24",
+	}, {
+		Oid: "MACHINE1",
+	}, {
+		Oid: "ALPHA",
+	}, {
+		Oid: "QUEUE",
+	}, {
+		Oid: "AAA",
+	},
+	}
+	sort.Sort(ResourceIDSlice(ids2))
+	if (ids2[0].Oid == "AAA") && (ids2[1].Oid == "ALPHA") && (ids2[2].Oid == "MACHINE1") && (ids2[3].Oid == "OUTLET24") && (ids2[4].Oid == "QUEUE") {
+		t.Logf("SORT PASS Got '%s, %s, %s, %s, %s", ids2[0], ids2[1], ids2[2], ids2[3], ids2[4])
+	} else {
+		t.Errorf("SORT FAIL Got '%s, %s, %s, %s, %s", ids2[0], ids2[1], ids2[2], ids2[3], ids2[4])
 	}
 }
