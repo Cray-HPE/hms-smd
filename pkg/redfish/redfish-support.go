@@ -58,7 +58,7 @@ Compare alpha parts (OUTLET) if same, then compare numeric part by converting to
 
 If not alpha-numeric string, or alpha portion different, just use regular string compare.
 */
-var alphanum = regexp.MustCompile("([a-zA-Z]+)([0-9]+)$")
+var alphanum, _ = regexp.Compile("([a-zA-Z]+)([0-9]+)$")
 
 // For sort interface, comparison operation
 func (rs ResourceIDSlice) Less(i, j int) bool {
@@ -70,10 +70,10 @@ func (rs ResourceIDSlice) Less(i, j int) bool {
 	// if in the correct format, otherwise emplty slice []
 	// If we did a successful split, check
 	if (len(split1) > 2) && (len(split2) > 2) &&
+		split1[1] == split2[1] {
 		// split1/2[1] will contain the alpha string
 		// split1/2[2] will contain the numeric part
 		// If alpha strings the same, sort on numeric value
-		split1[1] == split2[1] {
 		num1, err := strconv.Atoi(split1[2])
 		if err == nil {
 			num2, err := strconv.Atoi(split2[2])
