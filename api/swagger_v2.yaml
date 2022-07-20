@@ -9108,7 +9108,7 @@ definitions:
           - SO_DIMM_16b
           - SO_DIMM_32b
         readOnly: true
-        type: number
+        type: string
       BusWidthBits:
         description: Bus width in bits.
         readOnly: true
