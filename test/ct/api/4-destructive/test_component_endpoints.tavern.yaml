@@ -1,0 +1,497 @@
+# MIT License
+#
+# (C) Copyright [2019-2023] Hewlett Packard Enterprise Development LP
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
+
+# Tavern test cases for the Hardware State Manager (HSM) ComponentEndpoints API.
+# Author: Mitch Schooler, Isa Wazirzada
+# Service: Hardware State Manager
+
+# HMS test metrics test cases: 17
+# GET /Inventory/ComponentEndpoints
+# DELETE /Inventory/ComponentEndpoints/{endpoint}
+# DELETE /Inventory/Component/Endpoints
+---
+# THESE ARE DISTRUCTIVE TESTS - THEY WILL REMOVE ALL COMPONENT ENDPOINTS
+test_name: Query the ComponentEndpoints collection
+
+stages:
+  # GET /ComponentEndpoints API response code
+  # GET /ComponentEndpoints API response body
+  - name: Ensure that we can conduct a query on the ComponentEndpoints collection
+    request:
+      url: "{hsm_base_url}/hsm/v2/Inventory/ComponentEndpoints"
+      method: GET
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              ComponentEndpoints:
+                type: seq
+                matching: all
+                required: True
+                sequence:
+                  - type: map
+                    required: True
+                    mapping:
+                      ID:
+                        type: str
+                        required: True
+                        pattern: "x[0-9]+[cm][0-9]+.*"
+                      Type:
+                        type: str
+                        required: True
+                        enum:
+                          - "CabinetPDUController"
+                          - "CabinetPDUPowerConnector"
+                          - "CabinetPDU"
+                          - "ChassisBMC"
+                          - "Chassis"
+                          - "ComputeModule"
+                          - "HSNBoard"
+                          - "NodeBMC" # has ManagementEthernet MACAddress
+                          - "NodeEnclosure"
+                          - "Node" # has ManagementEthernet MACAddress
+                          - "RouterBMC"
+                          - "RouterModule"
+                      RedfishType:
+                        type: str
+                        required: True
+                        enum:
+                          - "C13"
+                          - "Chassis"
+                          - "ComputerSystem"
+                          - "Manager"
+                          - "Outlet"
+                          - "PowerDistribution"
+                      RedfishSubtype:
+                        type: str
+                        required: True
+                        enum:
+                          # empty RedfishSubtype string expected for HPE CabinetPDUController Managers
+                          - ""
+                          - "AuxiliaryController"
+                          - "Blade"
+                          - "BMC"
+                          - "C13"
+                          - "Cx"
+                          - "Enclosure"
+                          - "EnclosureManager"
+                          - "IEC_60320_C13"
+                          - "IEC_60320_C19"
+                          - "Physical"
+                          - "RackMount"
+                          - "RackPDU"
+                          - "StandAlone"
+                      MACAddr:
+                        type: str
+                        required: False
+                        pattern: "[a-z0-9]{{2}}(:[a-z0-9]{{2}}){{5}}"
+                      UUID:
+                        type: str
+                        required: False
+                        # UUID of NULL expected for HPE PDUs
+                        pattern: "[a-zA-Z0-9]{{8}}-[a-zA-Z0-9]{{4}}-[a-zA-Z0-9]{{4}}-[a-zA-Z0-9]{{4}}-[a-zA-Z0-9]{{12}}|NULL"
+                      OdataID:
+                        type: str
+                        required: True
+                        pattern: "/redfish/v1/.*"
+                      RedfishEndpointID:
+                        type: str
+                        required: True
+                        pattern: "x[0-9]+[cm][0-9]+.*"
+                      Enabled:
+                        type: bool
+                        required: True
+                      RedfishEndpointID:
+                        type: str
+                        required: True
+                        pattern: "x[0-9]+[cm][0-9]+.*"
+                      RedfishURL:
+                        type: str
+                        required: True
+                        pattern: "x[0-9]+[cm][0-9]+.*/redfish/v1/.*"
+                      ComponentEndpointType:
+                        type: str
+                        required: True
+                        enum:
+                          - "ComponentEndpointChassis"
+                          - "ComponentEndpointComputerSystem"
+                          - "ComponentEndpointManager"
+                          - "ComponentEndpointOutlet"
+                          - "ComponentEndpointPowerDistribution"
+                      RedfishChassisInfo:
+                        type: map
+                        required: False
+                        mapping:
+                          Name:
+                            type: str
+                            required: True
+                          Actions:
+                            type: map
+                            required: False
+                            allowempty: True
+                      RedfishEndpointFQDN:
+                        type: str
+                        required: True
+                        pattern: "x[0-9]+[cm][0-9]+.*"
+                      RedfishManagerInfo:
+                        type: map
+                        required: False
+                        mapping:
+                          Name:
+                            type: str
+                            required: True
+                          Actions:
+                            type: map
+                            # no RedfishManagerInfo Actions expected for HPE CabinetPDUController Managers
+                            required: False
+                            allowempty: True
+                          EthernetNICInfo:
+                            type: seq
+                            matching: all
+                            # this data is not present for RouterBMCs
+                            required: False
+                            sequence:
+                              - type: map
+                                required: True
+                                mapping:
+                                  RedfishId:
+                                    type: str
+                                    required: True
+                                    length:
+                                      min: 1
+                                    pattern: "[0-9]+|\
+bond[0-9]+|\
+usb[0-9]+"
+                                  "@odata.id":
+                                    type: str
+                                    required: False
+                                  Description:
+                                    type: str
+                                    required: False
+                                  FQDN:
+                                    type: str
+                                    required: False
+                                  Hostname:
+                                    type: str
+                                    required: False
+                                  InterfaceEnabled:
+                                    type: bool
+                                    required: False
+                                  MACAddress:
+                                    type: str
+                                    required: False
+                                  PermanentMACAddress:
+                                    type: str
+                                    required: False
+                                    pattern: "[a-z0-9]{{2}}(:[a-z0-9]{{2}}){{5}}"
+                      RedfishOutletInfo:
+                        type: map
+                        required: False
+                        mapping:
+                          Name:
+                            type: str
+                            required: True
+                          Actions:
+                            type: map
+                            required: False
+                            allowempty: True
+                      RedfishPDUInfo:
+                        type: map
+                        required: False
+                        mapping:
+                          Name:
+                            type: str
+                            # no RedfishPDUInfo expected for HPE PDUs
+                            required: False
+                          Actions:
+                            type: map
+                            required: False
+                            allowempty: True
+                      RedfishSystemInfo:
+                        type: map
+                        required: False
+                        mapping:
+                          Name:
+                            type: str
+                            required: True
+                          Actions:
+                            type: map
+                            required: True
+                            allowempty: True
+                          EthernetNICInfo:
+                            type: seq
+                            matching: all
+                            required: False
+                            sequence:
+                              - type: map
+                                required: True
+                                mapping:
+                                  RedfishId:
+                                    type: str
+                                    required: True
+                                    # missing interface <num>, MAC computed via workaround
+                                    # expected for some hardware types, leaves RedfishId empty
+                                    pattern: "^$|\
+[0-9]+|\
+HPCNet[0-9]+|\
+ManagementEthernet|\
+DE[0-9A-Za-z]+"
+                                  "@odata.id":
+                                    type: str
+                                    required: False
+                                  InterfaceEnabled:
+                                    type: bool
+                                    required: False
+                                  Description:
+                                    type: str
+                                    required: False
+                                  MACAddress:
+                                    type: str
+                                    required: False
+                                  PermanentMACAddress:
+                                    type: str
+                                    required: False
+                                    # present for ManagementEthernet but not HPCNet IDs
+                                    pattern: "[a-z0-9]{{2}}(:[a-z0-9]{{2}}){{5}}|\
+Not Available"
+                          PowerURL:
+                            type: str
+                            required: False
+                          Controls:
+                            type: seq
+                            matching: all
+                            required: False
+                            sequence:
+                              - type: map
+                                required: True
+                                mapping:
+                                  URL:
+                                    type: str
+                                    required: True
+                                  Control:
+                                    type: map
+                                    required: True
+                                    mapping:
+                                      ControlDelaySeconds:
+                                        type: int
+                                        required: True
+                                      ControlMode:
+                                        type: str
+                                        required: True
+                                      ControlType:
+                                        type: str
+                                        required: True
+                                      Id:
+                                        type: str
+                                        required: True
+                                      Name:
+                                        type: str
+                                        required: True
+                                      PhysicalContext:
+                                        type: str
+                                        required: True
+                                      SetPoint:
+                                        type: int
+                                        required: True
+                                      SetPointUnits:
+                                        type: str
+                                        required: True
+                                      SettingRangeMax:
+                                        type: int
+                                        required: True
+                                      SettingRangeMin:
+                                        type: int
+                                        required: True
+                                      Status:
+                                        type: map
+                                        required: True
+                                        mapping:
+                                          Health:
+                                            type: str
+                                            required: True
+                                            enum:
+                                              - "OK"
+                          PowerControl:
+                            type: seq
+                            matching: all
+                            required: False
+                            sequence:
+                              - type: map
+                                required: True
+                                # this allows the Oem key to be present as a map or a string
+                                allowempty: True
+                                mapping:
+                                  MemberId:
+                                    type: str
+                                    required: True
+                                    pattern: "[0-9]+|\
+Node|\
+Accelerator[0-9]+"
+                                  "@odata.id":
+                                    type: str
+                                    required: True
+                                  PowerCapacityWatts:
+                                    type: int
+                                    required: False
+                                  Name:
+                                    type: str
+                                    required: False
+                                  RelatedItem:
+                                    type: seq
+                                    matching: all
+                                    required: False
+                                    sequence:
+                                      - type: map
+                                        required: True
+                                        mapping:
+                                          "@odata.id":
+                                            type: str
+                                            required: True
+
+---
+test_name: Query the ComponentEndpoints collection and get Node Information
+
+stages:
+  # GET /ComponentEndpoints?type=Node API response code
+  # GET /ComponentEndpoints?type=Node API response body
+  - name: Ensure that we can conduct a query on the ComponentEndpoints collection for a particular node
+    request:
+      url: "{hsm_base_url}/hsm/v2/Inventory/ComponentEndpoints?type=Node"
+      method: GET
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              ComponentEndpoints:
+                type: seq
+                matching: all
+                required: True
+                sequence:
+                  - type: map
+                    required: True
+                    # only check that the xname IDs and type are correct to verify the query parameter since
+                    # all of the component endpoint data was already checked during previous test cases
+                    allowempty: True
+                    mapping:
+                      ID:
+                        type: str
+                        required: True
+                        pattern: "x[0-9]+c[0-9]+s[0-9]+b[0-9]+n[0-9]+"
+                      Type:
+                        type: str
+                        required: True
+                        enum:
+                          - "Node"
+                      RedfishEndpointID:
+                        type: str
+                        required: True
+                        pattern: "x[0-9]+c[0-9]+s[0-9]+b[0-9]+"
+      save:
+        json:
+          id: ComponentEndpoints[0].RedfishEndpointID
+
+  # GET /ComponentEndpoints/{node} API response code
+  # GET /ComponentEndpoints/{node} API response body
+  - name: Ensure that we can conduct a query on a specific node xname in the ComponentEndpoints collection
+    request:
+      url: "{hsm_base_url}/hsm/v2/Inventory/ComponentEndpoints/{id}"
+      method: GET
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            # only check that the xname IDs and type are correct to verify the query parameter since
+            # all of the component endpoint data was already checked during previous test cases
+            allowempty: True
+            mapping:
+              ID:
+                type: str
+                required: True
+                enum:
+                  - "{id}"
+              RedfishEndpointID:
+                type: str
+                required: True
+                enum:
+                  - "{id}"
+
+  - name: Delete ComponentEndpoint by id
+    request:
+      url: "{hsm_base_url}/hsm/v2/Inventory/ComponentEndpoints/{id}"
+      method: DELETE
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      json:
+        code: 0
+        message: deleted 1 entry
+
+  - name: Ensure that ComponentEndpoint is deleted
+    request:
+      url: "{hsm_base_url}/hsm/v2/Inventory/ComponentEndpoints/{id}"
+      method: GET
+      verify: !bool "{verify}"
+    response:
+      status_code: 404
+      json:
+        type: about:blank
+        title: Not Found
+        detail: no such xname.
+        status: 404
+
+  - name: Delete ALL ComponentEndpoints
+    request:
+      url: "{hsm_base_url}/hsm/v2/Inventory/ComponentEndpoints"
+      method: DELETE
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+
+  - name: Ensure all ComponentEndpoints are deleted
+    request:
+      url: "{hsm_base_url}/hsm/v2/Inventory/ComponentEndpoints"
+      method: DELETE
+      verify: !bool "{verify}"
+    response:
+      status_code: 404
+      json:
+        type: about:blank
+        title: Not Found
+        detail: no entries to delete
+        status: 404
