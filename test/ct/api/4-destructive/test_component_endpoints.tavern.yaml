@@ -24,7 +24,7 @@
 # Author: Mike Buchmann, Mitch Schooler
 # Service: Hardware State Manager
 
-# HMS test metrics test cases: 6
+# HMS test metrics test cases: 7
 # GET /Inventory/ComponentEndpoints retrieve ID
 # GET /Inventory/ComponentEndpoints/{id} existent ID
 # DELETE /Inventory/ComponentEndpoints/{id} existent ID
