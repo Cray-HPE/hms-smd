@@ -3134,7 +3134,7 @@ paths:
           description: >-
             Retrieve the RedfishEndpoint with the given IP address. A blank
             string will get Redfish endpoints without IP addresses.
-        - name: laststatus
+        - name: lastdiscoverystatus
           in: query
           type: string
           description: >-
@@ -9757,12 +9757,12 @@ definitions:
         description: >-
           Contains info about the discovery status of the given endpoint.
         properties:
-          LastAttempt:
+          LastDiscoveryAttempt:
             description: The time the last discovery attempt took place.
             format: date-time
             readOnly: true
             type: string
-          LastStatus:
+          LastDiscoveryStatus:
             description: Describes the outcome of the last discovery attempt.
             enum:
               - EndpointInvalid
