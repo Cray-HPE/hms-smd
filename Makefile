@@ -26,6 +26,8 @@ VERSION ?= $(shell cat .version)
 
 all: image unittest ct snyk ct_image
 
+.PHONY : all image unittest snyk ct ct_image binaries coverage
+
 image:
 	docker build ${NO_CACHE} --pull ${DOCKER_ARGS} --tag '${NAME}:${VERSION}' -f Dockerfile .
 
@@ -40,3 +42,17 @@ ct:
 
 ct_image:
 	docker build --no-cache -f test/ct/Dockerfile test/ct/ --tag hms-smd-test:${VERSION} 
+
+binaries: smd smd-init smd-loader
+
+smd:
+	go build ./cmd/smd
+
+smd-init:
+	go build ./cmd/smd-init
+
+smd-loader:
+	go build ./cmd/smd-loader
+
+coverage:
+	go test -cover -v -tags musl ./cmd/* ./internal/* ./pkg/*
