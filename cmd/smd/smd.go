@@ -27,28 +27,32 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/hashicorp/go-retryablehttp"
-	"github.com/sirupsen/logrus"
 	"log"
 	"net/http"
 	"os"
 	"runtime"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	base "github.com/Cray-HPE/hms-base/v2"
+
+	"github.com/Cray-HPE/hms-certs/pkg/hms_certs"
 	compcreds "github.com/Cray-HPE/hms-compcredentials"
 	msgbus "github.com/Cray-HPE/hms-msgbus"
 	sstorage "github.com/Cray-HPE/hms-securestorage"
 	"github.com/Cray-HPE/hms-smd/v2/internal/hbtdapi"
 	"github.com/Cray-HPE/hms-smd/v2/internal/hmsds"
 	"github.com/Cray-HPE/hms-smd/v2/internal/slsapi"
-	"github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
+	rf "github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
 	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
-	"github.com/Cray-HPE/hms-certs/pkg/hms_certs"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
+	"github.com/gorilla/mux"
+	"github.com/hashicorp/go-retryablehttp"
+	"github.com/sirupsen/logrus"
 )
+
+var Build, Version string
 
 const (
 	dbTypeMySQL    = "mysql" // No longer supported
@@ -405,9 +409,10 @@ func (s *SmD) JobSync() {
 // instance of HSM dies. This spins off a goroutine to periodically check for
 // orphaned discovery jobs and picks them up.
 // TODO: Close potential race condition between GetRFEndpointsFilter() and when
-//     discoverFromEndpoint() updates the DiscInfo.LastAttempt where another HSM
-//     instance could run GetRFEndpointsFilter() to get the same list of orphaned
-//     EPs. For now, this should be rare.
+//
+//	discoverFromEndpoint() updates the DiscInfo.LastAttempt where another HSM
+//	instance could run GetRFEndpointsFilter() to get the same list of orphaned
+//	EPs. For now, this should be rare.
 func (s *SmD) DiscoverySync() {
 	go func() {
 		for {
@@ -752,14 +757,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	serviceName,err = base.GetServiceInstanceName()
-	if (err != nil) {
+	serviceName, err = base.GetServiceInstanceName()
+	if err != nil {
 		serviceName = "SMD"
 		s.LogAlways("WARNING, can't get service/instance name, using '%s'",
 			serviceName)
 	}
 
-	s.LogAlways("Starting...\n")
+	s.LogAlways("Starting... " + serviceName + " " + Version + " " + Build + "\n")
 
 	// Route logs from Redfish interrogration to main smd log.
 	rf.SetLogger(s.lg)
@@ -784,11 +789,11 @@ func main() {
 	}
 
 	// Use socks, etc. proxy when interrogating Redfish endpoints
-//	if s.proxyURL != "" {
-//		s.LogAlways("Using '%s' as proxy when interrogating Redfish.",
-//			s.proxyURL)
-//		rf.SetHTTPClientProxyURL(s.proxyURL)
-//	}
+	//	if s.proxyURL != "" {
+	//		s.LogAlways("Using '%s' as proxy when interrogating Redfish.",
+	//			s.proxyURL)
+	//		rf.SetHTTPClientProxyURL(s.proxyURL)
+	//	}
 	// Generate unit test output during Redfish inventory discovery
 	if s.genTestPayloads != "" {
 		if err := rf.EnableGenTestingPayloads(s.genTestPayloads); err != nil {
@@ -852,30 +857,30 @@ func main() {
 
 	//Cert mgmt support
 
-	hms_certs.InitInstance(nil,serviceName)
+	hms_certs.InitInstance(nil, serviceName)
 	vurl := os.Getenv("SMD_VAULT_CA_URL")
-	if (vurl != "") {
-		s.LogAlways("Replacing default Vault CA URL with: '%s'",vurl)
+	if vurl != "" {
+		s.LogAlways("Replacing default Vault CA URL with: '%s'", vurl)
 		hms_certs.ConfigParams.VaultCAUrl = vurl
 	}
 	vurl = os.Getenv("SMD_VAULT_PKI_URL")
-	if (vurl != "") {
-		s.LogAlways("Replacing default Vault PKI URL with: '%s'",vurl)
+	if vurl != "" {
+		s.LogAlways("Replacing default Vault PKI URL with: '%s'", vurl)
 		hms_certs.ConfigParams.VaultPKIUrl = vurl
 	}
 	vurl = os.Getenv("SMD_LOG_INSECURE_FAILOVER")
-	if (vurl != "") {
-		yn,_ := strconv.ParseBool(vurl)
-		if (yn == false) {
+	if vurl != "" {
+		yn, _ := strconv.ParseBool(vurl)
+		if yn == false {
 			//Defaults to true
 			hms_certs.ConfigParams.LogInsecureFailover = false
 		}
 	}
 	vurl = os.Getenv("SMD_CA_URI")
-	if (vurl == "") {
+	if vurl == "" {
 		s.LogAlways("CA_URI: Not specified.")
 	} else {
-		s.LogAlways("CA_URI: '%s'.",vurl)
+		s.LogAlways("CA_URI: '%s'.", vurl)
 	}
 
 	//Initialize the SCN subscription list and map

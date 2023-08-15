@@ -45,14 +45,20 @@ ct_image:
 
 binaries: smd smd-init smd-loader
 
+
+
+BUILD := `git rev-parse HEAD --short`
+VERSION := `git describe --tags --abbrev=0`
+LDFLAGS=-ldflags "-X=$(GIT)build.Build=$(BUILD) -X=$(GIT)build.Version=$(VERSION)"
+
 smd:
-	go build ./cmd/smd
+	go build -v $(LDFLAGS) ./cmd/smd
 
 smd-init:
-	go build ./cmd/smd-init
+	go build -v $(LDFLAGS) ./cmd/smd-init
 
 smd-loader:
-	go build ./cmd/smd-loader
+	go build -v $(LDFLAGS) ./cmd/smd-loader
 
 coverage:
 	go test -cover -v -tags musl ./cmd/* ./internal/* ./pkg/*
