@@ -16,3 +16,5 @@ smd-loader
 *.csr
 *.key
 *.pem
+
+dist/

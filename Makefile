@@ -52,13 +52,13 @@ GVERSION := `git describe --tags --abbrev=0`
 LDFLAGS=-ldflags "-X=$(GIT)build.Build=$(BUILD) -X=$(GIT)build.Version=$(GVERSION)"
 
 smd:
-	go build -v $(LDFLAGS) ./cmd/smd
+	go build -v -tags musl $(LDFLAGS) ./cmd/smd
 
 smd-init:
-	go build -v $(LDFLAGS) ./cmd/smd-init
+	go build -v -tags musl $(LDFLAGS) ./cmd/smd-init
 
 smd-loader:
-	go build -v $(LDFLAGS) ./cmd/smd-loader
+	go build -v -tags musl $(LDFLAGS) ./cmd/smd-loader
 
 coverage:
 	go test -cover -v -tags musl ./cmd/* ./internal/* ./pkg/*
