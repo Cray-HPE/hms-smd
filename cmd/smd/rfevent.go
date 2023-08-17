@@ -225,7 +225,7 @@ func EventContextDecode(
 			}
 		}
 		// If not xname ID, add to generic list
-		if setID == false {
+		if !setID {
 			subLabels = append(subLabels, field)
 		}
 	}
@@ -321,7 +321,7 @@ func (s *SmD) GetEventActionParser(pe *processedRFEvent) EventActionParser {
 	// more compact.
 	for level := 1; level <= 3; level++ {
 		action, ok := eventActionParserLookup[strings.ToLower(lookup)]
-		if ok != true {
+		if !ok {
 			// No match at all, not even a nil pointer to keep trying.
 			// No action for event.
 			return nil
@@ -376,7 +376,7 @@ func ResourcePowerStateChangedParser(s *SmD, pe *processedRFEvent) (*CompUpdate,
 	uri := pe.Origin
 	op := ResourceUnknown
 	for _, arg := range pe.MessageArgs {
-		if strings.HasPrefix(arg, "/") == true {
+		if strings.HasPrefix(arg, "/") {
 			uri = arg
 		} else {
 			switch strings.ToLower(strings.TrimSpace(arg)) {
@@ -662,7 +662,7 @@ func AlertSystemPowerParser(s *SmD, pe *processedRFEvent) (*CompUpdate, error) {
 	uri := pe.Origin
 	op := ResourceUnknown
 	for _, arg := range pe.MessageArgs {
-		if strings.HasPrefix(arg, "/") == true {
+		if strings.HasPrefix(arg, "/") {
 			uri = arg
 		} else {
 			switch strings.ToLower(strings.TrimSpace(arg)) {
@@ -894,13 +894,12 @@ func (s *SmD) doUpdateCompHWInv(cep *sm.ComponentEndpoint, ep *rf.RedfishEP) err
 
 // doUpdateCompFoxconn - Update both the hwinv and the redfish system endpoint data.
 //
-//      For Foxconn Paradise hardware we want to do more than just call doUpdateCompHWInv().
-//      If the last discover was run with the node powered off, the PowerURL and
-//      PowerControl system information may not have been updated due to a BMC fw
-//      bug (see PRDIS-198).  doUpdateCompHWInv() would indeed update this system
-//      information correctly in the endpoint 'ep' since the node is now powered on, but
-//      it will not push it into the database.
-//
+//	For Foxconn Paradise hardware we want to do more than just call doUpdateCompHWInv().
+//	If the last discover was run with the node powered off, the PowerURL and
+//	PowerControl system information may not have been updated due to a BMC fw
+//	bug (see PRDIS-198).  doUpdateCompHWInv() would indeed update this system
+//	information correctly in the endpoint 'ep' since the node is now powered on, but
+//	it will not push it into the database.
 func (s *SmD) doUpdateCompFoxconn(cep *sm.ComponentEndpoint, ep *rf.RedfishEP) error {
 	// First update the hardware inventory.  This also updates system info in the
 	// component endpoint from the ProcesorModule_0 chassis
@@ -1133,7 +1132,7 @@ func (s *SmD) getIDForURI(epID, URI string) (string, error) {
 	for i := 0; i < 2; i++ {
 		if id == "" {
 			// Not found, try looking up directly in database
-			if didUpdate == false {
+			if !didUpdate {
 				// If found, make sure a sync occurs so it will be in the
 				// cache.
 				found, didUpdate, err = s.checkSyncCompEP(epID, snum)
@@ -1141,7 +1140,7 @@ func (s *SmD) getIDForURI(epID, URI string) (string, error) {
 					return "", err
 				}
 				// Not in DB
-				if found == false {
+				if !found {
 					return "", nil
 				}
 				// Found in DB, try the lookup from the cache again.
@@ -1171,7 +1170,7 @@ func (s *SmD) getCompEPbyID(epID string) (*sm.ComponentEndpoint, error) {
 	for i := 0; i < 2; i++ {
 		if cepi == nil {
 			// Not found, try looking up directly in database
-			if didUpdate == false {
+			if !didUpdate {
 				// If found, make sure a sync occurs so it will be in the
 				// cache.
 				found, didUpdate, err = s.checkSyncCompEP(epID, snum)
@@ -1179,7 +1178,7 @@ func (s *SmD) getCompEPbyID(epID string) (*sm.ComponentEndpoint, error) {
 					return nil, err
 				}
 				// Not in DB
-				if found == false {
+				if !found {
 					return nil, nil
 				}
 				// Found in DB, try the lookup from the cache again
@@ -1227,7 +1226,7 @@ func (s *SmD) getChildIDsForRfEP(epID string) ([]string, error) {
 	for i := 0; i < 2; i++ {
 		if idsStr == "" {
 			// Not found, try looking up directly in database
-			if didUpdate == false {
+			if !didUpdate {
 				// If found, make sure a sync occurs so it will be in the
 				// cache.
 				found, didUpdate, err = s.checkSyncCompEP(epID, snum)
@@ -1235,7 +1234,7 @@ func (s *SmD) getChildIDsForRfEP(epID string) ([]string, error) {
 					return []string{}, err
 				}
 				// Not in DB
-				if found == false {
+				if !found {
 					return []string{}, nil
 				}
 				// Found in DB, try the lookup from the cache again
@@ -1280,7 +1279,7 @@ func (s *SmD) getChildIDsForRfEP(epID string) ([]string, error) {
 func (s *SmD) checkSyncCompEP(xname string, snum int) (found, didUpdate bool, err error) {
 	found = false
 	didUpdate = false
-	ids := []string{}
+	var ids []string
 
 	for i := 0; i < CompEPSyncRetries; i++ {
 		if xnametypes.GetHMSType(xname) == xnametypes.CabinetPDUController {

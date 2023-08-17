@@ -95,7 +95,6 @@ type SmD struct {
 	dbPort    int
 	dbOpts    string
 
-	logDir          string
 	tlsCert         string
 	tlsKey          string
 	proxyURL        string
@@ -196,7 +195,7 @@ func (s *SmD) SetLogLevel(lvl LogLevel) error {
 		s.lgLvl = lvl
 		return nil
 	} else {
-		err := errors.New("Warning: verbose level unchanged")
+		err := errors.New("warning: verbose level unchanged")
 		s.lg.Printf("%s", err)
 		return err
 	}
@@ -368,7 +367,7 @@ func (s *SmD) JobSync() {
 			if err != nil {
 				s.LogAlways("JobSync(): Lookup failure: %s", err)
 				failed = true
-			} else if jobs != nil {
+			} else {
 				for _, job := range jobs {
 					if job.Status == sm.JobComplete {
 						s.db.DeleteJob(job.Id)
@@ -423,7 +422,7 @@ func (s *SmD) DiscoverySync() {
 			if err != nil {
 				s.LogAlways("DiscoverySync(): Lookup failure: %s", err)
 				failed = true
-			} else if eps != nil {
+			} else {
 				for _, ep := range eps {
 					lastAttempt, _ := time.Parse("2006-01-02T15:04:05.000000Z07:00", ep.DiscInfo.LastAttempt)
 					// Consider discovery jobs that have not updated
@@ -487,7 +486,7 @@ func (s *SmD) DiscoveryUpdater() {
 			s.discMapLock.Lock()
 			if len(s.discMap) > 0 {
 				discIDs := make([]string, 0, 1)
-				for id, _ := range s.discMap {
+				for id := range s.discMap {
 					discIDs = append(discIDs, id)
 				}
 				// Cause the discovery LastStatus to get updated for all of these IDs to
@@ -556,7 +555,7 @@ func (s *SmD) parseCmdLine() {
 	flag.Parse()
 
 	// Help message.
-	if help != nil && *help == true {
+	if help != nil && *help {
 		flag.Usage()
 		os.Exit(0)
 	}
@@ -858,20 +857,11 @@ func main() {
 	//Cert mgmt support
 
 	hms_certs.InitInstance(nil, serviceName)
-	vurl := os.Getenv("SMD_VAULT_CA_URL")
-	if vurl != "" {
-		s.LogAlways("Replacing default Vault CA URL with: '%s'", vurl)
-		hms_certs.ConfigParams.VaultCAUrl = vurl
-	}
-	vurl = os.Getenv("SMD_VAULT_PKI_URL")
-	if vurl != "" {
-		s.LogAlways("Replacing default Vault PKI URL with: '%s'", vurl)
-		hms_certs.ConfigParams.VaultPKIUrl = vurl
-	}
-	vurl = os.Getenv("SMD_LOG_INSECURE_FAILOVER")
+
+	vurl := os.Getenv("SMD_LOG_INSECURE_FAILOVER")
 	if vurl != "" {
 		yn, _ := strconv.ParseBool(vurl)
-		if yn == false {
+		if !yn {
 			//Defaults to true
 			hms_certs.ConfigParams.LogInsecureFailover = false
 		}

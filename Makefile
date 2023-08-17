@@ -47,9 +47,9 @@ binaries: smd smd-init smd-loader
 
 
 
-BUILD := `git rev-parse HEAD --short`
-VERSION := `git describe --tags --abbrev=0`
-LDFLAGS=-ldflags "-X=$(GIT)build.Build=$(BUILD) -X=$(GIT)build.Version=$(VERSION)"
+BUILD := `git rev-parse --short HEAD`
+GVERSION := `git describe --tags --abbrev=0`
+LDFLAGS=-ldflags "-X=$(GIT)build.Build=$(BUILD) -X=$(GIT)build.Version=$(GVERSION)"
 
 smd:
 	go build -v $(LDFLAGS) ./cmd/smd
@@ -62,3 +62,9 @@ smd-loader:
 
 coverage:
 	go test -cover -v -tags musl ./cmd/* ./internal/* ./pkg/*
+
+clean:
+	rm -f smd smd-init smd-loader
+	go clean -testcache
+	go clean -cache
+	go clean -modcache

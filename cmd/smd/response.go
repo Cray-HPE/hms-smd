@@ -147,23 +147,6 @@ func sendJsonNewResourceID(w http.ResponseWriter, uri *sm.ResourceURI) {
 	}
 }
 
-// Return a link to a single resource that is not new.
-func sendJsonResourceID(w http.ResponseWriter, uri *sm.ResourceURI) {
-	http_code := 200
-	w.Header().Set("Content-Type", "application/json")
-
-	if uri == nil {
-		http_code = 204
-	}
-	w.WriteHeader(http_code)
-	if uri != nil {
-		err := json.NewEncoder(w).Encode(uri)
-		if err != nil {
-			fmt.Printf("Couldn't encode a JSON command response: %s\n", err)
-		}
-	}
-}
-
 // Return a link to an array of resources that are not new.
 func sendJsonResourceIDArray(w http.ResponseWriter, uris []*sm.ResourceURI) {
 	http_code := 200
@@ -450,33 +433,6 @@ func sendJsonServiceEndpointArrayRsp(w http.ResponseWriter, seps *sm.ServiceEndp
 		if err != nil {
 			fmt.Printf("Couldn't encode a JSON command response: %s\n", err)
 		}
-	}
-}
-
-// Individual CompEthInterface response, matching a single ID.
-func sendJsonCompEthInterfaceRsp(w http.ResponseWriter, cei *sm.CompEthInterface) {
-	http_code := 200
-	if cei == nil {
-		http_code = 204
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http_code)
-	if cei != nil {
-		err := json.NewEncoder(w).Encode(cei)
-		if err != nil {
-			fmt.Printf("Couldn't encode a JSON command response: %s\n", err)
-		}
-	}
-}
-
-// Array of component ethernet interfaces
-func sendJsonCompEthInterfaceArrayRsp(w http.ResponseWriter, ceis []*sm.CompEthInterface) {
-	http_code := 200
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http_code)
-	err := json.NewEncoder(w).Encode(ceis)
-	if err != nil {
-		fmt.Printf("Couldn't encode a JSON command response: %s\n", err)
 	}
 }
 

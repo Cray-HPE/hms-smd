@@ -56,14 +56,13 @@ func (s *SmD) StartRFEventMonitor() {
 		s.LogAlways("No message bus host given.")
 	}
 	s.LogAlways("Not listening for events on the message bus.")
-	return
 }
 
 // Dequeue a single event and hand it off for processing.
 func (s *SmD) rfEventMonitor() error {
 	// Read the event
 	s.LogAlways("Starting event monitor...")
-	var err error
+
 	for {
 		// Read the event
 		payload, err := s.MsgBusReadNext()
@@ -74,6 +73,5 @@ func (s *SmD) rfEventMonitor() error {
 		rfEventJob := NewJobRFEvent(payload, s)
 		s.wpRFEvent.Queue(rfEventJob)
 	}
-	// Shouldn't happen
-	return err
+
 }
