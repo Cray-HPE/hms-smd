@@ -256,9 +256,9 @@ func (ep *RedfishEP) getHpeDeviceOrdinal(d *EpHpeDevice) int {
 					// Cassini shows as HPE instead of BEI in Proliant iLO redfish
 					// implementations so we check for both just incase this changes
 					// in the future. 
-					if strings.Contains(strings.ToLower(d.DeviceRF.Manufacturer), "mellanox") ||
-					   strings.Contains(strings.ToLower(d.DeviceRF.Manufacturer), "hpe") ||
-					   strings.Contains(strings.ToLower(d.DeviceRF.Manufacturer), "bei") {
+					if strings.Contains(strings.ToLower(device.DeviceRF.Manufacturer), "mellanox") ||
+					   strings.Contains(strings.ToLower(device.DeviceRF.Manufacturer), "hpe") ||
+					   strings.Contains(strings.ToLower(device.DeviceRF.Manufacturer), "bei") {
 						dsOIDs = append(dsOIDs, oid)
 					}
 				} else {
