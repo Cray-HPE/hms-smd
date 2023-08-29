@@ -16,6 +16,8 @@ github.com/Cray-HPE/hms-msgbus
 # github.com/Cray-HPE/hms-securestorage v1.12.2
 ## explicit
 github.com/Cray-HPE/hms-securestorage
+# github.com/Cray-HPE/hms-xname v1.2.0
+## explicit
 # github.com/DATA-DOG/go-sqlmock v1.3.3
 ## explicit
 github.com/DATA-DOG/go-sqlmock

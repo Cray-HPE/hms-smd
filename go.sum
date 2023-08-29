@@ -36,6 +36,8 @@ github.com/Cray-HPE/hms-msgbus v1.11.0 h1:w5ThMJ8D5pmuvXhc817rJDG4TTixEfvtcDi3tR
 github.com/Cray-HPE/hms-msgbus v1.11.0/go.mod h1:cxn+lUOq3tpY3+KdFml6L56ZQo8sqN2VoZ6gGxds6o8=
 github.com/Cray-HPE/hms-securestorage v1.12.2 h1:H5n0i6ldzewd5p7PI2Hktr/+9cYfSCui+0367p2L6n8=
 github.com/Cray-HPE/hms-securestorage v1.12.2/go.mod h1:P4CMKqQVlx/lv+AdyEjNQubZw2FKNyo/IAtFNgQ3VuI=
+github.com/Cray-HPE/hms-xname v1.2.0 h1:boZ8QlTQr/FxXbH+sloqr7qCGkKatJ6QNyIGbdOVmdw=
+github.com/Cray-HPE/hms-xname v1.2.0/go.mod h1:XKdjQSzoTps5KDOE8yWojBTAWASGaS6LfRrVDxwTQO8=
 github.com/DATA-DOG/go-sqlmock v1.3.3 h1:CWUqKXe0s8A2z6qCgkP4Kru7wC11YoAnoupUKFDnH08=
 github.com/DATA-DOG/go-sqlmock v1.3.3/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
 github.com/Masterminds/squirrel v1.4.0 h1:he5i/EXixZxrBUWcxzDYMiju9WZ3ld/l7QBNuo/eN3w=
