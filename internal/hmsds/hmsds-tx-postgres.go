@@ -953,7 +953,7 @@ func (t *hmsdbPgTx) UpdateCompFlagOnlyTx(id string, flag string) (int64, error) 
 	// Normalize key
 	normID := xnametypes.NormalizeHMSCompID(id)
 
-	// Make update in dataxnametypes.
+	// Make update in database.
 	result, err := stmt.ExecContext(t.ctx,
 		&flag,
 		&normID)
@@ -1045,7 +1045,7 @@ func (t *hmsdbPgTx) UpdateCompEnabledTx(id string, enabled bool) (int64, error) 
 	// Normalize key
 	normID := xnametypes.NormalizeHMSCompID(id)
 
-	// Make update in dataxnametypes.
+	// Make update in database.
 	result, err := stmt.ExecContext(t.ctx,
 		&enabledFlg,
 		&normID)
@@ -1127,7 +1127,7 @@ func (t *hmsdbPgTx) UpdateCompSwStatusTx(id string, swStatus string) (int64, err
 	// Normalize key
 	normID := xnametypes.NormalizeHMSCompID(id)
 
-	// Make update in dataxnametypes.
+	// Make update in database.
 	result, err := stmt.ExecContext(t.ctx,
 		&swStatus,
 		&normID)
@@ -1227,7 +1227,7 @@ func (t *hmsdbPgTx) UpdateCompRoleTx(id string, role, subRole string) (int64, er
 	// Normalize key
 	normID := xnametypes.NormalizeHMSCompID(id)
 
-	// Make update in dataxnametypes.
+	// Make update in database.
 	result, err := stmt.ExecContext(t.ctx,
 		&role,
 		&subRole,
@@ -1377,7 +1377,7 @@ func (t *hmsdbPgTx) UpdateCompNIDTx(c *base.Component) error {
 	// Normalize key
 	normID := xnametypes.NormalizeHMSCompID(c.ID)
 
-	// Make update in dataxnametypes.
+	// Make update in database.
 	_, err = stmt.ExecContext(t.ctx,
 		&rawNID,
 		&normID)
@@ -2008,7 +2008,7 @@ func (t *hmsdbPgTx) GetHWInvByFRUAllTx() ([]*sm.HWInvByFRU, error) {
 }
 
 // Insert or update HWInventoryByLocation struct (in transaction)
-// If PopulatedFRU is present, only the FRUID is added to the dataxnametypes.  If
+// If PopulatedFRU is present, only the FRUID is added to the database.  If
 // it is not, this effectively "depopulates" the given location.
 // The actual HWInventoryByFRU struct must be stored FIRST using the
 // corresponding function (presumably within the same transaction).
@@ -2074,7 +2074,7 @@ func (t *hmsdbPgTx) InsertHWInvByLocTx(hl *sm.HWInvByLoc) error {
 }
 
 // Insert or update HWInventoryByLocation struct (in transaction)
-// If PopulatedFRU is present, only the FRUID is added to the dataxnametypes.  If
+// If PopulatedFRU is present, only the FRUID is added to the database.  If
 // it is not, this effectively "depopulates" the given location.
 // The actual HWInventoryByFRU struct must be stored FIRST using the
 // corresponding function (presumably within the same transaction).
@@ -2724,7 +2724,7 @@ func (t *hmsdbPgTx) GetRFEndpointsFilterTx(f *RedfishEPFilter) ([]*sm.RedfishEnd
 	return reps, nil
 }
 
-// Insert new RedfishEndpoint into dataxnametypes. Does not insert any
+// Insert new RedfishEndpoint into database. Does not insert any
 // ComponentEndpoint children.(In transaction.)
 // If ID or FQDN already exists, return ErrHMSDSDuplicateKey
 // No insertion done on err != nil
@@ -2786,7 +2786,7 @@ func (t *hmsdbPgTx) InsertRFEndpointTx(ep *sm.RedfishEndpoint) error {
 	return nil
 }
 
-// Insert new RedfishEndpoints into dataxnametypes. Does not insert any
+// Insert new RedfishEndpoints into database. Does not insert any
 // ComponentEndpoint children.(In transaction.)
 // If ID or FQDN already exists, return ErrHMSDSDuplicateKey
 // No insertion done on err != nil
@@ -3538,7 +3538,7 @@ func (t *hmsdbPgTx) SetChildCompStatesCompEndpointsTx(
 		return []string{}, nil
 	}
 	// Should return the same set of xname IDs as 'ids', assuming they are
-	// actually in the dataxnametypes. Also locks both ComponentEP/RedfishEP tables
+	// actually in the database. Also locks both ComponentEP/RedfishEP tables
 	// if wrLock is true, which is the main thing.
 	cids, err := t.GetCompEndpointIDsTx(CE_IDs(ids), CE_WRLock)
 	if err != nil || len(cids) == 0 {
@@ -5163,7 +5163,7 @@ func (t *hmsdbPgTx) DeleteMemberTx(uuid, id string) (bool, error) {
 //
 ////////////////////////////////////////////////////////////////////////////
 
-// Insert component reservations into the dataxnametypes.
+// Insert component reservations into the database.
 // To Insert reservations without a duration, the component must be locked.
 // To Insert reservations with a duration, the component must be unlocked.
 func (t *hmsdbPgTx) InsertCompReservationsTx(ids []string, duration int) ([]sm.CompLockV2Success, string, error) {

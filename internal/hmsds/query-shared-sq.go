@@ -932,7 +932,7 @@ func selectComponentsHierarchy(
 
 // Create a select builder based on fieldfilter and the component filter.
 // If needed, join with group/partition table for additional fields/filtering.
-// returns squirrel.SelectBuilder for building onto or sending to dataxnametypes.
+// returns squirrel.SelectBuilder for building onto or sending to database.
 func makeComponentQuery(alias string, f *ComponentFilter, fltr FieldFilter) (
 	sq.SelectBuilder, error,
 ) {

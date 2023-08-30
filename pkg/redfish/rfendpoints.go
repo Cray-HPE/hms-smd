@@ -572,7 +572,7 @@ type RedfishEP struct {
 
 // Create RedfishEP struct from a validated RedfishEndpointDescription.
 // The description would be generated from user-supplied RawEndpoints and/or
-// retrieved from the dataxnametypes.
+// retrieved from the database.
 // The RedfishEP struct is set up based on the description to conduct queries
 // of the remote endpoint and to store the raw data retrieved from it.
 func NewRedfishEp(rep *RedfishEPDescription) (*RedfishEP, error) {

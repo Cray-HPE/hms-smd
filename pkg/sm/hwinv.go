@@ -1291,7 +1291,7 @@ func (hw *HWInvByLoc) DecodeLocationInfo(locInfoJSON []byte) error {
 
 // This function encode's the hwinv's type-specific LocationInfo struct
 // into a free-form JSON byte array that can be stored schema-less in the
-// dataxnametypes.
+// database.
 //
 // NOTE: This function is the counterpart to DecodeLocationInfo().
 //
@@ -1648,7 +1648,7 @@ func (hf *HWInvByFRU) DecodeFRUInfo(fruInfoJSON []byte) error {
 
 // This function encode's the hwinv's type-specific FRU info struct
 // into a free-form JSON byte array that can be stored schema-less in the
-// dataxnametypes.
+// database.
 //
 // NOTE: This function is the counterpart to DecodeFRUInfo().
 //

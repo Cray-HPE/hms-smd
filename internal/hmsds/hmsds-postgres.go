@@ -1187,7 +1187,7 @@ func (d *hmsdbPg) DeleteNodeMapByID(id string) (bool, error) {
 	return didDelete, err
 }
 
-// Delete all Node NID Mapping entries from dataxnametypes.
+// Delete all Node NID Mapping entries from database.
 // Also returns number of deleted rows, if error is nil.
 func (d *hmsdbPg) DeleteNodeMapsAll() (int64, error) {
 	t, err := d.Begin()
@@ -1294,7 +1294,7 @@ func (d *hmsdbPg) DeletePowerMapByID(id string) (bool, error) {
 	return didDelete, err
 }
 
-// Delete all Power Mapping entries from dataxnametypes.
+// Delete all Power Mapping entries from database.
 // Also returns number of deleted rows, if error is nil.
 func (d *hmsdbPg) DeletePowerMapsAll() (int64, error) {
 	t, err := d.Begin()
@@ -1998,7 +1998,7 @@ func (d *hmsdbPg) GetRFEndpointsFilter(f *RedfishEPFilter) ([]*sm.RedfishEndpoin
 	return reps, nil
 }
 
-// Insert new RedfishEndpoint into dataxnametypes.
+// Insert new RedfishEndpoint into database.
 // Does not update any ComponentEndpoint children.
 // If ID or FQDN already exists, return ErrHMSDSDuplicateKey
 // No insertion done on err != nil
@@ -2041,7 +2041,7 @@ func (d *hmsdbPg) InsertRFEndpoints(eps *sm.RedfishEndpointArray) error {
 	return nil
 }
 
-// Update existing RedfishEndpointArray entry in dataxnametypes.
+// Update existing RedfishEndpointArray entry in database.
 // Does not update any ComponentEndpoint children.
 // Returns updated entry or nil/nil if not found.  If an error occurred,
 // nil/error will be returned.
@@ -2379,7 +2379,7 @@ func (d *hmsdbPg) DeleteRFEndpointByID(id string) (bool, error) {
 	return didDelete, err
 }
 
-// Delete all RedfishEndpoints from dataxnametypes.
+// Delete all RedfishEndpoints from database.
 // Also returns number of deleted rows, if error is nil.
 func (d *hmsdbPg) DeleteRFEndpointsAll() (int64, error) {
 	t, err := d.Begin()
@@ -2438,7 +2438,7 @@ func (d *hmsdbPg) DeleteRFEndpointByIDSetEmpty(id string) (bool, []string, error
 	return true, affectedIDs, nil
 }
 
-// Delete all RedfishEndpoints from dataxnametypes.
+// Delete all RedfishEndpoints from database.
 // This also deletes all child ComponentEndpoints, and in addition,
 // sets the State/Components entries for those ComponentEndpoints to Empty/OK
 // Also returns number of deleted rows, if error is nil.
@@ -2576,7 +2576,7 @@ func (d *hmsdbPg) DeleteCompEndpointByID(id string) (bool, error) {
 	return didDelete, err
 }
 
-// Delete all ComponentEndpoints from dataxnametypes.
+// Delete all ComponentEndpoints from database.
 // Also returns number of deleted rows, if error is nil.
 func (d *hmsdbPg) DeleteCompEndpointsAll() (int64, error) {
 	t, err := d.Begin()
@@ -2635,7 +2635,7 @@ func (d *hmsdbPg) DeleteCompEndpointByIDSetEmpty(id string) (bool, []string, err
 	return true, affectedIDs, nil
 }
 
-// Delete all ComponentEndpoints from dataxnametypes. In addition,
+// Delete all ComponentEndpoints from database. In addition,
 // sets the State/Components entry for each ComponentEndpoint to Empty/OK
 // Also returns number of deleted rows, if error is nil, and also string array
 // of those xname IDs that were set to Empty/OK (i.e. not already Empty/OK)
@@ -2776,7 +2776,7 @@ func (d *hmsdbPg) DeleteServiceEndpointByID(svc, id string) (bool, error) {
 	return didDelete, err
 }
 
-// Delete all ServiceEndpoints from dataxnametypes.
+// Delete all ServiceEndpoints from database.
 // Also returns number of deleted rows, if error is nil.
 func (d *hmsdbPg) DeleteServiceEndpointsAll() (int64, error) {
 	t, err := d.Begin()
@@ -2902,7 +2902,7 @@ func (d *hmsdbPg) GetCompEthInterfaceFilter(f_opts ...CompEthInterfaceFiltFunc) 
 	return ceis, err
 }
 
-// Insert a new CompEthInterface into the dataxnametypes.
+// Insert a new CompEthInterface into the database.
 // If ID or MAC address already exists, return ErrHMSDSDuplicateKey
 // No insertion done on err != nil
 func (d *hmsdbPg) InsertCompEthInterface(cei *sm.CompEthInterfaceV2) error {
@@ -2941,7 +2941,7 @@ func (d *hmsdbPg) InsertCompEthInterfaces(ceis []*sm.CompEthInterfaceV2) error {
 	return nil
 }
 
-// Insert/update a CompEthInterface in the dataxnametypes.
+// Insert/update a CompEthInterface in the database.
 // If ID or MAC address already exists, only overwrite ComponentID
 // and Type fields.
 // No insertion done on err != nil
@@ -3101,7 +3101,7 @@ func (d *hmsdbPg) DeleteCompEthInterfaceByID(id string) (bool, error) {
 	return didDelete, err
 }
 
-// Delete all CompEthInterfaces from the dataxnametypes.
+// Delete all CompEthInterfaces from the database.
 // Also returns number of deleted rows, if error is nil.
 func (d *hmsdbPg) DeleteCompEthInterfacesAll() (int64, error) {
 	t, err := d.Begin()

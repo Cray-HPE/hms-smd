@@ -2251,7 +2251,7 @@ func (s *SmD) doRedfishEndpointPut(w http.ResponseWriter, r *http.Request) {
 				// redfish endpoint changes we just made in the database? If we
 				// fail to store credentials in vault, we'll lose the credentials
 				// and the redfish endpoints associated with them will still be
-				// successfully in the dataxnametypes. I think this is ok for now
+				// successfully in the database. I think this is ok for now
 				// since the future plan is for HSM to only read credentials
 				// from Vault. Other services like REDS should be writing the
 				// credentials to Vault.
@@ -2355,7 +2355,7 @@ func (s *SmD) doRedfishEndpointPatch(w http.ResponseWriter, r *http.Request) {
 				// redfish endpoint changes we just made in the database? If we
 				// fail to store credentials in vault, we'll lose the credentials
 				// and the redfish endpoints associated with them will still be
-				// successfully in the dataxnametypes. I think this is ok for now
+				// successfully in the database. I think this is ok for now
 				// since the future plan is for HSM to only read credentials
 				// from Vault. Other services like REDS should be writing the
 				// credentials to Vault.
@@ -2479,7 +2479,7 @@ func (s *SmD) doRedfishEndpointsPost(w http.ResponseWriter, r *http.Request) {
 					// endpoints we just inserted into the database? If we fail to
 					// store credentials in vault, we'll lose the credentials and
 					// the redfish endpoints associated with them will still be
-					// successfully in the dataxnametypes. I think this is ok for now
+					// successfully in the database. I think this is ok for now
 					// since the future plan is for HSM to only read credentials
 					// from Vault. Other services like REDS should be writing the
 					// credentials to Vault.
@@ -3384,7 +3384,7 @@ func (s *SmD) doPostSCNSubscription(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.scnSubLock.Lock()
-	// Insert the subscription into the dataxnametypes.
+	// Insert the subscription into the database.
 	// Existing subscriptions will be updated.
 	id, err := s.db.InsertSCNSubscription(*subIn)
 	if err != nil {
@@ -3556,7 +3556,7 @@ func (s *SmD) doPutSCNSubscription(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.scnSubLock.Lock()
-	// Update the subscription in the dataxnametypes.
+	// Update the subscription in the database.
 	didUpdate, err := s.db.UpdateSCNSubscription(id, *subIn)
 	if err != nil {
 		s.scnSubLock.Unlock()
@@ -3677,7 +3677,7 @@ func (s *SmD) doPatchSCNSubscription(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.scnSubLock.Lock()
-	// Patch the subscription in the dataxnametypes.
+	// Patch the subscription in the database.
 	didPatch, err := s.db.PatchSCNSubscription(id, patchIn.Op, *patchIn)
 	if err != nil {
 		s.scnSubLock.Unlock()
@@ -3692,7 +3692,7 @@ func (s *SmD) doPatchSCNSubscription(w http.ResponseWriter, r *http.Request) {
 	// Patch the cached subscription table.
 	// Look for an existing subscription. Patch it.
 	// Note: There is a possibility that the cached subscription table is out
-	//       of sync with the dataxnametypes. Patch what we have anyway. We'll get
+	//       of sync with the database. Patch what we have anyway. We'll get
 	//       corrected by the SCNSubscriptionRefresh() thread.
 	for i, sub := range s.scnSubs.SubscriptionList {
 		if sub.ID == id {

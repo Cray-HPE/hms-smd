@@ -39,11 +39,11 @@ import (
 // in the rf package to associate it with basic data needed to place it
 // within the system and extra HMS-level metadata.
 // We do this discovery and then use the resulting data to create HMS-level
-// structures and place them in the dataxnametypes.
+// structures and place them in the database.
 //
 // Args:
 //
-//	eps is a set of RedfishEndpoints retrieved from the dataxnametypes.
+//	eps is a set of RedfishEndpoints retrieved from the database.
 //	id is the id of the DiscoveryStatus object to write status to.
 func (s *SmD) discoverFromEndpoints(eps []*sm.RedfishEndpoint, id uint, update, force bool) {
 	idsFiltered := make([]string, 0, len(eps))
@@ -128,7 +128,7 @@ func (s *SmD) discoverFromEndpoints(eps []*sm.RedfishEndpoint, id uint, update, 
 //
 // Args:
 //
-//	ep is a single RedfishEndpoint retrieved from the dataxnametypes.
+//	ep is a single RedfishEndpoint retrieved from the database.
 //	id is the id of the DiscoveryStatus object to write status to.
 func (s *SmD) discoverFromEndpoint(ep *sm.RedfishEndpoint, id uint, force bool) {
 	if ep.RediscOnUpdate != true {
@@ -198,7 +198,7 @@ func (s *SmD) doDiscovery(rfEP *rf.RedfishEP) {
 	rfEP.GetRootInfo()
 
 	// Create/update HMS-level components from the retrieved discovery data
-	// from Redfish.  This also inserts the data into the dataxnametypes.
+	// from Redfish.  This also inserts the data into the database.
 	s.updateFromRfEndpoint(rfEP)
 }
 
@@ -309,7 +309,7 @@ func (s *SmD) updateFromRfEndpoint(rfEP *rf.RedfishEP) error {
 		savedPw = ep.Password
 		savedUn = ep.User
 		if s.readVault {
-			// Empty the password so it doesn't get stored in the dataxnametypes.
+			// Empty the password so it doesn't get stored in the database.
 			ep.Password = ""
 		}
 	}
@@ -389,7 +389,7 @@ func (s *SmD) updateFromRfEndpoint(rfEP *rf.RedfishEP) error {
 				if err != nil {
 					// If we fail to store credentials in vault, we'll lose the
 					// credentials and the component endpoints associated with
-					// them will still be successfully in the dataxnametypes.
+					// them will still be successfully in the database.
 					s.LogAlways("Failed to store credentials for %s in Vault - %s", cep.ID, err)
 					savedErr = err
 				}

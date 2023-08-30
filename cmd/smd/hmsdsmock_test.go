@@ -1611,7 +1611,7 @@ func (d *hmsdbtest) DeleteNodeMapByID(id string) (bool, error) {
 	return d.t.DeleteNodeMapByID.Return.changed, d.t.DeleteNodeMapByID.Return.err
 }
 
-// Delete all Node NID Mapping entries from dataxnametypes.
+// Delete all Node NID Mapping entries from database.
 // Also returns number of deleted rows, if error is nil.
 func (d *hmsdbtest) DeleteNodeMapsAll() (int64, error) {
 	return d.t.DeleteNodeMapsAll.Return.numRows, d.t.DeleteNodeMapsAll.Return.err
@@ -1655,7 +1655,7 @@ func (d *hmsdbtest) DeletePowerMapByID(id string) (bool, error) {
 	return d.t.DeletePowerMapByID.Return.changed, d.t.DeletePowerMapByID.Return.err
 }
 
-// Delete all Power Mapping entries from dataxnametypes.
+// Delete all Power Mapping entries from database.
 // Also returns number of deleted rows, if error is nil.
 func (d *hmsdbtest) DeletePowerMapsAll() (int64, error) {
 	return d.t.DeletePowerMapsAll.Return.numRows, d.t.DeletePowerMapsAll.Return.err
@@ -1892,7 +1892,7 @@ func (d *hmsdbtest) GetRFEndpointsFilter(f *hmsds.RedfishEPFilter) ([]*sm.Redfis
 	return d.t.GetRFEndpointsFilter.Return.entries, d.t.GetRFEndpointsFilter.Return.err
 }
 
-// Insert new RedfishEndpoint into dataxnametypes.
+// Insert new RedfishEndpoint into database.
 // Does not update any ComponentEndpoint children.
 // If ID or FQDN already exists, return ErrHMSDSDuplicateKey
 // No insertion done on err != nil
@@ -1911,7 +1911,7 @@ func (d *hmsdbtest) InsertRFEndpoints(eps *sm.RedfishEndpointArray) error {
 	return d.t.InsertRFEndpoints.Return.err
 }
 
-// Update existing RedfishEndpointArray entry in dataxnametypes.
+// Update existing RedfishEndpointArray entry in database.
 // Does not update any ComponentEndpoint children.
 // Returns updated entry or nil/nil if not found.  If an error occurred,
 // nil/error will be returned.
@@ -1973,7 +1973,7 @@ func (d *hmsdbtest) DeleteRFEndpointByID(id string) (bool, error) {
 	return d.t.DeleteRFEndpointByID.Return.changed, d.t.DeleteRFEndpointByID.Return.err
 }
 
-// Delete all RedfishEndpoints from dataxnametypes.
+// Delete all RedfishEndpoints from database.
 // Also returns number of deleted rows, if error is nil.
 func (d *hmsdbtest) DeleteRFEndpointsAll() (int64, error) {
 	return d.t.DeleteRFEndpointsAll.Return.numRows, d.t.DeleteRFEndpointsAll.Return.err
@@ -1990,7 +1990,7 @@ func (d *hmsdbtest) DeleteRFEndpointByIDSetEmpty(id string) (bool, []string, err
 		d.t.DeleteRFEndpointByIDSetEmpty.Return.err
 }
 
-// Delete all RedfishEndpoints from dataxnametypes.
+// Delete all RedfishEndpoints from database.
 // This also deletes all child ComponentEndpoints, and in addition,
 // sets the State/Components entries for those ComponentEndpoints to Empty/OK
 // Also returns number of deleted rows, if error is nil.
@@ -2049,7 +2049,7 @@ func (d *hmsdbtest) DeleteCompEndpointByID(id string) (bool, error) {
 	return d.t.DeleteCompEndpointByID.Return.changed, d.t.DeleteCompEndpointByID.Return.err
 }
 
-// Delete all ComponentEndpoints from dataxnametypes.
+// Delete all ComponentEndpoints from database.
 // Also returns number of deleted rows, if error is nil.
 func (d *hmsdbtest) DeleteCompEndpointsAll() (int64, error) {
 	return d.t.DeleteCompEndpointsAll.Return.numRows, d.t.DeleteCompEndpointsAll.Return.err
@@ -2067,7 +2067,7 @@ func (d *hmsdbtest) DeleteCompEndpointByIDSetEmpty(id string) (bool, []string, e
 		d.t.DeleteCompEndpointByIDSetEmpty.Return.err
 }
 
-// Delete all ComponentEndpoints from dataxnametypes. In addition,
+// Delete all ComponentEndpoints from database. In addition,
 // sets the State/Components entry for each ComponentEndpoint to Empty/OK
 // Also returns number of deleted rows, if error is nil, and also string array
 // of those xname IDs that were set to Empty/OK (i.e. not already Empty/OK)
@@ -2128,7 +2128,7 @@ func (d *hmsdbtest) DeleteServiceEndpointByID(svc, id string) (bool, error) {
 	return d.t.DeleteServiceEndpointByID.Return.changed, d.t.DeleteServiceEndpointByID.Return.err
 }
 
-// Delete all ServiceEndpoints from dataxnametypes.
+// Delete all ServiceEndpoints from database.
 // Also returns number of deleted rows, if error is nil.
 func (d *hmsdbtest) DeleteServiceEndpointsAll() (int64, error) {
 	return d.t.DeleteServiceEndpointsAll.Return.numRows, d.t.DeleteServiceEndpointsAll.Return.err
@@ -2155,7 +2155,7 @@ func (d *hmsdbtest) GetCompEthInterfaceFilter(f_opts ...hmsds.CompEthInterfaceFi
 	return d.t.GetCompEthInterfaceFilter.Return.ceis, d.t.GetCompEthInterfaceFilter.Return.err
 }
 
-// Insert a new CompEthInterface into the dataxnametypes.
+// Insert a new CompEthInterface into the database.
 // If ID or MAC address already exists, return ErrHMSDSDuplicateKey
 // No insertion done on err != nil
 func (d *hmsdbtest) InsertCompEthInterface(cei *sm.CompEthInterfaceV2) error {
@@ -2172,7 +2172,7 @@ func (d *hmsdbtest) InsertCompEthInterfaces(ceis []*sm.CompEthInterfaceV2) error
 	return d.t.InsertCompEthInterfaces.Return.err
 }
 
-// Insert/update a CompEthInterface in the dataxnametypes.
+// Insert/update a CompEthInterface in the database.
 // If ID or MAC address already exists, only overwrite ComponentID
 // and Type fields.
 // No insertion done on err != nil
@@ -2223,7 +2223,7 @@ func (d *hmsdbtest) DeleteCompEthInterfaceByID(id string) (bool, error) {
 	return d.t.DeleteCompEthInterfaceByID.Return.didDelete, d.t.DeleteCompEthInterfaceByID.Return.err
 }
 
-// Delete all CompEthInterfaces from the dataxnametypes.
+// Delete all CompEthInterfaces from the database.
 // Also returns number of deleted rows, if error is nil.
 func (d *hmsdbtest) DeleteCompEthInterfacesAll() (int64, error) {
 	return d.t.DeleteCompEthInterfacesAll.Return.numRows, d.t.DeleteCompEthInterfacesAll.Return.err

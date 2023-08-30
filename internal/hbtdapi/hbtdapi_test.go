@@ -34,6 +34,7 @@ import (
 	"os"
 	"testing"
 
+	base "github.com/Cray-HPE/hms-base/v2"
 	"github.com/hashicorp/go-retryablehttp"
 )
 
@@ -204,7 +205,7 @@ func NewRTFuncSLSAPI() RTFunc {
 	return func(req *http.Request) *http.Response {
 		bad := true
 		if len(req.Header) > 0 {
-			vals, ok := req.Header[xnametypes.USERAGENT]
+			vals, ok := req.Header[base.USERAGENT]
 			if ok {
 				for _, v := range vals {
 					if v == testSvcName {

@@ -163,7 +163,7 @@ func (g *Group) Normalize() {
 }
 
 // Check input fields of a group.  If no error is returned, the result should
-// be ok to put into the dataxnametypes.
+// be ok to put into the database.
 func (g *Group) Verify() error {
 	if g.verified == true {
 		return nil
@@ -267,7 +267,7 @@ func (p *Partition) Normalize() {
 }
 
 // Check input fields of a group.  If no error is returned, the result should
-// be ok to put into the dataxnametypes.
+// be ok to put into the database.
 func (p *Partition) Verify() error {
 	if p.verified == true {
 		return nil
