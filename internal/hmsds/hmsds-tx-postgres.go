@@ -32,8 +32,9 @@ import (
 	"strings"
 	"time"
 
-	base "github.com/Cray-HPE/hms-base"
+	base "github.com/Cray-HPE/hms-base/v2"
 	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
+	"github.com/Cray-HPE/hms-xname/xnametypes"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
@@ -519,18 +520,18 @@ func (t *hmsdbPgTx) getComponentByIDRawTx(id string, for_update bool) (*base.Com
 	}
 	// Perform corresponding query on DB
 	comps, err := t.queryComponent(fname, FLTR_DEFAULT, query,
-		base.NormalizeHMSCompID(id))
+		xnametypes.NormalizeHMSCompID(id))
 	if err != nil {
 		return nil, err
 	}
 	// Query succeeded.  There should be at most 1 row returned...
 	if len(comps) == 0 {
 		t.Log(LOG_INFO, "Info: %s(%s) matched no comps.",
-			fname, base.NormalizeHMSCompID(id))
+			fname, xnametypes.NormalizeHMSCompID(id))
 		return nil, nil
 	} else if len(comps) > 1 {
 		t.LogAlways("WARNING: %s(%s): multiple comps!.",
-			fname, base.NormalizeHMSCompID(id))
+			fname, xnametypes.NormalizeHMSCompID(id))
 	}
 	return comps[0], nil
 }
@@ -667,7 +668,7 @@ func (t *hmsdbPgTx) InsertComponentTx(c *base.Component) (int64, error) {
 		enabledFlg = *c.Enabled
 	}
 	// Normalize key
-	normID := base.NormalizeHMSCompID(c.ID)
+	normID := xnametypes.NormalizeHMSCompID(c.ID)
 
 	// Perform insert
 	result, err := stmt.ExecContext(t.ctx,
@@ -705,32 +706,38 @@ func (t *hmsdbPgTx) InsertComponentTx(c *base.Component) (int64, error) {
 //
 // Example Query:
 // INSERT INTO components (
-//   id,
-//   type,
-//   state,
-//   flag,
-//   enabled,
-//   admin,
-//   role,
-//   subrole,
-//   nid,
-//   subtype,
-//   nettype,
-//   arch,
-//   class,
-//   reservation_disabled,
-//   locked)
+//
+//	id,
+//	type,
+//	state,
+//	flag,
+//	enabled,
+//	admin,
+//	role,
+//	subrole,
+//	nid,
+//	subtype,
+//	nettype,
+//	arch,
+//	class,
+//	reservation_disabled,
+//	locked)
+//
 // VALUES
-//   ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15),
-//   ...
-//   ($#, $#, $#, $#, $#, $#, $#, $#, $#, $#, $#, $#, $#, $#, $#)
+//
+//	($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15),
+//	...
+//	($#, $#, $#, $#, $#, $#, $#, $#, $#, $#, $#, $#, $#, $#, $#)
+//
 // ON CONFLICT(id) DO UPDATE SET
-//   state = EXCLUDED.state,
-//   flag = EXCLUDED.flag,
-//   subtype = EXCLUDED.subtype,
-//   nettype = EXCLUDED.nettype,
-//   arch = EXCLUDED.arch,
-//   class = EXCLUDED.class
+//
+//	state = EXCLUDED.state,
+//	flag = EXCLUDED.flag,
+//	subtype = EXCLUDED.subtype,
+//	nettype = EXCLUDED.nettype,
+//	arch = EXCLUDED.arch,
+//	class = EXCLUDED.class
+//
 // RETURNING *;
 func (t *hmsdbPgTx) InsertComponentsTx(comps []*base.Component) ([]string, error) {
 	results := []string{}
@@ -748,7 +755,7 @@ func (t *hmsdbPgTx) InsertComponentsTx(comps []*base.Component) ([]string, error
 
 	for _, c := range comps {
 		// Normalize key
-		normID := base.NormalizeHMSCompID(c.ID)
+		normID := xnametypes.NormalizeHMSCompID(c.ID)
 		// Take out duplicates so that we don't get errors for modifying a row multiple times.
 		if _, ok := valueMap[normID]; ok {
 			continue
@@ -795,7 +802,7 @@ func (t *hmsdbPgTx) InsertComponentsTx(comps []*base.Component) ([]string, error
 		compSubTypeCol + " = EXCLUDED." + compSubTypeCol + ", " +
 		compNetTypeCol + " = EXCLUDED." + compNetTypeCol + ", " +
 		compArchCol + " = EXCLUDED." + compArchCol + ", " +
-		compClassCol + " = EXCLUDED." + compClassCol + 
+		compClassCol + " = EXCLUDED." + compClassCol +
 		" RETURNING " + compIdCol)
 
 	query = query.PlaceholderFormat(sq.Dollar)
@@ -829,7 +836,8 @@ func (t *hmsdbPgTx) InsertComponentsTx(comps []*base.Component) ([]string, error
 //
 // Returns the number of affected rows. < 0 means RowsAffected() is not
 // supported.
-//   Note: If flag is not set, it will be set to OK (i.e. no flag)
+//
+//	Note: If flag is not set, it will be set to OK (i.e. no flag)
 func (t *hmsdbPgTx) UpdateCompStatesTx(
 	ids []string,
 	state, flag string,
@@ -943,9 +951,9 @@ func (t *hmsdbPgTx) UpdateCompFlagOnlyTx(id string, flag string) (int64, error) 
 		return 0, err
 	}
 	// Normalize key
-	normID := base.NormalizeHMSCompID(id)
+	normID := xnametypes.NormalizeHMSCompID(id)
 
-	// Make update in database.
+	// Make update in dataxnametypes.
 	result, err := stmt.ExecContext(t.ctx,
 		&flag,
 		&normID)
@@ -1035,9 +1043,9 @@ func (t *hmsdbPgTx) UpdateCompEnabledTx(id string, enabled bool) (int64, error) 
 		return 0, err
 	}
 	// Normalize key
-	normID := base.NormalizeHMSCompID(id)
+	normID := xnametypes.NormalizeHMSCompID(id)
 
-	// Make update in database.
+	// Make update in dataxnametypes.
 	result, err := stmt.ExecContext(t.ctx,
 		&enabledFlg,
 		&normID)
@@ -1117,9 +1125,9 @@ func (t *hmsdbPgTx) UpdateCompSwStatusTx(id string, swStatus string) (int64, err
 		return 0, err
 	}
 	// Normalize key
-	normID := base.NormalizeHMSCompID(id)
+	normID := xnametypes.NormalizeHMSCompID(id)
 
-	// Make update in database.
+	// Make update in dataxnametypes.
 	result, err := stmt.ExecContext(t.ctx,
 		&swStatus,
 		&normID)
@@ -1217,9 +1225,9 @@ func (t *hmsdbPgTx) UpdateCompRoleTx(id string, role, subRole string) (int64, er
 		return 0, err
 	}
 	// Normalize key
-	normID := base.NormalizeHMSCompID(id)
+	normID := xnametypes.NormalizeHMSCompID(id)
 
-	// Make update in database.
+	// Make update in dataxnametypes.
 	result, err := stmt.ExecContext(t.ctx,
 		&role,
 		&subRole,
@@ -1367,9 +1375,9 @@ func (t *hmsdbPgTx) UpdateCompNIDTx(c *base.Component) error {
 		return err
 	}
 	// Normalize key
-	normID := base.NormalizeHMSCompID(c.ID)
+	normID := xnametypes.NormalizeHMSCompID(c.ID)
 
-	// Make update in database.
+	// Make update in dataxnametypes.
 	_, err = stmt.ExecContext(t.ctx,
 		&rawNID,
 		&normID)
@@ -1398,7 +1406,7 @@ func (t *hmsdbPgTx) BulkUpdateCompNIDTx(comps []base.Component) error {
 	nidFromCol := compTableSubAlias + "." + compNIDCol
 	// Generate query
 	// Make the column name a sq.Sqlizer so sq will set it as a column name and not a value.
-	query := sq.Update(compTable + " " + compTableJoinAlias).
+	query := sq.Update(compTable+" "+compTableJoinAlias).
 		Set(compNIDCol, sq.Expr(nidFromCol))
 
 	// sq doesn't have a way to add a FROM statement to an UPDATE.
@@ -1408,7 +1416,7 @@ func (t *hmsdbPgTx) BulkUpdateCompNIDTx(comps []base.Component) error {
 	valStr := ""
 	for i, c := range comps {
 		// Normalize key
-		normID := base.NormalizeHMSCompID(c.ID)
+		normID := xnametypes.NormalizeHMSCompID(c.ID)
 		// Take out duplicates so that we don't get errors for modifying a row multiple times.
 		if _, ok := valueMap[normID]; ok {
 			continue
@@ -1471,7 +1479,7 @@ func (t *hmsdbPgTx) DeleteComponentByIDTx(id string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	res, err := stmt.ExecContext(t.ctx, base.NormalizeHMSCompID(id))
+	res, err := stmt.ExecContext(t.ctx, xnametypes.NormalizeHMSCompID(id))
 	if err != nil {
 		t.LogAlways("Error: DeleteComponentByIDTx(%s): stmt.Exec: %s", id, err)
 		return false, err
@@ -1558,18 +1566,18 @@ func (t *hmsdbPgTx) GetNodeMapByIDTx(id string) (*sm.NodeMap, error) {
 	}
 	// Perform corresponding query on DB
 	nnms, err := t.queryNodeMap("GetNodeMapByIDTx",
-		getNodeMapByIDQuery, base.NormalizeHMSCompID(id))
+		getNodeMapByIDQuery, xnametypes.NormalizeHMSCompID(id))
 	if err != nil {
 		return nil, err
 	}
 	// Query succeeded.  There should be at most 1 row returned...
 	if len(nnms) == 0 {
 		t.Log(LOG_INFO, "Info: GetNodeMapByIDTx(%s) matched 0.",
-			base.NormalizeHMSCompID(id))
+			xnametypes.NormalizeHMSCompID(id))
 		return nil, nil
 	} else if len(nnms) > 1 {
 		t.LogAlways("WARNING: GetNodeMapByIDTx(%s): matched >1!",
-			base.NormalizeHMSCompID(id))
+			xnametypes.NormalizeHMSCompID(id))
 	}
 	return nnms[0], nil
 }
@@ -1612,7 +1620,7 @@ func (t *hmsdbPgTx) InsertNodeMapTx(m *sm.NodeMap) error {
 		return err
 	}
 	// Normalize key
-	normID := base.NormalizeHMSCompID(m.ID)
+	normID := xnametypes.NormalizeHMSCompID(m.ID)
 
 	// Perform insert
 	_, err = stmt.ExecContext(t.ctx,
@@ -1649,10 +1657,10 @@ func (t *hmsdbPgTx) DeleteNodeMapByIDTx(id string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	res, err := stmt.ExecContext(t.ctx, base.NormalizeHMSCompID(id))
+	res, err := stmt.ExecContext(t.ctx, xnametypes.NormalizeHMSCompID(id))
 	if err != nil {
 		t.LogAlways("Error: DeleteNodeMapByIDTx(%s): stmt.Exec: %s",
-			base.NormalizeHMSCompID(id), err)
+			xnametypes.NormalizeHMSCompID(id), err)
 		return false, err
 	}
 
@@ -1735,18 +1743,18 @@ func (t *hmsdbPgTx) GetPowerMapByIDTx(id string) (*sm.PowerMap, error) {
 	}
 	// Perform corresponding query on DB
 	ms, err := t.queryPowerMap("GetPowerMapByIDTx",
-		getPowerMapByIDQuery, base.NormalizeHMSCompID(id))
+		getPowerMapByIDQuery, xnametypes.NormalizeHMSCompID(id))
 	if err != nil {
 		return nil, err
 	}
 	// Query succeeded.  There should be at most 1 row returned...
 	if len(ms) == 0 {
 		t.Log(LOG_INFO, "Info: GetPowerMapByIDTx(%s) matched 0.",
-			base.NormalizeHMSCompID(id))
+			xnametypes.NormalizeHMSCompID(id))
 		return nil, nil
 	} else if len(ms) > 1 {
 		t.LogAlways("WARNING: GetPowerMapByIDTx(%s): matched >1!",
-			base.NormalizeHMSCompID(id))
+			xnametypes.NormalizeHMSCompID(id))
 	}
 	return ms[0], nil
 }
@@ -1780,11 +1788,11 @@ func (t *hmsdbPgTx) InsertPowerMapTx(m *sm.PowerMap) error {
 		return err
 	}
 	// Normalize key
-	normID := base.NormalizeHMSCompID(m.ID)
+	normID := xnametypes.NormalizeHMSCompID(m.ID)
 
 	normPwrIds := make([]string, 0, len(m.PoweredBy))
 	for _, pwrId := range m.PoweredBy {
-		normPwrIds = append(normPwrIds, base.NormalizeHMSCompID(pwrId))
+		normPwrIds = append(normPwrIds, xnametypes.NormalizeHMSCompID(pwrId))
 	}
 
 	// Perform insert
@@ -1815,10 +1823,10 @@ func (t *hmsdbPgTx) DeletePowerMapByIDTx(id string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	res, err := stmt.ExecContext(t.ctx, base.NormalizeHMSCompID(id))
+	res, err := stmt.ExecContext(t.ctx, xnametypes.NormalizeHMSCompID(id))
 	if err != nil {
 		t.LogAlways("Error: DeletePowerMapByIDTx(%s): stmt.Exec: %s",
-			base.NormalizeHMSCompID(id), err)
+			xnametypes.NormalizeHMSCompID(id), err)
 		return false, err
 	}
 
@@ -1927,18 +1935,18 @@ func (t *hmsdbPgTx) GetHWInvByLocIDTx(id string) (*sm.HWInvByLoc, error) {
 	}
 	// Perform corresponding query on DB
 	hwlocs, err := t.queryHWInvByLoc("GetHWInvByLocIDTx",
-		getHWInvByLocWithFRUByIDQuery, base.NormalizeHMSCompID(id))
+		getHWInvByLocWithFRUByIDQuery, xnametypes.NormalizeHMSCompID(id))
 	if err != nil {
 		return nil, err
 	}
 	// Query succeeded.  There should be at most 1 row returned...
 	if len(hwlocs) == 0 {
 		t.Log(LOG_INFO, "Info: GetHWInvByLocIDTx(%s) matched no entry.",
-			base.NormalizeHMSCompID(id))
+			xnametypes.NormalizeHMSCompID(id))
 		return nil, nil
 	} else if len(hwlocs) > 1 {
 		t.LogAlways("Warning: GetHWInvByLocIDTx(%s): multiple entries!.",
-			base.NormalizeHMSCompID(id))
+			xnametypes.NormalizeHMSCompID(id))
 	}
 	return hwlocs[0], nil
 }
@@ -2000,7 +2008,7 @@ func (t *hmsdbPgTx) GetHWInvByFRUAllTx() ([]*sm.HWInvByFRU, error) {
 }
 
 // Insert or update HWInventoryByLocation struct (in transaction)
-// If PopulatedFRU is present, only the FRUID is added to the database.  If
+// If PopulatedFRU is present, only the FRUID is added to the dataxnametypes.  If
 // it is not, this effectively "depopulates" the given location.
 // The actual HWInventoryByFRU struct must be stored FIRST using the
 // corresponding function (presumably within the same transaction).
@@ -2029,7 +2037,7 @@ func (t *hmsdbPgTx) InsertHWInvByLocTx(hl *sm.HWInvByLoc) error {
 		return err
 	}
 	// Normalize key
-	normID := base.NormalizeHMSCompID(hl.ID)
+	normID := xnametypes.NormalizeHMSCompID(hl.ID)
 
 	// Get the parent node xname for use with partition queries. Components under nodes
 	// (processors, memory, etc.) get the parent_node set to the node above them. For
@@ -2037,8 +2045,8 @@ func (t *hmsdbPgTx) InsertHWInvByLocTx(hl *sm.HWInvByLoc) error {
 	pnID := normID
 	// Don't bother checking if the component isn't under a node
 	if strings.Contains(pnID, "n") {
-		for base.GetHMSType(pnID) != base.Node {
-			pnID = base.GetHMSCompParent(pnID)
+		for xnametypes.GetHMSType(pnID) != xnametypes.Node {
+			pnID = xnametypes.GetHMSCompParent(pnID)
 			// This is to catch components that are not under nodes
 			// but have 'n' in the xname.
 			if pnID == "" {
@@ -2066,7 +2074,7 @@ func (t *hmsdbPgTx) InsertHWInvByLocTx(hl *sm.HWInvByLoc) error {
 }
 
 // Insert or update HWInventoryByLocation struct (in transaction)
-// If PopulatedFRU is present, only the FRUID is added to the database.  If
+// If PopulatedFRU is present, only the FRUID is added to the dataxnametypes.  If
 // it is not, this effectively "depopulates" the given location.
 // The actual HWInventoryByFRU struct must be stored FIRST using the
 // corresponding function (presumably within the same transaction).
@@ -2083,10 +2091,10 @@ func (t *hmsdbPgTx) BulkInsertHWInvByLocTx(hls []*sm.HWInvByLoc) error {
 	// Generate query
 	query := sq.Insert(hwInvLocTable).
 		Columns(hwInvLocCols...)
-	
+
 	for _, hl := range hls {
 		// Normalize key
-		normID := base.NormalizeHMSCompID(hl.ID)
+		normID := xnametypes.NormalizeHMSCompID(hl.ID)
 
 		// Take out duplicates so that we don't get errors for modifying a row multiple times.
 		if _, ok := valueMap[normID]; ok {
@@ -2105,8 +2113,8 @@ func (t *hmsdbPgTx) BulkInsertHWInvByLocTx(hls []*sm.HWInvByLoc) error {
 				fruId.Valid = true
 			}
 		} else {
-            fruId.Valid = false
-        }
+			fruId.Valid = false
+		}
 		infoJSON, err := hl.EncodeLocationInfo()
 		if err != nil {
 			t.LogAlways("Error: BulkInsertHWInvByLocTx(): EncodeLocationInfo: %s", err)
@@ -2119,8 +2127,8 @@ func (t *hmsdbPgTx) BulkInsertHWInvByLocTx(hls []*sm.HWInvByLoc) error {
 		pnID := normID
 		// Don't bother checking if the component isn't under a node
 		if strings.Contains(pnID, "n") {
-			for base.GetHMSType(pnID) != base.Node {
-				pnID = base.GetHMSCompParent(pnID)
+			for xnametypes.GetHMSType(pnID) != xnametypes.Node {
+				pnID = xnametypes.GetHMSCompParent(pnID)
 				// This is to catch components that are not under nodes
 				// but have 'n' in the xname.
 				if pnID == "" {
@@ -2205,7 +2213,7 @@ func (t *hmsdbPgTx) BulkInsertHWInvByFRUTx(hfs []*sm.HWInvByFRU) error {
 	// Generate query
 	query := sq.Insert(hwInvFruTable).
 		Columns(hwInvFruTblCols...)
-	
+
 	for _, hf := range hfs {
 		// Take out duplicates so that we don't get errors for modifying a row multiple times.
 		if _, ok := valueMap[hf.FRUID]; ok {
@@ -2260,14 +2268,14 @@ func (t *hmsdbPgTx) DeleteHWInvByLocIDTx(id string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	res, err := stmt.ExecContext(t.ctx, base.NormalizeHMSCompID(id))
+	res, err := stmt.ExecContext(t.ctx, xnametypes.NormalizeHMSCompID(id))
 	if err != nil {
 		t.LogAlways("Error: DeleteHWInvByLocIDTx(%s): stmt.Exec: %s",
-			base.NormalizeHMSCompID(id), err)
+			xnametypes.NormalizeHMSCompID(id), err)
 		return false, err
 	}
 	t.Log(LOG_INFO, "Info: DeleteHWInvByLocIDTx(%s) - %s",
-		base.NormalizeHMSCompID(id), res)
+		xnametypes.NormalizeHMSCompID(id), res)
 
 	// Return true if there was a row affected, false if there were zero.
 	num, err := res.RowsAffected()
@@ -2497,7 +2505,7 @@ func (t *hmsdbPgTx) GetHWInvHistLastEventsTx(ids []string) ([]*sm.HWInvHist, err
 	if len(ids) > 0 {
 		query = query.Where(sq.Eq{hwInvHistIdColAlias: ids})
 	}
-	
+
 	query = query.OrderBy("" + hwInvHistIdColAlias + ", " + hwInvHistTimestampColAlias + " DESC")
 
 	// Execute
@@ -2543,7 +2551,7 @@ func (t *hmsdbPgTx) InsertHWInvHistTx(hh *sm.HWInvHist) error {
 	if eventType == "" {
 		return ErrHMSDSArgBadHWInvHistEventType
 	}
-	loc := base.VerifyNormalizeCompID(hh.ID)
+	loc := xnametypes.VerifyNormalizeCompID(hh.ID)
 	if loc == "" {
 		return ErrHMSDSArgBadID
 	}
@@ -2582,7 +2590,7 @@ func (t *hmsdbPgTx) InsertHWInvHistsTx(hhs []*sm.HWInvHist) error {
 		if eventType == "" {
 			return ErrHMSDSArgBadHWInvHistEventType
 		}
-		loc := base.VerifyNormalizeCompID(hh.ID)
+		loc := xnametypes.VerifyNormalizeCompID(hh.ID)
 		if loc == "" {
 			return ErrHMSDSArgBadID
 		}
@@ -2655,7 +2663,7 @@ func (t *hmsdbPgTx) GetRFEndpointByIDTx(id string) (*sm.RedfishEndpoint, error) 
 	}
 	// Perform corresponding query on DB
 	eps, err := t.queryRedfishEndpoint("GetRFEndpointByIDTx",
-		getRFEndpointByIDQuery, base.NormalizeHMSCompID(id))
+		getRFEndpointByIDQuery, xnametypes.NormalizeHMSCompID(id))
 	if err != nil {
 		return nil, err
 	}
@@ -2716,7 +2724,7 @@ func (t *hmsdbPgTx) GetRFEndpointsFilterTx(f *RedfishEPFilter) ([]*sm.RedfishEnd
 	return reps, nil
 }
 
-// Insert new RedfishEndpoint into database. Does not insert any
+// Insert new RedfishEndpoint into dataxnametypes. Does not insert any
 // ComponentEndpoint children.(In transaction.)
 // If ID or FQDN already exists, return ErrHMSDSDuplicateKey
 // No insertion done on err != nil
@@ -2740,7 +2748,7 @@ func (t *hmsdbPgTx) InsertRFEndpointTx(ep *sm.RedfishEndpoint) error {
 		t.LogAlways(" InsertRFEndpointTx: decode DiscoveryInfo: %s", err)
 	}
 	// Ensure endpoint name is normalized and valid
-	normID := base.VerifyNormalizeCompID(ep.ID)
+	normID := xnametypes.VerifyNormalizeCompID(ep.ID)
 	if normID == "" {
 		t.LogAlways("InsertRFEndpointTx(%s): %s", ep.ID, ErrHMSDSArgBadID)
 		return ErrHMSDSArgBadID
@@ -2778,7 +2786,7 @@ func (t *hmsdbPgTx) InsertRFEndpointTx(ep *sm.RedfishEndpoint) error {
 	return nil
 }
 
-// Insert new RedfishEndpoints into database. Does not insert any
+// Insert new RedfishEndpoints into dataxnametypes. Does not insert any
 // ComponentEndpoint children.(In transaction.)
 // If ID or FQDN already exists, return ErrHMSDSDuplicateKey
 // No insertion done on err != nil
@@ -2794,10 +2802,10 @@ func (t *hmsdbPgTx) InsertRFEndpointsTx(eps []*sm.RedfishEndpoint) error {
 	// Generate query
 	query := sq.Insert(rfEPsTable).
 		Columns(rfEPsAllCols...)
-	
+
 	for _, ep := range eps {
 		// Ensure endpoint name is normalized and valid
-		normID := base.VerifyNormalizeCompID(ep.ID)
+		normID := xnametypes.VerifyNormalizeCompID(ep.ID)
 		// Take out duplicates so that we don't get errors for modifying a row multiple times.
 		if _, ok := valueMap[normID]; ok {
 			continue
@@ -2875,7 +2883,7 @@ func (t *hmsdbPgTx) UpdateRFEndpointTx(ep *sm.RedfishEndpoint) (bool, error) {
 		t.LogAlways("UpdateRFEndpointTx: decode DiscoveryInfo: %s", err)
 	}
 	// Normalized key
-	normID := base.NormalizeHMSCompID(ep.ID)
+	normID := xnametypes.NormalizeHMSCompID(ep.ID)
 
 	// Perform update
 	res, err := stmt.ExecContext(t.ctx,
@@ -2929,7 +2937,7 @@ func (t *hmsdbPgTx) UpdateRFEndpointsTx(eps []*sm.RedfishEndpoint) ([]*sm.Redfis
 
 	// Generate query
 	// Make the column name a sq.Sqlizer so sq will set it as a column name and not a value.
-	query := sq.Update(rfEPsTable + " r").
+	query := sq.Update(rfEPsTable+" r").
 		Set(rfEPsTypeCol, sq.Expr(rfEPsTypeColAlias)).
 		Set(rfEPsNameCol, sq.Expr(rfEPsNameColAlias)).
 		Set(rfEPsHostnameCol, sq.Expr(rfEPsHostnameColAlias)).
@@ -2954,7 +2962,7 @@ func (t *hmsdbPgTx) UpdateRFEndpointsTx(eps []*sm.RedfishEndpoint) ([]*sm.Redfis
 	valStr := ""
 	for i, ep := range eps {
 		// Normalized key
-		normID := base.NormalizeHMSCompID(ep.ID)
+		normID := xnametypes.NormalizeHMSCompID(ep.ID)
 		// Take out duplicates so that we don't get errors for modifying a row multiple times.
 		if _, ok := valueMap[normID]; ok {
 			continue
@@ -3039,7 +3047,7 @@ func (t *hmsdbPgTx) UpdateRFEndpointNoDiscInfoTx(ep *sm.RedfishEndpoint) (bool, 
 		return false, err
 	}
 	// Normalize key
-	normID := base.NormalizeHMSCompID(ep.ID)
+	normID := xnametypes.NormalizeHMSCompID(ep.ID)
 
 	// Perform update
 	res, err := stmt.ExecContext(t.ctx,
@@ -3094,7 +3102,7 @@ func (t *hmsdbPgTx) DeleteRFEndpointByIDTx(id string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	res, err := stmt.ExecContext(t.ctx, base.NormalizeHMSCompID(id))
+	res, err := stmt.ExecContext(t.ctx, xnametypes.NormalizeHMSCompID(id))
 	if err != nil {
 		t.LogAlways("Error: DeleteRFEndpointByIDTx(%s): stmt.Exec: %s", id, err)
 		return false, err
@@ -3349,7 +3357,7 @@ func (t *hmsdbPgTx) UpsertCompEndpointTx(cep *sm.ComponentEndpoint) error {
 		t.LogAlways("UpsertCompEndpointTx: decode CompInfo: %s", err)
 	}
 	// Ensure endpoint name is normalized and valid
-	normID := base.VerifyNormalizeCompID(cep.ID)
+	normID := xnametypes.VerifyNormalizeCompID(cep.ID)
 	if normID == "" {
 		t.LogAlways("UpsertCompEndpointTx(%s): %s", normID, ErrHMSDSArgBadID)
 		return ErrHMSDSArgBadID
@@ -3392,10 +3400,10 @@ func (t *hmsdbPgTx) UpsertCompEndpointsTx(ceps *sm.ComponentEndpointArray) error
 	// Generate query
 	query := sq.Insert(compEPsTable).
 		Columns(compEPsAllCols...)
-	
+
 	for _, cep := range ceps.ComponentEndpoints {
 		// Ensure endpoint name is normalized and valid
-		normID := base.VerifyNormalizeCompID(cep.ID)
+		normID := xnametypes.VerifyNormalizeCompID(cep.ID)
 		if normID == "" {
 			t.LogAlways("UpsertCompEndpointTx(%s): %s", normID, ErrHMSDSArgBadID)
 			return ErrHMSDSArgBadID
@@ -3449,7 +3457,6 @@ func (t *hmsdbPgTx) UpsertCompEndpointsTx(ceps *sm.ComponentEndpointArray) error
 	return nil
 }
 
-
 // Delete ComponentEndpoint with matching xname id from database, if it
 // exists (in transaction)
 // Return true if there was a row affected, false if there were zero.
@@ -3467,14 +3474,14 @@ func (t *hmsdbPgTx) DeleteCompEndpointByIDTx(id string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	res, err := stmt.ExecContext(t.ctx, base.NormalizeHMSCompID(id))
+	res, err := stmt.ExecContext(t.ctx, xnametypes.NormalizeHMSCompID(id))
 	if err != nil {
 		t.LogAlways("Error: DeleteCompEndpointByIDTx(%s): stmt.Exec: %s",
-			base.NormalizeHMSCompID(id), err)
+			xnametypes.NormalizeHMSCompID(id), err)
 		return false, err
 	}
 	t.Log(LOG_INFO, "Info: DeleteCompEndpointByIDTx(%s) - %s",
-		base.NormalizeHMSCompID(id), res)
+		xnametypes.NormalizeHMSCompID(id), res)
 
 	// Return true if there was a row affected, false if there were zero.
 	num, err := res.RowsAffected()
@@ -3531,7 +3538,7 @@ func (t *hmsdbPgTx) SetChildCompStatesCompEndpointsTx(
 		return []string{}, nil
 	}
 	// Should return the same set of xname IDs as 'ids', assuming they are
-	// actually in the database. Also locks both ComponentEP/RedfishEP tables
+	// actually in the dataxnametypes. Also locks both ComponentEP/RedfishEP tables
 	// if wrLock is true, which is the main thing.
 	cids, err := t.GetCompEndpointIDsTx(CE_IDs(ids), CE_WRLock)
 	if err != nil || len(cids) == 0 {
@@ -3688,7 +3695,7 @@ func (t *hmsdbPgTx) UpsertServiceEndpointTx(sep *sm.ServiceEndpoint) error {
 		return err
 	}
 	// Normalize key
-	normRFID := base.NormalizeHMSCompID(sep.RfEndpointID)
+	normRFID := xnametypes.NormalizeHMSCompID(sep.RfEndpointID)
 
 	// Perform insert
 	res, err := stmt.ExecContext(t.ctx,
@@ -3724,14 +3731,14 @@ func (t *hmsdbPgTx) UpsertServiceEndpointsTx(seps *sm.ServiceEndpointArray) erro
 	// Generate query
 	query := sq.Insert(serviceEPsTable).
 		Columns(serviceEPsCols...)
-	
+
 	for _, sep := range seps.ServiceEndpoints {
 		if sep == nil {
 			t.LogAlways("Error: UpsertServiceEndpointsTx(): Service Endpoint was nil.")
 			return ErrHMSDSArgNil
 		}
 		// Normalize key
-		normRFID := base.NormalizeHMSCompID(sep.RfEndpointID)
+		normRFID := xnametypes.NormalizeHMSCompID(sep.RfEndpointID)
 		// Take out duplicates so that we don't get errors for modifying a row multiple times.
 		key := normRFID + sep.RedfishType
 		if _, ok := valueMap[key]; ok {
@@ -3748,7 +3755,7 @@ func (t *hmsdbPgTx) UpsertServiceEndpointsTx(seps *sm.ServiceEndpointArray) erro
 			sep.OdataID,
 			sep.ServiceInfo)
 	}
-	query = query.Suffix("ON CONFLICT(" + serviceEPsRFEndpointIDCol + ", "+ serviceEPsRedfishTypeCol + ") DO UPDATE SET " +
+	query = query.Suffix("ON CONFLICT(" + serviceEPsRFEndpointIDCol + ", " + serviceEPsRedfishTypeCol + ") DO UPDATE SET " +
 		serviceEPsRedfishSubtypeCol + " = EXCLUDED." + serviceEPsRedfishSubtypeCol + ", " +
 		serviceEPsUUIDCol + " = EXCLUDED." + serviceEPsUUIDCol + ", " +
 		serviceEPsODataIDCol + " = EXCLUDED." + serviceEPsODataIDCol + ", " +
@@ -3787,7 +3794,7 @@ func (t *hmsdbPgTx) DeleteServiceEndpointByIDTx(svc, id string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	res, err := stmt.ExecContext(t.ctx, base.NormalizeHMSCompID(id), svc)
+	res, err := stmt.ExecContext(t.ctx, xnametypes.NormalizeHMSCompID(id), svc)
 	if err != nil {
 		t.LogAlways("Error: DeleteServiceEndpointByIDTx(%s,%s): stmt.Exec: %s",
 			svc, id, err)
@@ -3892,13 +3899,13 @@ func (t *hmsdbPgTx) InsertCompEthInterfaceTx(cei *sm.CompEthInterfaceV2) error {
 		return ErrHMSDSArgBadArg
 	}
 	if cei.CompID != "" {
-		cei.CompID = base.VerifyNormalizeCompID(cei.CompID)
+		cei.CompID = xnametypes.VerifyNormalizeCompID(cei.CompID)
 		if cei.CompID == "" {
 			return ErrHMSDSArgBadID
 		}
 	}
 	if cei.Type != "" {
-		cei.Type = base.VerifyNormalizeType(cei.Type)
+		cei.Type = xnametypes.VerifyNormalizeType(cei.Type)
 		if cei.Type == "" {
 			return ErrHMSDSArgBadType
 		}
@@ -3938,7 +3945,7 @@ func (t *hmsdbPgTx) InsertCompEthInterfacesTx(ceis []*sm.CompEthInterfaceV2) err
 	// Generate query
 	query := sq.Insert(compEthTable).
 		Columns(compEthCols...)
-	
+
 	for _, cei := range ceis {
 		cei.MACAddr = strings.ToLower(cei.MACAddr)
 		cei.ID = strings.ReplaceAll(cei.MACAddr, ":", "")
@@ -3952,13 +3959,13 @@ func (t *hmsdbPgTx) InsertCompEthInterfacesTx(ceis []*sm.CompEthInterfaceV2) err
 			valueMap[cei.ID] = true
 		}
 		if cei.CompID != "" {
-			cei.CompID = base.VerifyNormalizeCompID(cei.CompID)
+			cei.CompID = xnametypes.VerifyNormalizeCompID(cei.CompID)
 			if cei.CompID == "" {
 				return ErrHMSDSArgBadID
 			}
 		}
 		if cei.Type != "" {
-			cei.Type = base.VerifyNormalizeType(cei.Type)
+			cei.Type = xnametypes.VerifyNormalizeType(cei.Type)
 			if cei.Type == "" {
 				return ErrHMSDSArgBadType
 			}
@@ -4007,13 +4014,13 @@ func (t *hmsdbPgTx) InsertCompEthInterfaceCompInfoTx(cei *sm.CompEthInterfaceV2)
 		return ErrHMSDSArgBadArg
 	}
 	if cei.CompID != "" {
-		cei.CompID = base.VerifyNormalizeCompID(cei.CompID)
+		cei.CompID = xnametypes.VerifyNormalizeCompID(cei.CompID)
 		if cei.CompID == "" {
 			return ErrHMSDSArgBadID
 		}
 	}
 	if cei.Type != "" {
-		cei.Type = base.VerifyNormalizeType(cei.Type)
+		cei.Type = xnametypes.VerifyNormalizeType(cei.Type)
 		if cei.Type == "" {
 			return ErrHMSDSArgBadType
 		}
@@ -4056,7 +4063,7 @@ func (t *hmsdbPgTx) InsertCompEthInterfacesCompInfoTx(ceis []*sm.CompEthInterfac
 	// Generate query
 	query := sq.Insert(compEthTable).
 		Columns(compEthCols...)
-	
+
 	for _, cei := range ceis {
 		cei.MACAddr = strings.ToLower(cei.MACAddr)
 		cei.ID = strings.ReplaceAll(cei.MACAddr, ":", "")
@@ -4070,13 +4077,13 @@ func (t *hmsdbPgTx) InsertCompEthInterfacesCompInfoTx(ceis []*sm.CompEthInterfac
 			valueMap[cei.ID] = true
 		}
 		if cei.CompID != "" {
-			cei.CompID = base.VerifyNormalizeCompID(cei.CompID)
+			cei.CompID = xnametypes.VerifyNormalizeCompID(cei.CompID)
 			if cei.CompID == "" {
 				return ErrHMSDSArgBadID
 			}
 		}
 		if cei.Type != "" {
-			cei.Type = base.VerifyNormalizeType(cei.Type)
+			cei.Type = xnametypes.VerifyNormalizeType(cei.Type)
 			if cei.Type == "" {
 				return ErrHMSDSArgBadType
 			}
@@ -4147,12 +4154,12 @@ func (t *hmsdbPgTx) UpdateCompEthInterfaceTx(cei *sm.CompEthInterfaceV2, ceip *s
 	}
 
 	if ceip.CompID != nil {
-		compNorm := base.VerifyNormalizeCompID(*ceip.CompID)
+		compNorm := xnametypes.VerifyNormalizeCompID(*ceip.CompID)
 		if compNorm == "" {
 			return false, ErrHMSDSArgBadID
 		}
 		update = update.Set(compEthCompIDCol, compNorm)
-		ctype := base.GetHMSTypeString(compNorm)
+		ctype := xnametypes.GetHMSTypeString(compNorm)
 		update = update.Set(compEthTypeCol, ctype)
 		doUpdate = true
 	}
@@ -5127,7 +5134,7 @@ func (t *hmsdbPgTx) DeleteMemberTx(uuid, id string) (bool, error) {
 	// Build query - works like AND
 	query := sq.Delete(compGroupMembersTable).
 		Where("group_id = ?", uuid).
-		Where("component_id = ?", base.NormalizeHMSCompID(id))
+		Where("component_id = ?", xnametypes.NormalizeHMSCompID(id))
 
 	// Execute - Should delete one row.
 	query = query.PlaceholderFormat(sq.Dollar)
@@ -5156,7 +5163,7 @@ func (t *hmsdbPgTx) DeleteMemberTx(uuid, id string) (bool, error) {
 //
 ////////////////////////////////////////////////////////////////////////////
 
-// Insert component reservations into the database.
+// Insert component reservations into the dataxnametypes.
 // To Insert reservations without a duration, the component must be locked.
 // To Insert reservations with a duration, the component must be unlocked.
 func (t *hmsdbPgTx) InsertCompReservationsTx(ids []string, duration int) ([]sm.CompLockV2Success, string, error) {

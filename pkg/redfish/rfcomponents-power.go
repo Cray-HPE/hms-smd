@@ -28,7 +28,8 @@ import (
 	"sort"
 	"strconv"
 
-	base "github.com/Cray-HPE/hms-base"
+	base "github.com/Cray-HPE/hms-base/v2"
+	"github.com/Cray-HPE/hms-xname/xnametypes"
 	//"strings"
 )
 
@@ -76,7 +77,7 @@ type EpPDUs struct {
 // This should be the only way this struct is created.
 func NewEpPDU(epRF *RedfishEP, odataID ResourceID, rawOrdinal int) *EpPDU {
 	pdu := new(EpPDU)
-	pdu.Type = base.HMSTypeInvalid.String() // Must be updated later
+	pdu.Type = xnametypes.HMSTypeInvalid.String() // Must be updated later
 	pdu.OdataID = odataID.Oid
 	pdu.BaseOdataID = odataID.Basename()
 	pdu.RedfishType = PDUType
@@ -239,7 +240,7 @@ func (pdu *EpPDU) discoverLocalPhase2() {
 	// There may be outlet types that are not supported.
 	pdu.Ordinal = pdu.epRF.getPDUOrdinal(pdu)
 	pdu.Type = pdu.epRF.getPDUHMSType(pdu, pdu.Ordinal)
-	if pdu.Type == base.HMSTypeInvalid.String() {
+	if pdu.Type == xnametypes.HMSTypeInvalid.String() {
 		pdu.LastStatus = RedfishSubtypeNoSupport
 		return
 	}
@@ -249,8 +250,8 @@ func (pdu *EpPDU) discoverLocalPhase2() {
 	pdu.discoverComponentState()
 
 	// Check if we have something valid to insert into the data store
-	if base.GetHMSTypeString(pdu.ID) != pdu.Type ||
-		pdu.Type == base.HMSTypeInvalid.String() || pdu.Type == "" {
+	if xnametypes.GetHMSTypeString(pdu.ID) != pdu.Type ||
+		pdu.Type == xnametypes.HMSTypeInvalid.String() || pdu.Type == "" {
 
 		errlog.Printf("PDU: Error: Bad xname ID ('%s') or Type ('%s') for %s\n",
 			pdu.ID, pdu.Type, pdu.PDUURL)
@@ -344,7 +345,7 @@ type EpOutlets struct {
 // This should be the only way this struct is created.
 func NewEpOutlet(pdu *EpPDU, odataID ResourceID, rawOrdinal int) *EpOutlet {
 	out := new(EpOutlet)
-	out.Type = base.HMSTypeInvalid.String() // Must be updated later
+	out.Type = xnametypes.HMSTypeInvalid.String() // Must be updated later
 	out.OdataID = odataID.Oid
 	out.BaseOdataID = odataID.Basename()
 	out.RedfishType = OutletType
@@ -458,7 +459,7 @@ func (out *EpOutlet) discoverLocalPhase2() {
 	// There may be outlet types that are not supported.
 	out.Ordinal = out.epRF.getOutletOrdinal(out)
 	out.Type = out.epRF.getOutletHMSType(out)
-	if out.Type == base.HMSTypeInvalid.String() {
+	if out.Type == xnametypes.HMSTypeInvalid.String() {
 		out.LastStatus = RedfishSubtypeNoSupport
 		return
 	}
@@ -468,8 +469,8 @@ func (out *EpOutlet) discoverLocalPhase2() {
 	out.discoverComponentState()
 
 	// Check if we have something valid to insert into the data store
-	if base.GetHMSTypeString(out.ID) != out.Type ||
-		out.Type == base.HMSTypeInvalid.String() || out.Type == "" {
+	if xnametypes.GetHMSTypeString(out.ID) != out.Type ||
+		out.Type == xnametypes.HMSTypeInvalid.String() || out.Type == "" {
 
 		errlog.Printf("Outlet: Error: Bad ID ('%s') or Type ('%s') for %s\n",
 			out.ID, out.Type, out.OutletURL)
@@ -535,7 +536,7 @@ func (out *EpOutlet) discoverComponentState() {
 // the same xname.
 func (ep *RedfishEP) getPDUHMSID(pdu *EpPDU, hmsType string, ordinal int) string {
 	// Note every hmsType and ordinal pair must get a unique xname ID
-	hmsTypeStr := base.VerifyNormalizeType(hmsType)
+	hmsTypeStr := xnametypes.VerifyNormalizeType(hmsType)
 	if hmsTypeStr == "" {
 		// This is an error or a skipped type.
 		return ""
@@ -544,7 +545,7 @@ func (ep *RedfishEP) getPDUHMSID(pdu *EpPDU, hmsType string, ordinal int) string
 		// Ordinal was never set.
 		return ""
 	}
-	if hmsType == base.CabinetPDU.String() {
+	if hmsType == xnametypes.CabinetPDU.String() {
 		return pdu.epRF.ID + "p" + strconv.Itoa(ordinal)
 	}
 	// Something went wrong
@@ -554,11 +555,11 @@ func (ep *RedfishEP) getPDUHMSID(pdu *EpPDU, hmsType string, ordinal int) string
 // Get the HMS type of the Cabinet PDU
 func (ep *RedfishEP) getPDUHMSType(pdu *EpPDU, ordinal int) string {
 	// There can 1 or more Cabinet PDUs under a Cabinet PDU controller
-	if ep.Type == base.CabinetPDUController.String() && ordinal >= 0 {
-		return base.CabinetPDU.String()
+	if ep.Type == xnametypes.CabinetPDUController.String() && ordinal >= 0 {
+		return xnametypes.CabinetPDU.String()
 	}
 	// Shouldn't happen
-	return base.HMSTypeInvalid.String()
+	return xnametypes.HMSTypeInvalid.String()
 }
 
 // Determines based on discovered info and original list order what the
@@ -579,7 +580,7 @@ func (ep *RedfishEP) getPDUOrdinal(pdu *EpPDU) int {
 // the same as the parent RedfishEndpoint's xname ID.
 func (ep *RedfishEP) getOutletHMSID(out *EpOutlet, hmsType string, ordinal int) string {
 	// Note every hmsType and ordinal pair must get a unique xname ID
-	hmsTypeStr := base.VerifyNormalizeType(hmsType)
+	hmsTypeStr := xnametypes.VerifyNormalizeType(hmsType)
 	if hmsTypeStr == "" {
 		// This is an error or a skipped type.
 		return ""
@@ -588,13 +589,13 @@ func (ep *RedfishEP) getOutletHMSID(out *EpOutlet, hmsType string, ordinal int) 
 		// Ordinal was never set (properly)
 		return ""
 	}
-	if hmsType == base.CabinetPDUOutlet.String() {
+	if hmsType == xnametypes.CabinetPDUOutlet.String() {
 		// Do not start at zero for the jJ portion of the xname,
 		// start at one.  We keep the ordinal at the original value for
 		// consistency in hwinv so ordinal 0 => xXmMpPj1
 		return out.epPDU.ID + "j" + strconv.Itoa(ordinal+1)
 	}
-	if hmsType == base.CabinetPDUPowerConnector.String() {
+	if hmsType == xnametypes.CabinetPDUPowerConnector.String() {
 		// Do not start at zero for the jJ portion of the xname,
 		// start at one.  We keep the ordinal at the original value for
 		// consistency in hwinv so ordinal 0 => xXmMpPj1
@@ -607,11 +608,11 @@ func (ep *RedfishEP) getOutletHMSID(out *EpOutlet, hmsType string, ordinal int) 
 // Get the HMS type of the Outlet
 func (ep *RedfishEP) getOutletHMSType(out *EpOutlet) string {
 	// Just one?  That's this endpoint's type.
-	if out.epPDU.Type == base.CabinetPDU.String() {
-		return base.CabinetPDUPowerConnector.String()
+	if out.epPDU.Type == xnametypes.CabinetPDU.String() {
+		return xnametypes.CabinetPDUPowerConnector.String()
 	}
 	// Shouldn't happen
-	return base.HMSTypeInvalid.String()
+	return xnametypes.HMSTypeInvalid.String()
 }
 
 // Determines based on discovered info and original list order what the
@@ -870,7 +871,7 @@ func (p *EpPowerSupply) discoverLocalPhase2() {
 		p.Flag = base.FlagOK.String()
 	}
 	// Check if we have something valid to insert into the data store
-	if ((base.GetHMSType(p.ID) == base.CMMRectifier) || (base.GetHMSType(p.ID) == base.NodeEnclosurePowerSupply)) && (p.Type == base.CMMRectifier.String() || p.Type == base.NodeEnclosurePowerSupply.String()) {
+	if ((xnametypes.GetHMSType(p.ID) == xnametypes.CMMRectifier) || (xnametypes.GetHMSType(p.ID) == xnametypes.NodeEnclosurePowerSupply)) && (p.Type == xnametypes.CMMRectifier.String() || p.Type == xnametypes.NodeEnclosurePowerSupply.String()) {
 		if rfVerbose > 0 {
 			errlog.Printf("PowerSupply discoverLocalPhase2: VALID xname ID ('%s') and Type ('%s') for: %s\n",
 				p.ID, p.Type, p.PowerSupplyURL)

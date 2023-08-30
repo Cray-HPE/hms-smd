@@ -30,7 +30,8 @@ import (
 	"strings"
 	"time"
 
-	base "github.com/Cray-HPE/hms-base"
+	base "github.com/Cray-HPE/hms-base/v2"
+	"github.com/Cray-HPE/hms-xname/xnametypes"
 )
 
 /////////////////////////////////////////////////////////////////////////////
@@ -81,7 +82,7 @@ type ComponentSystemInfo struct {
 	Actions    *ComputerSystemActions `json:"Actions,omitempty"`
 	EthNICInfo []*EthernetNICInfo     `json:"EthernetNICInfo,omitempty"`
 	PowerCtlInfo
-	Controls   []*Control             `json:"Controls,omitempty"`
+	Controls []*Control `json:"Controls,omitempty"`
 }
 
 type ComponentManagerInfo struct {
@@ -142,10 +143,10 @@ type CrayPwrLimit struct {
 }
 
 type PwrCtlOEMHPE struct {
-	PowerLimit CrayPwrLimit     `json:"PowerLimit"`
-	PowerRegulationEnabled bool `json:"PowerRegulationEnabled"`
-	Status     string           `json:"Status"`
-	Target     string           `json:"Target"`
+	PowerLimit             CrayPwrLimit `json:"PowerLimit"`
+	PowerRegulationEnabled bool         `json:"PowerRegulationEnabled"`
+	Status                 string       `json:"Status"`
+	Target                 string       `json:"Target"`
 }
 
 type PwrCtlRelatedItem struct {
@@ -220,7 +221,7 @@ type EpChassisSet struct {
 // This should be the only way this struct is created.
 func NewEpChassis(epRF *RedfishEP, odataID ResourceID, rawOrdinal int) *EpChassis {
 	c := new(EpChassis)
-	c.Type = base.HMSTypeInvalid.String() // Must be updated later
+	c.Type = xnametypes.HMSTypeInvalid.String() // Must be updated later
 	c.OdataID = odataID.Oid
 	c.BaseOdataID = odataID.Basename()
 	c.RedfishType = ChassisType
@@ -394,7 +395,7 @@ func (c *EpChassis) discoverLocalPhase2() {
 	}
 	// There may be chassis types that are not supported.
 	c.Type = c.epRF.getChassisHMSType(c)
-	if c.Type == base.HMSTypeInvalid.String() {
+	if c.Type == xnametypes.HMSTypeInvalid.String() {
 		c.LastStatus = RedfishSubtypeNoSupport
 		return
 	}
@@ -414,12 +415,12 @@ func (c *EpChassis) discoverLocalPhase2() {
 	c.NetType = base.NetSling.String()
 
 	// Check if we have something valid to insert into the data store
-	hmsType := base.GetHMSType(c.ID)
-	if (!base.IsHMSTypeContainer(hmsType) &&
-	    hmsType != base.MgmtSwitch &&
-		hmsType != base.MgmtHLSwitch &&
-		hmsType != base.CDUMgmtSwitch) ||
-	    c.Type != hmsType.String() {
+	hmsType := xnametypes.GetHMSType(c.ID)
+	if (!xnametypes.IsHMSTypeContainer(hmsType) &&
+		hmsType != xnametypes.MgmtSwitch &&
+		hmsType != xnametypes.MgmtHLSwitch &&
+		hmsType != xnametypes.CDUMgmtSwitch) ||
+		c.Type != hmsType.String() {
 		errlog.Printf("Error: Bad xname ID ('%s') or Type ('%s' != %s) for %s\n",
 			c.ID, c.Type, hmsType.String(), c.ChassisURL)
 		c.LastStatus = VerificationFailed
@@ -440,7 +441,7 @@ func (c *EpChassis) discoverLocalPhase2() {
 func (c *EpChassis) discoverComponentState() {
 	// HSNBoard here is a workaround, should never be legitmately absent.
 	if c.ChassisRF.Status.State != "Absent" ||
-		c.Type == base.HSNBoard.String() {
+		c.Type == xnametypes.HSNBoard.String() {
 
 		// Chassis status is too unpredictable and no clear what Ready
 		// means anyways since it's not a node or a controller.  So just
@@ -554,7 +555,7 @@ type EpManagers struct {
 // This should be the only way this struct is created.
 func NewEpManager(epRF *RedfishEP, odataID ResourceID, rawOrdinal int) *EpManager {
 	m := new(EpManager)
-	m.Type = base.HMSTypeInvalid.String() // Must be set properly later
+	m.Type = xnametypes.HMSTypeInvalid.String() // Must be set properly later
 	m.OdataID = odataID.Oid
 	m.BaseOdataID = odataID.Basename()
 	m.RedfishType = ManagerType
@@ -710,7 +711,7 @@ func (m *EpManager) discoverLocalPhase2() {
 	}
 	m.Ordinal = m.epRF.getManagerOrdinal(m)
 	m.Type = m.epRF.getManagerHMSType(m)
-	if m.Type == base.HMSTypeInvalid.String() {
+	if m.Type == xnametypes.HMSTypeInvalid.String() {
 		m.LastStatus = RedfishSubtypeNoSupport
 		return
 	}
@@ -738,8 +739,8 @@ func (m *EpManager) discoverLocalPhase2() {
 	m.NetType = base.NetSling.String()
 
 	// Check if we have something valid to insert into the data store
-	hmsType := base.GetHMSType(m.ID)
-	if !base.IsHMSTypeController(hmsType) || m.Type != hmsType.String() {
+	hmsType := xnametypes.GetHMSType(m.ID)
+	if !xnametypes.IsHMSTypeController(hmsType) || m.Type != hmsType.String() {
 		errlog.Printf("Error: Bad xname ID ('%s') or Type ('%s') for %s\n",
 			m.ID, m.Type, m.ManagerURL)
 		m.LastStatus = VerificationFailed
@@ -935,7 +936,7 @@ type EpSystem struct {
 	// associate it with nodes (systems) so we record it here.
 	Assembly        *EpAssembly       `json:"Assembly"`
 	NodeAccelRisers EpNodeAccelRisers `json:"NodeAccelRisers"`
-	
+
 	// HpeDevice info comes from the Chassis level HPE OEM Links but we
 	// associate it with nodes (systems) so we record it here. We discover
 	// GPUs on HPE hardware as an HpeDevice.
@@ -975,7 +976,7 @@ type EpSystems struct {
 // This should be the only way this struct is created.
 func NewEpSystem(epRF *RedfishEP, odataID ResourceID, rawOrdinal int) *EpSystem {
 	s := new(EpSystem)
-	s.Type = base.Node.String()
+	s.Type = xnametypes.Node.String()
 	s.OdataID = odataID.Oid
 	s.BaseOdataID = odataID.Basename()
 	s.RedfishType = ComputerSystemType
@@ -1192,7 +1193,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 					}
 				}
 				control := Control{
-					URL: url.Oid,
+					URL:     url.Oid,
 					Control: rfControl,
 				}
 				s.Controls = append(s.Controls, &control)
@@ -1226,7 +1227,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 					if s.PowerInfo.OEM.HPE.Links.AccPowerService.Oid == "" {
 						break
 					}
-					
+
 					path = s.PowerInfo.OEM.HPE.Links.AccPowerService.Oid
 					hpeAccPowerServiceJSON, err := s.epRF.GETRelative(path)
 					if err != nil || hpeAccPowerServiceJSON == nil {
@@ -1661,7 +1662,7 @@ func (s *EpSystem) discoverLocalPhase2() {
 	s.discoverComponentState()
 
 	// Check if we have something valid to insert into the data store
-	if base.GetHMSType(s.ID) != base.Node || s.Type != base.Node.String() {
+	if xnametypes.GetHMSType(s.ID) != xnametypes.Node || s.Type != xnametypes.Node.String() {
 		errlog.Printf("Error: Bad xname ID ('%s') or Type ('%s') for %s\n",
 			s.ID, s.Type, s.SystemURL)
 		s.LastStatus = VerificationFailed
@@ -1920,7 +1921,7 @@ type EpEthInterfaces struct {
 func NewEpEthInterface(e *RedfishEP, pOID, pType string, odataID ResourceID, rawOrdinal int) *EpEthInterface {
 	ei := new(EpEthInterface)
 	ei.OdataID = odataID.Oid
-	ei.Type = base.HMSTypeInvalid.String() // Not used in inventory/state-tracking
+	ei.Type = xnametypes.HMSTypeInvalid.String() // Not used in inventory/state-tracking
 	ei.BaseOdataID = odataID.Basename()
 	ei.RedfishType = EthernetInterfaceType
 	ei.RfEndpointID = e.ID
@@ -2021,7 +2022,7 @@ type EpProcessors struct {
 func NewEpProcessor(s *EpSystem, odataID ResourceID, rawOrdinal int) *EpProcessor {
 	p := new(EpProcessor)
 	p.OdataID = odataID.Oid
-	p.Type = base.Processor.String()
+	p.Type = xnametypes.Processor.String()
 	p.BaseOdataID = odataID.Basename()
 	p.RedfishType = ProcessorType
 	p.RfEndpointID = s.epRF.ID
@@ -2135,7 +2136,7 @@ func (p *EpProcessor) discoverLocalPhase2() {
 	p.Ordinal = p.epRF.getProcessorOrdinal(p)
 	if strings.ToLower(p.RedfishSubtype) == "gpu" {
 		p.ID = p.sysRF.ID + "a" + strconv.Itoa(p.Ordinal)
-		p.Type = base.NodeAccel.String()
+		p.Type = xnametypes.NodeAccel.String()
 	} else {
 		p.ID = p.sysRF.ID + "p" + strconv.Itoa(p.Ordinal)
 	}
@@ -2159,9 +2160,9 @@ func (p *EpProcessor) discoverLocalPhase2() {
 			errlog.Printf("Using untrackable FRUID: %s\n", generatedFRUID)
 		}
 		p.FRUID = generatedFRUID
-		
+
 		// Discover processor arch
-		if p.Type == base.Processor.String() {
+		if p.Type == xnametypes.Processor.String() {
 			p.Arch = GetProcessorArch(p)
 		}
 	} else {
@@ -2171,10 +2172,10 @@ func (p *EpProcessor) discoverLocalPhase2() {
 		p.Flag = base.FlagOK.String()
 	}
 	// Check if we have something valid to insert into the data store
-	if (base.GetHMSType(p.ID) != base.Processor ||
-		p.Type != base.Processor.String()) &&
-		(base.GetHMSType(p.ID) != base.NodeAccel ||
-			p.Type != base.NodeAccel.String()) {
+	if (xnametypes.GetHMSType(p.ID) != xnametypes.Processor ||
+		p.Type != xnametypes.Processor.String()) &&
+		(xnametypes.GetHMSType(p.ID) != xnametypes.NodeAccel ||
+			p.Type != xnametypes.NodeAccel.String()) {
 		errlog.Printf("Error: Bad xname ID ('%s') or Type ('%s') for: %s\n",
 			p.ID, p.Type, p.ProcessorURL)
 		p.LastStatus = VerificationFailed
@@ -2228,7 +2229,7 @@ type EpMemoryMods struct {
 func NewEpMemory(s *EpSystem, odataID ResourceID, rawOrdinal int) *EpMemory {
 	m := new(EpMemory)
 	m.OdataID = odataID.Oid
-	m.Type = base.Memory.String()
+	m.Type = xnametypes.Memory.String()
 	m.BaseOdataID = odataID.Basename()
 	m.RedfishType = MemoryType
 	m.RfEndpointID = s.epRF.ID
@@ -2345,7 +2346,7 @@ func (m *EpMemory) discoverLocalPhase2() {
 	if m.MemoryRF.Status.State == "" && m.MemoryRF.SerialNumber == "NO DIMM" {
 		m.MemoryRF.Status.State = "Absent"
 	}
-	
+
 	if m.MemoryRF.Status.State != "Absent" {
 		m.Status = "Populated"
 		m.State = base.StatePopulated.String()
@@ -2363,7 +2364,7 @@ func (m *EpMemory) discoverLocalPhase2() {
 		m.Flag = base.FlagOK.String()
 	}
 	// Check if we have something valid to insert into the data store
-	if base.GetHMSType(m.ID) != base.Memory || m.Type != base.Memory.String() {
+	if xnametypes.GetHMSType(m.ID) != xnametypes.Memory || m.Type != xnametypes.Memory.String() {
 		errlog.Printf("Error: Bad xname ID ('%s') or Type ('%s') for %s\n",
 			m.ID, m.Type, m.MemoryURL)
 		m.LastStatus = VerificationFailed

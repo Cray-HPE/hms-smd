@@ -33,10 +33,11 @@ import (
 	"testing"
 	"time"
 
-	base "github.com/Cray-HPE/hms-base"
+	base "github.com/Cray-HPE/hms-base/v2"
 	rf "github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
 	stest "github.com/Cray-HPE/hms-smd/v2/pkg/sharedtest"
 	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
+	"github.com/Cray-HPE/hms-xname/xnametypes"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	sq "github.com/Masterminds/squirrel"
@@ -557,7 +558,7 @@ func TestPgUpsertComponents(t *testing.T) {
 		compSubTypeCol + " = EXCLUDED." + compSubTypeCol + ", " +
 		compNetTypeCol + " = EXCLUDED." + compNetTypeCol + ", " +
 		compArchCol + " = EXCLUDED." + compArchCol + ", " +
-		compClassCol + " = EXCLUDED." + compClassCol + 
+		compClassCol + " = EXCLUDED." + compClassCol +
 		" RETURNING " + compIdCol
 
 	sqq := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
@@ -587,7 +588,7 @@ func TestPgUpsertComponents(t *testing.T) {
 	}{{
 		comps: []*base.Component{&base.Component{
 			ID:    "x0c0s0b0n0",
-			Type:  base.Node.String(),
+			Type:  xnametypes.Node.String(),
 			State: base.StateEmpty.String(),
 			Flag:  base.FlagOK.String(),
 		}},
@@ -599,7 +600,7 @@ func TestPgUpsertComponents(t *testing.T) {
 		expectedPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedArgs:    []driver.Value{"x0c0s0b0n0"},
 		expectedInsert:  regexp.QuoteMeta(insert1),
-		expectedRows:    [][]driver.Value{
+		expectedRows: [][]driver.Value{
 			[]driver.Value{"x0c0s0b0n0"},
 		},
 		expectedInArgs: []driver.Value{
@@ -618,13 +619,13 @@ func TestPgUpsertComponents(t *testing.T) {
 	}, {
 		comps: []*base.Component{&base.Component{
 			ID:    "x0c0s0b0n0",
-			Type:  base.Node.String(),
+			Type:  xnametypes.Node.String(),
 			State: base.StateEmpty.String(),
 			Flag:  base.FlagOK.String(),
 		}},
 		force:     false,
 		dbColumns: []string{"id", "type", "state", "flag", "enabled", "admin", "role", "subrole", "nid", "subtype", "nettype", "arch", "class", "reservation_disabled", "locked"},
-		dbRows:    [][]driver.Value{
+		dbRows: [][]driver.Value{
 			[]driver.Value{"x0c0s0b0n0", "Node", "On", "OK", true, "AdminStatus", "Compute", "", 832, "", "Sling", "X86", "", false, false},
 		},
 		dbError:         nil,
@@ -638,13 +639,13 @@ func TestPgUpsertComponents(t *testing.T) {
 	}, {
 		comps: []*base.Component{&base.Component{
 			ID:    "x0c0s0b0n0",
-			Type:  base.Node.String(),
+			Type:  xnametypes.Node.String(),
 			State: base.StateEmpty.String(),
 			Flag:  base.FlagOK.String(),
 		}},
 		force:     true,
 		dbColumns: []string{"id", "type", "state", "flag", "enabled", "admin", "role", "subrole", "nid", "subtype", "nettype", "arch", "class", "reservation_disabled", "locked"},
-		dbRows:    [][]driver.Value{
+		dbRows: [][]driver.Value{
 			[]driver.Value{"x0c0s0b0n0", "Node", "On", "OK", true, "AdminStatus", "Compute", "", 832, "", "Sling", "X86", "", false, false},
 		},
 		dbError:         nil,
@@ -652,7 +653,7 @@ func TestPgUpsertComponents(t *testing.T) {
 		expectedPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedArgs:    []driver.Value{"x0c0s0b0n0"},
 		expectedInsert:  regexp.QuoteMeta(insert1),
-		expectedRows:    [][]driver.Value{
+		expectedRows: [][]driver.Value{
 			[]driver.Value{"x0c0s0b0n0"},
 		},
 		expectedInArgs: []driver.Value{
@@ -667,13 +668,13 @@ func TestPgUpsertComponents(t *testing.T) {
 		comps: []*base.Component{
 			&base.Component{
 				ID:    "x0c0s0b0n0",
-				Type:  base.Node.String(),
+				Type:  xnametypes.Node.String(),
 				State: base.StateEmpty.String(),
 				Flag:  base.FlagOK.String(),
 			},
 			&base.Component{
 				ID:    "x0c0s0b0n1",
-				Type:  base.Node.String(),
+				Type:  xnametypes.Node.String(),
 				State: base.StateEmpty.String(),
 				Flag:  base.FlagOK.String(),
 			},
@@ -686,7 +687,7 @@ func TestPgUpsertComponents(t *testing.T) {
 		expectedPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1,$2)"),
 		expectedArgs:    []driver.Value{"x0c0s0b0n0", "x0c0s0b0n1"},
 		expectedInsert:  regexp.QuoteMeta(insert2),
-		expectedRows:    [][]driver.Value{
+		expectedRows: [][]driver.Value{
 			[]driver.Value{"x0c0s0b0n0"},
 			[]driver.Value{"x0c0s0b0n1"},
 		},
@@ -716,7 +717,7 @@ func TestPgUpsertComponents(t *testing.T) {
 		comps: []*base.Component{
 			&base.Component{
 				ID:    "x0c0s0b0n0",
-				Type:  base.Node.String(),
+				Type:  xnametypes.Node.String(),
 				State: base.StateEmpty.String(),
 				Flag:  base.FlagOK.String(),
 			},
@@ -736,7 +737,7 @@ func TestPgUpsertComponents(t *testing.T) {
 		comps: []*base.Component{
 			&base.Component{
 				ID:    "x0c0s0b0n0",
-				Type:  base.Node.String(),
+				Type:  xnametypes.Node.String(),
 				State: base.StateEmpty.String(),
 				Flag:  base.FlagOK.String(),
 			},
@@ -749,7 +750,7 @@ func TestPgUpsertComponents(t *testing.T) {
 		expectedPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedArgs:    []driver.Value{"x0c0s0b0n0"},
 		expectedInsert:  regexp.QuoteMeta(insert1),
-		expectedRows:    [][]driver.Value{
+		expectedRows: [][]driver.Value{
 			[]driver.Value{"x0c0s0b0n0"},
 		},
 		expectedInArgs: []driver.Value{
@@ -1569,14 +1570,14 @@ func TestPgBulkUpdateCompClass(t *testing.T) {
 func TestPgBulkUpdateCompNID(t *testing.T) {
 
 	sqq := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	update, _, _ := sqq.Update(compTable + " " + compTableJoinAlias).
-		Set(compNIDCol, sq.Expr(compTableSubAlias + "." + compNIDCol)).
-		Suffix("FROM (VALUES (?,?::BIGINT),(?,?::BIGINT)) AS " + compTableSubAlias +
-		"(" + compIdCol + ", " + compNIDCol +
-		") WHERE " + compTableJoinAlias + "." + compIdCol + " = " + compTableSubAlias + "." + compIdCol,
-		"x0c0s25b0n0", 800, "x0c0s27b0n0", 864).ToSql()
+	update, _, _ := sqq.Update(compTable+" "+compTableJoinAlias).
+		Set(compNIDCol, sq.Expr(compTableSubAlias+"."+compNIDCol)).
+		Suffix("FROM (VALUES (?,?::BIGINT),(?,?::BIGINT)) AS "+compTableSubAlias+
+			"("+compIdCol+", "+compNIDCol+
+			") WHERE "+compTableJoinAlias+"."+compIdCol+" = "+compTableSubAlias+"."+compIdCol,
+			"x0c0s25b0n0", 800, "x0c0s27b0n0", 864).ToSql()
 	tests := []struct {
-		comps                *[]base.Component
+		comps                 *[]base.Component
 		dbUpdateError         error
 		expectedUpdatePrepare string
 		expectedUpdateArgs    []driver.Value
@@ -1656,7 +1657,7 @@ func TestPgGetHWInvByLocQueryFilter(t *testing.T) {
 	preQuery2, preQuery2Args, _ := sq.Select(preQueryCols...).
 		From(hwInvLocTable + " " + hwInvLocAlias).
 		Where(sq.Expr("("+hwInvLocAlias+"."+hwInvLocIdCol+" SIMILAR TO ?)", node1.ID+"([[:alpha:]][[:alnum:]]*)?")).
-		Where(sq.Eq{hwInvLocAlias + "." + hwInvLocTypeCol: []string{base.Processor.String()}}).ToSql()
+		Where(sq.Eq{hwInvLocAlias + "." + hwInvLocTypeCol: []string{xnametypes.Processor.String()}}).ToSql()
 	preQuery2Args = append(preQuery2Args, ")([[:alpha:]][[:alnum:]]*)?")
 	query2, _, _ := sqq.Select(columns...).
 		From(hwInvTable+" "+hwInvAlias).
@@ -1673,7 +1674,7 @@ func TestPgGetHWInvByLocQueryFilter(t *testing.T) {
 
 	query4, _, _ := sqq.Select(columns...).
 		From(hwInvTable + " " + hwInvAlias).
-		Where(sq.Eq{hwInvAlias + "." + hwInvTypeCol: []string{base.Processor.String()}}).ToSql()
+		Where(sq.Eq{hwInvAlias + "." + hwInvTypeCol: []string{xnametypes.Processor.String()}}).ToSql()
 
 	tests := []struct {
 		f_opts          []HWInvLocFiltFunc
@@ -1695,13 +1696,13 @@ func TestPgGetHWInvByLocQueryFilter(t *testing.T) {
 		expectedHwLocs:  []*sm.HWInvByLoc{&node1, &proc1},
 		expectedErr:     nil,
 	}, {
-		f_opts: []HWInvLocFiltFunc{HWInvLoc_ID(node1.ID), HWInvLoc_Type(base.Processor.String()), HWInvLoc_Child},
+		f_opts: []HWInvLocFiltFunc{HWInvLoc_ID(node1.ID), HWInvLoc_Type(xnametypes.Processor.String()), HWInvLoc_Child},
 		dbRows: [][]driver.Value{
 			[]driver.Value{proc1.ID, proc1.Type, proc1.Ordinal, proc1.Status, proc1LocInfo, proc1.PopulatedFRU.FRUID, proc1.PopulatedFRU.Type, proc1.PopulatedFRU.Subtype, proc1FruInfo},
 		},
 		dbError:         nil,
 		expectedPrepare: regexp.QuoteMeta(query2),
-		expectedArgs:    []driver.Value{node1.ID + "([[:alpha:]][[:alnum:]]*)?", base.Processor.String(), ")([[:alpha:]][[:alnum:]]*)?"},
+		expectedArgs:    []driver.Value{node1.ID + "([[:alpha:]][[:alnum:]]*)?", xnametypes.Processor.String(), ")([[:alpha:]][[:alnum:]]*)?"},
 		expectedHwLocs:  []*sm.HWInvByLoc{&proc1},
 		expectedErr:     nil,
 	}, {
@@ -1724,11 +1725,11 @@ func TestPgGetHWInvByLocQueryFilter(t *testing.T) {
 		expectedHwLocs:  nil,
 		expectedErr:     ErrHMSDSArgBadRedfishType,
 	}, {
-		f_opts:          []HWInvLocFiltFunc{HWInvLoc_Type(base.Processor.String())},
+		f_opts:          []HWInvLocFiltFunc{HWInvLoc_Type(xnametypes.Processor.String())},
 		dbRows:          nil,
 		dbError:         sql.ErrNoRows,
 		expectedPrepare: regexp.QuoteMeta(query4),
-		expectedArgs:    []driver.Value{base.Processor.String()},
+		expectedArgs:    []driver.Value{xnametypes.Processor.String()},
 		expectedHwLocs:  nil,
 		expectedErr:     nil,
 	}}
@@ -1785,7 +1786,7 @@ func TestPgGetHWInvByLocFilter(t *testing.T) {
 	query2, _, _ := sqq.Select(columns...).
 		From(hwInvTable + " " + hwInvAlias).
 		Where(sq.Eq{hwInvAlias + "." + hwInvIdCol: []string{node1.ID}}).
-		Where(sq.Eq{hwInvAlias + "." + hwInvTypeCol: []string{base.Node.String()}}).
+		Where(sq.Eq{hwInvAlias + "." + hwInvTypeCol: []string{xnametypes.Node.String()}}).
 		Where(sq.Expr("("+hwInvAlias+"."+hwInvFruInfoCol+" ->> 'Manufacturer' ILIKE ?)", "%cray%")).
 		Where(sq.Eq{hwInvAlias + "." + hwInvFruInfoCol + " ->> 'PartNumber'": []string{node1.PopulatedFRU.HMSNodeFRUInfo.PartNumber}}).
 		Where(sq.Eq{hwInvAlias + "." + hwInvFruInfoCol + " ->> 'SerialNumber'": []string{node1.PopulatedFRU.HMSNodeFRUInfo.SerialNumber}}).
@@ -1806,7 +1807,7 @@ func TestPgGetHWInvByLocFilter(t *testing.T) {
 		},
 		dbError:         nil,
 		expectedPrepare: regexp.QuoteMeta(query2),
-		expectedArgs:    []driver.Value{node1.ID, base.Node.String(), "%cray%", node1.PopulatedFRU.HMSNodeFRUInfo.PartNumber, node1.PopulatedFRU.HMSNodeFRUInfo.SerialNumber, node1.PopulatedFRU.FRUID},
+		expectedArgs:    []driver.Value{node1.ID, xnametypes.Node.String(), "%cray%", node1.PopulatedFRU.HMSNodeFRUInfo.PartNumber, node1.PopulatedFRU.HMSNodeFRUInfo.SerialNumber, node1.PopulatedFRU.FRUID},
 		expectedHwLocs:  []*sm.HWInvByLoc{&node1},
 		expectedErr:     nil,
 	}, {
@@ -1878,7 +1879,7 @@ func TestPgGetHWInvByFRUFilter(t *testing.T) {
 
 	query2, _, _ := sqq.Select(columns...).
 		From(hwInvFruTable + " " + hwInvFruAlias).
-		Where(sq.Eq{hwInvFruAlias + "." + hwInvFruTblTypeCol: []string{base.Node.String()}}).
+		Where(sq.Eq{hwInvFruAlias + "." + hwInvFruTblTypeCol: []string{xnametypes.Node.String()}}).
 		Where(sq.Expr("("+hwInvFruAlias+"."+hwInvFruTblInfoCol+" ->> 'Manufacturer' ILIKE ?)", "%cray%")).
 		Where(sq.Eq{hwInvFruAlias + "." + hwInvFruTblInfoCol + " ->> 'PartNumber'": []string{node1.HMSNodeFRUInfo.PartNumber}}).
 		Where(sq.Eq{hwInvFruAlias + "." + hwInvFruTblInfoCol + " ->> 'SerialNumber'": []string{node1.HMSNodeFRUInfo.SerialNumber}}).
@@ -1886,7 +1887,7 @@ func TestPgGetHWInvByFRUFilter(t *testing.T) {
 
 	query3, _, _ := sqq.Select(columns...).
 		From(hwInvFruTable + " " + hwInvFruAlias).
-		Where(sq.Eq{hwInvFruAlias + "." + hwInvFruTblTypeCol: []string{base.Processor.String()}}).ToSql()
+		Where(sq.Eq{hwInvFruAlias + "." + hwInvFruTblTypeCol: []string{xnametypes.Processor.String()}}).ToSql()
 
 	tests := []struct {
 		f_opts          []HWInvLocFiltFunc
@@ -1914,7 +1915,7 @@ func TestPgGetHWInvByFRUFilter(t *testing.T) {
 		},
 		dbError:         nil,
 		expectedPrepare: regexp.QuoteMeta(query2),
-		expectedArgs:    []driver.Value{base.Node.String(), "%cray%", node1.HMSNodeFRUInfo.PartNumber, node1.HMSNodeFRUInfo.SerialNumber, node1.FRUID},
+		expectedArgs:    []driver.Value{xnametypes.Node.String(), "%cray%", node1.HMSNodeFRUInfo.PartNumber, node1.HMSNodeFRUInfo.SerialNumber, node1.FRUID},
 		expectedHwFrus:  []*sm.HWInvByFRU{&node1},
 		expectedErr:     nil,
 	}, {
@@ -1926,11 +1927,11 @@ func TestPgGetHWInvByFRUFilter(t *testing.T) {
 		expectedHwFrus:  nil,
 		expectedErr:     ErrHMSDSArgBadRedfishType,
 	}, {
-		f_opts:          []HWInvLocFiltFunc{HWInvLoc_Type(base.Processor.String())},
+		f_opts:          []HWInvLocFiltFunc{HWInvLoc_Type(xnametypes.Processor.String())},
 		dbRows:          nil,
 		dbError:         sql.ErrNoRows,
 		expectedPrepare: regexp.QuoteMeta(query3),
-		expectedArgs:    []driver.Value{base.Processor.String()},
+		expectedArgs:    []driver.Value{xnametypes.Processor.String()},
 		expectedHwFrus:  nil,
 		expectedErr:     nil,
 	}}
@@ -2178,7 +2179,7 @@ func TestInsertHWInvHists(t *testing.T) {
 	}{{
 		hhs:             []*sm.HWInvHist{&testHWInvHist1, &testHWInvHist2},
 		expectedPrepare: regexp.QuoteMeta(insert1),
-		expectedArgs:    []driver.Value{
+		expectedArgs: []driver.Value{
 			testHWInvHist1.ID, testHWInvHist1.FruId, testHWInvHist1.EventType,
 			testHWInvHist2.ID, testHWInvHist2.FruId, testHWInvHist2.EventType,
 		},
@@ -2191,7 +2192,7 @@ func TestInsertHWInvHists(t *testing.T) {
 	}, {
 		hhs:             []*sm.HWInvHist{&testHWInvHist1, &testHWInvHist2},
 		expectedPrepare: regexp.QuoteMeta(insert1),
-		expectedArgs:    []driver.Value{
+		expectedArgs: []driver.Value{
 			testHWInvHist1.ID, testHWInvHist1.FruId, testHWInvHist1.EventType,
 			testHWInvHist2.ID, testHWInvHist2.FruId, testHWInvHist2.EventType,
 		},
@@ -3047,7 +3048,7 @@ func TestPgUpsertServiceEndpoint(t *testing.T) {
 }
 
 func TestPgUpsertServiceEndpoints(t *testing.T) {
-	upsertSuffix := "ON CONFLICT(" + serviceEPsRFEndpointIDCol + ", "+ serviceEPsRedfishTypeCol + ") DO UPDATE SET " +
+	upsertSuffix := "ON CONFLICT(" + serviceEPsRFEndpointIDCol + ", " + serviceEPsRedfishTypeCol + ") DO UPDATE SET " +
 		serviceEPsRedfishSubtypeCol + " = EXCLUDED." + serviceEPsRedfishSubtypeCol + ", " +
 		serviceEPsUUIDCol + " = EXCLUDED." + serviceEPsUUIDCol + ", " +
 		serviceEPsODataIDCol + " = EXCLUDED." + serviceEPsODataIDCol + ", " +
@@ -3075,7 +3076,7 @@ func TestPgUpsertServiceEndpoints(t *testing.T) {
 		seps:            &stest.TestServiceEndpointArrayUpdates,
 		dbError:         nil,
 		expectedPrepare: regexp.QuoteMeta(insert2),
-		expectedArgs:    []driver.Value{
+		expectedArgs: []driver.Value{
 			stest.TestServiceEndpointArrayUpdates.ServiceEndpoints[0].RfEndpointID,
 			stest.TestServiceEndpointArrayUpdates.ServiceEndpoints[0].RedfishType,
 			stest.TestServiceEndpointArrayUpdates.ServiceEndpoints[0].RedfishSubtype,
@@ -3094,7 +3095,7 @@ func TestPgUpsertServiceEndpoints(t *testing.T) {
 		seps:            &stest.TestServiceEndpointArrayUpdate1,
 		dbError:         nil,
 		expectedPrepare: regexp.QuoteMeta(insert1),
-		expectedArgs:    []driver.Value{
+		expectedArgs: []driver.Value{
 			stest.TestServiceEndpointArrayUpdate1.ServiceEndpoints[0].RfEndpointID,
 			stest.TestServiceEndpointArrayUpdate1.ServiceEndpoints[0].RedfishType,
 			stest.TestServiceEndpointArrayUpdate1.ServiceEndpoints[0].RedfishSubtype,
@@ -3107,7 +3108,7 @@ func TestPgUpsertServiceEndpoints(t *testing.T) {
 		seps:            &stest.TestServiceEndpointArrayUpdate1,
 		dbError:         sql.ErrNoRows,
 		expectedPrepare: regexp.QuoteMeta(insert1),
-		expectedArgs:    []driver.Value{
+		expectedArgs: []driver.Value{
 			stest.TestServiceEndpointArrayUpdate1.ServiceEndpoints[0].RfEndpointID,
 			stest.TestServiceEndpointArrayUpdate1.ServiceEndpoints[0].RedfishType,
 			stest.TestServiceEndpointArrayUpdate1.ServiceEndpoints[0].RedfishSubtype,
@@ -3455,7 +3456,7 @@ func TestInsertCompEthInterfaces(t *testing.T) {
 	}{{ // Test 0 - Insert 2 new rows
 		in:              []*sm.CompEthInterfaceV2{&testCompEth1, &testCompEth2},
 		expectedPrepare: regexp.QuoteMeta(insert1),
-		expectedArgs:    []driver.Value{
+		expectedArgs: []driver.Value{
 			testCompEth1.ID, testCompEth1.Desc, testCompEth1.MACAddr, "NOW()", testCompEth1.CompID, testCompEth1.Type, testCompEth1IPAddrsRaw,
 			"a4bf0138ee67", testCompEth2.Desc, testCompEth2.MACAddr, "NOW()", testCompEth2.CompID, testCompEth2.Type, testCompEth2IPAddrsRaw,
 		},
@@ -3463,7 +3464,7 @@ func TestInsertCompEthInterfaces(t *testing.T) {
 	}, { // Test 1 - Test that database error is passed back
 		in:              []*sm.CompEthInterfaceV2{&testCompEth1, &testCompEth2},
 		expectedPrepare: regexp.QuoteMeta(insert1),
-		expectedArgs:    []driver.Value{
+		expectedArgs: []driver.Value{
 			testCompEth1.ID, testCompEth1.Desc, testCompEth1.MACAddr, "NOW()", testCompEth1.CompID, testCompEth1.Type, testCompEth1IPAddrsRaw,
 			"a4bf0138ee67", testCompEth2.Desc, testCompEth2.MACAddr, "NOW()", testCompEth2.CompID, testCompEth2.Type, testCompEth2IPAddrsRaw,
 		},
@@ -3591,88 +3592,88 @@ func TestDeleteCompEthInterfacesAll(t *testing.T) {
 
 func TestGetSCNSubscriptionsAll(t *testing.T) {
 	tests := []struct {
-		dbColumns		[]string
-		dbRows			[][]driver.Value
-		dbError			error
-		expectedPrepare		string
-		expectedSCNSubs		*sm.SCNSubscriptionArray
+		dbColumns       []string
+		dbRows          [][]driver.Value
+		dbError         error
+		expectedPrepare string
+		expectedSCNSubs *sm.SCNSubscriptionArray
 	}{{
-		dbColumns:		[]string{"id", "subscription"},
-		dbRows:			[][]driver.Value{
-						[]driver.Value{2, `{"Subscriber":"hmfd@sms01","States":["On","Off"],"Url":"https://foo/bar"}`},
+		dbColumns: []string{"id", "subscription"},
+		dbRows: [][]driver.Value{
+			[]driver.Value{2, `{"Subscriber":"hmfd@sms01","States":["On","Off"],"Url":"https://foo/bar"}`},
 		},
-		dbError:		nil,
-		expectedPrepare:	regexp.QuoteMeta(tGetSCNSubscriptionQueryAll),
-		expectedSCNSubs:	&sm.SCNSubscriptionArray{[]sm.SCNSubscription{
+		dbError:         nil,
+		expectedPrepare: regexp.QuoteMeta(tGetSCNSubscriptionQueryAll),
+		expectedSCNSubs: &sm.SCNSubscriptionArray{[]sm.SCNSubscription{
 			sm.SCNSubscription{
-				ID:		2,
-				Subscriber:	"hmfd@sms01",
-				States:		[]string{"On", "Off"},
-				Url:		"https://foo/bar",
+				ID:         2,
+				Subscriber: "hmfd@sms01",
+				States:     []string{"On", "Off"},
+				Url:        "https://foo/bar",
 			},
 		}},
 	}, {
-		dbColumns:		[]string{"id", "subscription"},
-		dbRows:			[][]driver.Value{
-						[]driver.Value{2, `{"Subscriber":"hmfd@sms01","States":["On","Off"],"Url":"https://foo/bar"}`},
-						[]driver.Value{3, `{"Subscriber":"hmfd@sms02","States":["Off","Ready"],"Url":"https://foo2/bar"}`},
+		dbColumns: []string{"id", "subscription"},
+		dbRows: [][]driver.Value{
+			[]driver.Value{2, `{"Subscriber":"hmfd@sms01","States":["On","Off"],"Url":"https://foo/bar"}`},
+			[]driver.Value{3, `{"Subscriber":"hmfd@sms02","States":["Off","Ready"],"Url":"https://foo2/bar"}`},
 		},
-		dbError:		nil,
-		expectedPrepare:	regexp.QuoteMeta(tGetSCNSubscriptionQueryAll),
-		expectedSCNSubs:	&sm.SCNSubscriptionArray{[]sm.SCNSubscription{
+		dbError:         nil,
+		expectedPrepare: regexp.QuoteMeta(tGetSCNSubscriptionQueryAll),
+		expectedSCNSubs: &sm.SCNSubscriptionArray{[]sm.SCNSubscription{
 			sm.SCNSubscription{
-				ID:		2,
-				Subscriber:	"hmfd@sms01",
-				States:		[]string{"On", "Off"},
-				Url:		"https://foo/bar",
+				ID:         2,
+				Subscriber: "hmfd@sms01",
+				States:     []string{"On", "Off"},
+				Url:        "https://foo/bar",
 			},
 			sm.SCNSubscription{
-				ID:		3,
-				Subscriber:	"hmfd@sms02",
-				States:		[]string{"Off", "Ready"},
-				Url:		"https://foo2/bar",
+				ID:         3,
+				Subscriber: "hmfd@sms02",
+				States:     []string{"Off", "Ready"},
+				Url:        "https://foo2/bar",
 			},
 		}},
 	}, {
-		dbColumns:		[]string{"id", "subscription"},
-		dbRows:			[][]driver.Value{
-						[]driver.Value{1, `{"Subscriber":"cray-hmnfd-798784bd66-s69mg_4","Roles":["compute","service"],"States":["Empty","Populated","Off","On","Standby","Halt","Ready"],"Url":"http://cray-hmnfd/hmi/v1/scn"}`},
-						[]driver.Value{2, `{"Subscriber":"cray-hmnfd-798784bd66-rkvzn_4","Roles":["service"],"States":["Populated","Off","On","Standby","Halt","Ready"],"Url":"http://cray-hmnfd/hmi/v1/scn"}`},
-						[]driver.Value{3, `{"Subscriber":"cray-hmnfd-798784bd66-bp8rc_23","Roles":["compute"],"States":["Empty","Off","On","Standby","Halt","Ready"],"Url":"http://cray-hmnfd/hmi/v1/scn"}`},
+		dbColumns: []string{"id", "subscription"},
+		dbRows: [][]driver.Value{
+			[]driver.Value{1, `{"Subscriber":"cray-hmnfd-798784bd66-s69mg_4","Roles":["compute","service"],"States":["Empty","Populated","Off","On","Standby","Halt","Ready"],"Url":"http://cray-hmnfd/hmi/v1/scn"}`},
+			[]driver.Value{2, `{"Subscriber":"cray-hmnfd-798784bd66-rkvzn_4","Roles":["service"],"States":["Populated","Off","On","Standby","Halt","Ready"],"Url":"http://cray-hmnfd/hmi/v1/scn"}`},
+			[]driver.Value{3, `{"Subscriber":"cray-hmnfd-798784bd66-bp8rc_23","Roles":["compute"],"States":["Empty","Off","On","Standby","Halt","Ready"],"Url":"http://cray-hmnfd/hmi/v1/scn"}`},
 		},
-		dbError:		nil,
-		expectedPrepare:	regexp.QuoteMeta(tGetSCNSubscriptionQueryAll),
-		expectedSCNSubs:	&sm.SCNSubscriptionArray{[]sm.SCNSubscription{
+		dbError:         nil,
+		expectedPrepare: regexp.QuoteMeta(tGetSCNSubscriptionQueryAll),
+		expectedSCNSubs: &sm.SCNSubscriptionArray{[]sm.SCNSubscription{
 			sm.SCNSubscription{
-				ID:		1,
-				Subscriber:	"cray-hmnfd-798784bd66-s69mg_4",
-				Roles:		[]string{"compute", "service"},
-				States:		[]string{"Empty", "Populated", "Off", "On", "Standby", "Halt", "Ready"},
-				Url:		"http://cray-hmnfd/hmi/v1/scn",
+				ID:         1,
+				Subscriber: "cray-hmnfd-798784bd66-s69mg_4",
+				Roles:      []string{"compute", "service"},
+				States:     []string{"Empty", "Populated", "Off", "On", "Standby", "Halt", "Ready"},
+				Url:        "http://cray-hmnfd/hmi/v1/scn",
 			},
 			sm.SCNSubscription{
-				ID:		2,
-				Subscriber:	"cray-hmnfd-798784bd66-rkvzn_4",
-				Roles:		[]string{"service"},
-				States:		[]string{"Populated", "Off", "On", "Standby", "Halt", "Ready"},
-				Url:		"http://cray-hmnfd/hmi/v1/scn",
+				ID:         2,
+				Subscriber: "cray-hmnfd-798784bd66-rkvzn_4",
+				Roles:      []string{"service"},
+				States:     []string{"Populated", "Off", "On", "Standby", "Halt", "Ready"},
+				Url:        "http://cray-hmnfd/hmi/v1/scn",
 			},
 			sm.SCNSubscription{
-				ID:		3,
-				Subscriber:	"cray-hmnfd-798784bd66-bp8rc_23",
-				Roles:		[]string{"compute"},
-				States:		[]string{"Empty", "Off", "On", "Standby", "Halt", "Ready"},
-				Url:		"http://cray-hmnfd/hmi/v1/scn",
+				ID:         3,
+				Subscriber: "cray-hmnfd-798784bd66-bp8rc_23",
+				Roles:      []string{"compute"},
+				States:     []string{"Empty", "Off", "On", "Standby", "Halt", "Ready"},
+				Url:        "http://cray-hmnfd/hmi/v1/scn",
 			},
 		}},
 	}, {
-		dbColumns:		[]string{"id", "subscription"},
-		dbRows:			[][]driver.Value{
-						[]driver.Value{"", `{}`},
+		dbColumns: []string{"id", "subscription"},
+		dbRows: [][]driver.Value{
+			[]driver.Value{"", `{}`},
 		},
-		dbError:		sql.ErrNoRows,
-		expectedPrepare:	regexp.QuoteMeta(tGetSCNSubscriptionQueryAll),
-		expectedSCNSubs:	&sm.SCNSubscriptionArray{[]sm.SCNSubscription{
+		dbError:         sql.ErrNoRows,
+		expectedPrepare: regexp.QuoteMeta(tGetSCNSubscriptionQueryAll),
+		expectedSCNSubs: &sm.SCNSubscriptionArray{[]sm.SCNSubscription{
 			sm.SCNSubscription{},
 		}},
 	}}
@@ -3713,54 +3714,54 @@ func TestGetSCNSubscriptionsAll(t *testing.T) {
 
 func TestGetSCNSubscription(t *testing.T) {
 	tests := []struct {
-		id			int64
-		dbColumns		[]string
-		dbRows			[][]driver.Value
-		dbError			error
-		expectedPrepare		string
-		expectedArgs		[]driver.Value
-		expectedSCNSub		*sm.SCNSubscription
+		id              int64
+		dbColumns       []string
+		dbRows          [][]driver.Value
+		dbError         error
+		expectedPrepare string
+		expectedArgs    []driver.Value
+		expectedSCNSub  *sm.SCNSubscription
 	}{{
-		id:			2,
-		dbColumns:		[]string{"id", "subscription"},
-		dbRows:			[][]driver.Value{
-						[]driver.Value{2, `{"Subscriber":"cray-hmnfd-69d99579c5-shpmk_3","States":["Empty","Populated","Off","On","Standby","Halt","Ready"],"Url":"http://cray-hmnfd/hmi/v1/scn"}`},
+		id:        2,
+		dbColumns: []string{"id", "subscription"},
+		dbRows: [][]driver.Value{
+			[]driver.Value{2, `{"Subscriber":"cray-hmnfd-69d99579c5-shpmk_3","States":["Empty","Populated","Off","On","Standby","Halt","Ready"],"Url":"http://cray-hmnfd/hmi/v1/scn"}`},
 		},
-		dbError:		nil,
-		expectedPrepare:	regexp.QuoteMeta(tGetSCNSubscriptionQueryId),
-		expectedArgs:		[]driver.Value{2},
-		expectedSCNSub:		&sm.SCNSubscription{
-			ID:		2,
-			Subscriber:	"cray-hmnfd-69d99579c5-shpmk_3",
-			States:		[]string{"Empty","Populated","Off","On","Standby","Halt","Ready"},
-			Url:		"http://cray-hmnfd/hmi/v1/scn",
-		},
-	}, {
-		id:			3,
-		dbColumns:		[]string{"id", "subscription"},
-		dbRows:			[][]driver.Value{
-						[]driver.Value{3, `{"Subscriber":"cray-hmnfd-798784bd66-s69mg_4","Roles":["compute","service"],"States":["Empty","Populated","Off","On","Standby","Halt","Ready"],"Url":"http://cray-hmnfd/hmi/v1/scn"}`},
-		},
-		dbError:		nil,
-		expectedPrepare:	regexp.QuoteMeta(tGetSCNSubscriptionQueryId),
-		expectedArgs:		[]driver.Value{3},
-		expectedSCNSub:		&sm.SCNSubscription{
-			ID:		3,
-			Subscriber:	"cray-hmnfd-798784bd66-s69mg_4",
-			Roles:		[]string{"compute","service"},
-			States:		[]string{"Empty","Populated","Off","On","Standby","Halt","Ready"},
-			Url:		"http://cray-hmnfd/hmi/v1/scn",
+		dbError:         nil,
+		expectedPrepare: regexp.QuoteMeta(tGetSCNSubscriptionQueryId),
+		expectedArgs:    []driver.Value{2},
+		expectedSCNSub: &sm.SCNSubscription{
+			ID:         2,
+			Subscriber: "cray-hmnfd-69d99579c5-shpmk_3",
+			States:     []string{"Empty", "Populated", "Off", "On", "Standby", "Halt", "Ready"},
+			Url:        "http://cray-hmnfd/hmi/v1/scn",
 		},
 	}, {
-		id:			0,
-		dbColumns:		[]string{"id", "subscription"},
-		dbRows:			[][]driver.Value{
-						[]driver.Value{"", `{}`},
+		id:        3,
+		dbColumns: []string{"id", "subscription"},
+		dbRows: [][]driver.Value{
+			[]driver.Value{3, `{"Subscriber":"cray-hmnfd-798784bd66-s69mg_4","Roles":["compute","service"],"States":["Empty","Populated","Off","On","Standby","Halt","Ready"],"Url":"http://cray-hmnfd/hmi/v1/scn"}`},
 		},
-		dbError:		sql.ErrNoRows,
-		expectedPrepare:	regexp.QuoteMeta(tGetSCNSubscriptionQueryId),
-		expectedArgs:		[]driver.Value{},
-		expectedSCNSub:		&sm.SCNSubscription{},
+		dbError:         nil,
+		expectedPrepare: regexp.QuoteMeta(tGetSCNSubscriptionQueryId),
+		expectedArgs:    []driver.Value{3},
+		expectedSCNSub: &sm.SCNSubscription{
+			ID:         3,
+			Subscriber: "cray-hmnfd-798784bd66-s69mg_4",
+			Roles:      []string{"compute", "service"},
+			States:     []string{"Empty", "Populated", "Off", "On", "Standby", "Halt", "Ready"},
+			Url:        "http://cray-hmnfd/hmi/v1/scn",
+		},
+	}, {
+		id:        0,
+		dbColumns: []string{"id", "subscription"},
+		dbRows: [][]driver.Value{
+			[]driver.Value{"", `{}`},
+		},
+		dbError:         sql.ErrNoRows,
+		expectedPrepare: regexp.QuoteMeta(tGetSCNSubscriptionQueryId),
+		expectedArgs:    []driver.Value{},
+		expectedSCNSub:  &sm.SCNSubscription{},
 	}}
 
 	for i, test := range tests {
@@ -3799,52 +3800,52 @@ func TestGetSCNSubscription(t *testing.T) {
 
 func TestInsertSCNSubscription(t *testing.T) {
 	tests := []struct {
-		sub			sm.SCNPostSubscription
-		dbColumns		[]string
-		dbRows			[][]driver.Value
-		dbError			error
-		expectedPrepare		string
-		expectedArgs		[]driver.Value
-		expectedID		int64
+		sub             sm.SCNPostSubscription
+		dbColumns       []string
+		dbRows          [][]driver.Value
+		dbError         error
+		expectedPrepare string
+		expectedArgs    []driver.Value
+		expectedID      int64
 	}{{
-		sub:			sm.SCNPostSubscription{
-						Subscriber:	"hmfd@sms01",
-						States:		[]string{"On", "Off"},
-						Url:		"https://foo/bar",
+		sub: sm.SCNPostSubscription{
+			Subscriber: "hmfd@sms01",
+			States:     []string{"On", "Off"},
+			Url:        "https://foo/bar",
 		},
-		dbColumns:		[]string{"id"},
-		dbRows:			[][]driver.Value{
-						[]driver.Value{4},
+		dbColumns: []string{"id"},
+		dbRows: [][]driver.Value{
+			[]driver.Value{4},
 		},
-		dbError:		nil,
-		expectedPrepare:	regexp.QuoteMeta(tInsertSCNSubscription),
-		expectedArgs:		[]driver.Value{"hmfd@sms01https://foo/bar",json.RawMessage(`{"Subscriber":"hmfd@sms01","States":["On","Off"],"Url":"https://foo/bar"}`)},
-		expectedID:		4,
+		dbError:         nil,
+		expectedPrepare: regexp.QuoteMeta(tInsertSCNSubscription),
+		expectedArgs:    []driver.Value{"hmfd@sms01https://foo/bar", json.RawMessage(`{"Subscriber":"hmfd@sms01","States":["On","Off"],"Url":"https://foo/bar"}`)},
+		expectedID:      4,
 	}, {
-		sub:			sm.SCNPostSubscription{
-						Subscriber:	"cray-hmnfd-798784bd66-s69mg_4",
-						Roles:		[]string{"compute","service"},
-						States:		[]string{"Empty","Populated","Off","On","Standby","Halt","Ready"},
-						Url:		"http://cray-hmnfd/hmi/v1/scn",
+		sub: sm.SCNPostSubscription{
+			Subscriber: "cray-hmnfd-798784bd66-s69mg_4",
+			Roles:      []string{"compute", "service"},
+			States:     []string{"Empty", "Populated", "Off", "On", "Standby", "Halt", "Ready"},
+			Url:        "http://cray-hmnfd/hmi/v1/scn",
 		},
-		dbColumns:		[]string{"id"},
-		dbRows:			[][]driver.Value{
-						[]driver.Value{5},
+		dbColumns: []string{"id"},
+		dbRows: [][]driver.Value{
+			[]driver.Value{5},
 		},
-		dbError:		nil,
-		expectedPrepare:	regexp.QuoteMeta(tInsertSCNSubscription),
-		expectedArgs:		[]driver.Value{"cray-hmnfd-798784bd66-s69mg_4http://cray-hmnfd/hmi/v1/scn",json.RawMessage(`{"Subscriber":"cray-hmnfd-798784bd66-s69mg_4","Roles":["compute","service"],"States":["Empty","Populated","Off","On","Standby","Halt","Ready"],"Url":"http://cray-hmnfd/hmi/v1/scn"}`)},
-		expectedID:		5,
+		dbError:         nil,
+		expectedPrepare: regexp.QuoteMeta(tInsertSCNSubscription),
+		expectedArgs:    []driver.Value{"cray-hmnfd-798784bd66-s69mg_4http://cray-hmnfd/hmi/v1/scn", json.RawMessage(`{"Subscriber":"cray-hmnfd-798784bd66-s69mg_4","Roles":["compute","service"],"States":["Empty","Populated","Off","On","Standby","Halt","Ready"],"Url":"http://cray-hmnfd/hmi/v1/scn"}`)},
+		expectedID:      5,
 	}, {
-		sub:			sm.SCNPostSubscription{},
-		dbColumns:		[]string{"id"},
-		dbRows:			[][]driver.Value{
-						[]driver.Value{0},
+		sub:       sm.SCNPostSubscription{},
+		dbColumns: []string{"id"},
+		dbRows: [][]driver.Value{
+			[]driver.Value{0},
 		},
-		dbError:		sql.ErrNoRows,
-		expectedPrepare:	regexp.QuoteMeta(tInsertSCNSubscription),
-		expectedArgs:		[]driver.Value{"",json.RawMessage(`{}`)},
-		expectedID:		0,
+		dbError:         sql.ErrNoRows,
+		expectedPrepare: regexp.QuoteMeta(tInsertSCNSubscription),
+		expectedArgs:    []driver.Value{"", json.RawMessage(`{}`)},
+		expectedID:      0,
 	}}
 
 	for i, test := range tests {
@@ -3884,30 +3885,30 @@ func TestInsertSCNSubscription(t *testing.T) {
 
 func TestUpdateSCNSubscription(t *testing.T) {
 	tests := []struct {
-		id			int64
-		sub			sm.SCNPostSubscription
-		dbError			error
-		expectedPrepare		string
-		expectedArgs		[]driver.Value
-		expectedDidUpdate	bool
+		id                int64
+		sub               sm.SCNPostSubscription
+		dbError           error
+		expectedPrepare   string
+		expectedArgs      []driver.Value
+		expectedDidUpdate bool
 	}{{
-		id:			4,
-		sub:			sm.SCNPostSubscription{
-						Subscriber:	"hmfd@sms01",
-						States:		[]string{"On", "Off"},
-						Url:		"https://foo/bar",
+		id: 4,
+		sub: sm.SCNPostSubscription{
+			Subscriber: "hmfd@sms01",
+			States:     []string{"On", "Off"},
+			Url:        "https://foo/bar",
 		},
-		dbError:		nil,
-		expectedPrepare:	regexp.QuoteMeta(tUpdateSCNSubscription),
-		expectedArgs:		[]driver.Value{"hmfd@sms01https://foo/bar",json.RawMessage(`{"Subscriber":"hmfd@sms01","States":["On","Off"],"Url":"https://foo/bar"}`),4},
-		expectedDidUpdate:	true,
+		dbError:           nil,
+		expectedPrepare:   regexp.QuoteMeta(tUpdateSCNSubscription),
+		expectedArgs:      []driver.Value{"hmfd@sms01https://foo/bar", json.RawMessage(`{"Subscriber":"hmfd@sms01","States":["On","Off"],"Url":"https://foo/bar"}`), 4},
+		expectedDidUpdate: true,
 	}, {
-		id:			0,
-		sub:			sm.SCNPostSubscription{},
-		dbError:		sql.ErrNoRows,
-		expectedPrepare:	regexp.QuoteMeta(tUpdateSCNSubscription),
-		expectedArgs:		[]driver.Value{"",json.RawMessage(`{}`),0},
-		expectedDidUpdate:	false,
+		id:                0,
+		sub:               sm.SCNPostSubscription{},
+		dbError:           sql.ErrNoRows,
+		expectedPrepare:   regexp.QuoteMeta(tUpdateSCNSubscription),
+		expectedArgs:      []driver.Value{"", json.RawMessage(`{}`), 0},
+		expectedDidUpdate: false,
 	}}
 
 	for i, test := range tests {
@@ -3942,48 +3943,48 @@ func TestUpdateSCNSubscription(t *testing.T) {
 
 func TestPatchSCNSubscription(t *testing.T) {
 	tests := []struct {
-		id			int64
-		op			string
-		sub			sm.SCNPatchSubscription
-		dbColumns		[]string
-		dbRows			[][]driver.Value
-		dbError			error
-		expectedQueryPrepare	string
-		expectedUpdatePrepare	string
-		expectedQueryArgs	[]driver.Value
-		expectedUpdateArgs	[]driver.Value
-		expectedDidPatch	bool
+		id                    int64
+		op                    string
+		sub                   sm.SCNPatchSubscription
+		dbColumns             []string
+		dbRows                [][]driver.Value
+		dbError               error
+		expectedQueryPrepare  string
+		expectedUpdatePrepare string
+		expectedQueryArgs     []driver.Value
+		expectedUpdateArgs    []driver.Value
+		expectedDidPatch      bool
 	}{{
-		id:			4,
-		op:			"add",
-		sub:			sm.SCNPatchSubscription{
-						Op:		"add",
-						States:		[]string{"On", "Off"},
+		id: 4,
+		op: "add",
+		sub: sm.SCNPatchSubscription{
+			Op:     "add",
+			States: []string{"On", "Off"},
 		},
-		dbColumns:		[]string{"id", "subscription"},
-		dbRows:			[][]driver.Value{
-						[]driver.Value{4, `{"Subscriber":"cray-hmnfd-69d99579c5-shpmk_3","States":["Empty","Populated","Off","On","Standby","Halt","Ready"],"Url":"http://cray-hmnfd/hmi/v1/scn"}`},
+		dbColumns: []string{"id", "subscription"},
+		dbRows: [][]driver.Value{
+			[]driver.Value{4, `{"Subscriber":"cray-hmnfd-69d99579c5-shpmk_3","States":["Empty","Populated","Off","On","Standby","Halt","Ready"],"Url":"http://cray-hmnfd/hmi/v1/scn"}`},
 		},
-		dbError:		nil,
-		expectedQueryPrepare:	regexp.QuoteMeta(tGetSCNSubscriptionUpdate),
-		expectedUpdatePrepare:	regexp.QuoteMeta(tUpdateSCNSubscription),
-		expectedQueryArgs:	[]driver.Value{4},
-		expectedUpdateArgs:	[]driver.Value{"cray-hmnfd-69d99579c5-shpmk_3http://cray-hmnfd/hmi/v1/scn",json.RawMessage(`{"Subscriber":"cray-hmnfd-69d99579c5-shpmk_3","States":["Empty","Populated","Off","On","Standby","Halt","Ready"],"Url":"http://cray-hmnfd/hmi/v1/scn"}`),4},
-		expectedDidPatch:	true,
+		dbError:               nil,
+		expectedQueryPrepare:  regexp.QuoteMeta(tGetSCNSubscriptionUpdate),
+		expectedUpdatePrepare: regexp.QuoteMeta(tUpdateSCNSubscription),
+		expectedQueryArgs:     []driver.Value{4},
+		expectedUpdateArgs:    []driver.Value{"cray-hmnfd-69d99579c5-shpmk_3http://cray-hmnfd/hmi/v1/scn", json.RawMessage(`{"Subscriber":"cray-hmnfd-69d99579c5-shpmk_3","States":["Empty","Populated","Off","On","Standby","Halt","Ready"],"Url":"http://cray-hmnfd/hmi/v1/scn"}`), 4},
+		expectedDidPatch:      true,
 	}, {
-		id:			0,
-		op:			"remove",
-		sub:			sm.SCNPatchSubscription{},
-		dbColumns:		[]string{"", ""},
-		dbRows:			[][]driver.Value{
-						[]driver.Value{0, `{}`},
+		id:        0,
+		op:        "remove",
+		sub:       sm.SCNPatchSubscription{},
+		dbColumns: []string{"", ""},
+		dbRows: [][]driver.Value{
+			[]driver.Value{0, `{}`},
 		},
-		dbError:		sql.ErrNoRows,
-		expectedQueryPrepare:	regexp.QuoteMeta(tGetSCNSubscriptionUpdate),
-		expectedUpdatePrepare:	regexp.QuoteMeta(tUpdateSCNSubscription),
-		expectedQueryArgs:	[]driver.Value{},
-		expectedUpdateArgs:	[]driver.Value{"",json.RawMessage(`{}`),0},
-		expectedDidPatch:	false,
+		dbError:               sql.ErrNoRows,
+		expectedQueryPrepare:  regexp.QuoteMeta(tGetSCNSubscriptionUpdate),
+		expectedUpdatePrepare: regexp.QuoteMeta(tUpdateSCNSubscription),
+		expectedQueryArgs:     []driver.Value{},
+		expectedUpdateArgs:    []driver.Value{"", json.RawMessage(`{}`), 0},
+		expectedDidPatch:      false,
 	}}
 
 	for i, test := range tests {
@@ -4025,23 +4026,23 @@ func TestPatchSCNSubscription(t *testing.T) {
 
 func TestDeleteSCNSubscription(t *testing.T) {
 	tests := []struct {
-		id			int64
-		dbError			error
-		expectedPrepare		string
-		expectedArgs		[]driver.Value
-		expectedDidDelete	bool
+		id                int64
+		dbError           error
+		expectedPrepare   string
+		expectedArgs      []driver.Value
+		expectedDidDelete bool
 	}{{
-		id:			5,
-		dbError:		nil,
-		expectedPrepare:	regexp.QuoteMeta(tDeleteSCNSubscription),
-		expectedArgs:		[]driver.Value{5},
-		expectedDidDelete:	true,
+		id:                5,
+		dbError:           nil,
+		expectedPrepare:   regexp.QuoteMeta(tDeleteSCNSubscription),
+		expectedArgs:      []driver.Value{5},
+		expectedDidDelete: true,
 	}, {
-		id:			0,
-		dbError:		sql.ErrNoRows,
-		expectedPrepare:	regexp.QuoteMeta(tDeleteSCNSubscription),
-		expectedArgs:		[]driver.Value{},
-		expectedDidDelete:	false,
+		id:                0,
+		dbError:           sql.ErrNoRows,
+		expectedPrepare:   regexp.QuoteMeta(tDeleteSCNSubscription),
+		expectedArgs:      []driver.Value{},
+		expectedDidDelete: false,
 	}}
 
 	for i, test := range tests {
@@ -4076,25 +4077,25 @@ func TestDeleteSCNSubscription(t *testing.T) {
 
 func TestDeleteSCNSubscriptionsAll(t *testing.T) {
 	tests := []struct {
-		dbError			error
-		expectedPrepare		string
-		expectedNumSubsDeleted	int64
+		dbError                error
+		expectedPrepare        string
+		expectedNumSubsDeleted int64
 	}{{
-		dbError:		nil,
-		expectedPrepare:	regexp.QuoteMeta(tDeleteSCNSubscriptionAll),
-		expectedNumSubsDeleted:	1,
+		dbError:                nil,
+		expectedPrepare:        regexp.QuoteMeta(tDeleteSCNSubscriptionAll),
+		expectedNumSubsDeleted: 1,
 	}, {
-		dbError:		nil,
-		expectedPrepare:	regexp.QuoteMeta(tDeleteSCNSubscriptionAll),
-		expectedNumSubsDeleted:	5,
+		dbError:                nil,
+		expectedPrepare:        regexp.QuoteMeta(tDeleteSCNSubscriptionAll),
+		expectedNumSubsDeleted: 5,
 	}, {
-		dbError:		sql.ErrNoRows,
-		expectedPrepare:	regexp.QuoteMeta(tDeleteSCNSubscriptionAll),
-		expectedNumSubsDeleted:	0,
+		dbError:                sql.ErrNoRows,
+		expectedPrepare:        regexp.QuoteMeta(tDeleteSCNSubscriptionAll),
+		expectedNumSubsDeleted: 0,
 	}}
 
 	for i, test := range tests {
-                ResetMockDB()
+		ResetMockDB()
 		mockPG.ExpectBegin()
 		if test.dbError != nil {
 			mockPG.ExpectPrepare(test.expectedPrepare).ExpectExec().WillReturnError(test.dbError)
@@ -5135,7 +5136,7 @@ func TestPgDeleteGroupMember(t *testing.T) {
 	dgrp1Update, _, _ := sqq.Delete(compGroupMembersTable).
 		Where("group_id = ?", uuid1).
 		Where("component_id = ?",
-			base.NormalizeHMSCompID(dgrp1.Members.IDs[0])).ToSql()
+			xnametypes.NormalizeHMSCompID(dgrp1.Members.IDs[0])).ToSql()
 
 	dgrp2Query, _, _ := sqq.Select(compGroupsColsSMGroup...).
 		From(compGroupsTable).
@@ -5145,7 +5146,7 @@ func TestPgDeleteGroupMember(t *testing.T) {
 	dgrp2Update, _, _ := sqq.Delete(compGroupMembersTable).
 		Where("group_id = ?", uuid2).
 		Where("component_id = ?",
-			base.NormalizeHMSCompID(dgrp2.Members.IDs[0])).ToSql()
+			xnametypes.NormalizeHMSCompID(dgrp2.Members.IDs[0])).ToSql()
 
 	dgrp3Query, _, _ := sqq.Select(compGroupsColsSMGroup...).
 		From(compGroupsTable).
@@ -5155,7 +5156,7 @@ func TestPgDeleteGroupMember(t *testing.T) {
 	dgrp3Update, _, _ := sqq.Delete(compGroupMembersTable).
 		Where("group_id = ?", uuid3).
 		Where("component_id = ?",
-			base.NormalizeHMSCompID(dgrp3x.Members.IDs[0])).ToSql()
+			xnametypes.NormalizeHMSCompID(dgrp3x.Members.IDs[0])).ToSql()
 
 	dgrp4Query, _, _ := sqq.Select(compGroupsColsSMGroup...).
 		From(compGroupsTable).
@@ -5165,7 +5166,7 @@ func TestPgDeleteGroupMember(t *testing.T) {
 	dgrp4Update, _, _ := sqq.Delete(compGroupMembersTable).
 		Where("group_id = ?", uuid4).
 		Where("component_id = ?",
-			base.NormalizeHMSCompID(dgrp4x.Members.IDs[0])).ToSql()
+			xnametypes.NormalizeHMSCompID(dgrp4x.Members.IDs[0])).ToSql()
 
 	tests := []struct {
 		label                 string
@@ -5885,7 +5886,7 @@ func TestPgDeletePartitionMember(t *testing.T) {
 	dgrp5Update, _, _ := sqq.Delete(compGroupMembersTable).
 		Where("group_id = ?", uuid5).
 		Where("component_id = ?",
-			base.NormalizeHMSCompID(dgrp5p.Members.IDs[0])).ToSql()
+			xnametypes.NormalizeHMSCompID(dgrp5p.Members.IDs[0])).ToSql()
 
 	dgrp6Query, _, _ := sqq.Select(compGroupsColsSMPart...).
 		From(compGroupsTable).
@@ -5895,7 +5896,7 @@ func TestPgDeletePartitionMember(t *testing.T) {
 	dgrp6Update, _, _ := sqq.Delete(compGroupMembersTable).
 		Where("group_id = ?", uuid6).
 		Where("component_id = ?",
-			base.NormalizeHMSCompID(dgrp6p.Members.IDs[0])).ToSql()
+			xnametypes.NormalizeHMSCompID(dgrp6p.Members.IDs[0])).ToSql()
 
 	tests := []struct {
 		name                  string
@@ -6399,7 +6400,7 @@ func TestPgInsertCompReservations(t *testing.T) {
 		expectedGetCompIDsPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedGetCompIDsArgs:    []driver.Value{"x3000c0s9b0n0"},
 		dbGetCompIDsReturnCols:    []string{"id", "type", "state", "flag", "enabled", "admin", "role", "subrole", "nid", "subtype", "nettype", "arch", "class", "reservation_disabled", "locked"},
-		dbGetCompIDsReturnRows:    [][]driver.Value{
+		dbGetCompIDsReturnRows: [][]driver.Value{
 			[]driver.Value{"x3000c0s9b0n0", "Node", "Ready", "OK", true, "", "Compute", "", 42, "", "Sling", "X86", "Mountain", false, false},
 		},
 		dbInsertError:           nil,
@@ -6409,9 +6410,9 @@ func TestPgInsertCompReservations(t *testing.T) {
 		dbInsertV2ResReturnRows: [][]driver.Value{
 			[]driver.Value{"x3000c0s9b0n0", "x3000c0s9b0n0:dk:de1a20c2-efc9-41ad-b839-1e3cef197d17", "x3000c0s9b0n0:rk:cbff2077-952f-4536-a102-c442227fdc5d"},
 		},
-		expectedSuccess:       1,
-		expectedFailure:       0,
-		expectErr:             false,
+		expectedSuccess: 1,
+		expectedFailure: 0,
+		expectErr:       false,
 	}, {
 		f: sm.CompLockV2Filter{
 			ID:                  []string{"x3000c0s9b0n0"},
@@ -6422,7 +6423,7 @@ func TestPgInsertCompReservations(t *testing.T) {
 		expectedGetCompIDsPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedGetCompIDsArgs:    []driver.Value{"x3000c0s9b0n0"},
 		dbGetCompIDsReturnCols:    []string{"id", "type", "state", "flag", "enabled", "admin", "role", "subrole", "nid", "subtype", "nettype", "arch", "class", "reservation_disabled", "locked"},
-		dbGetCompIDsReturnRows:    [][]driver.Value{
+		dbGetCompIDsReturnRows: [][]driver.Value{
 			[]driver.Value{"x3000c0s9b0n0", "Node", "Ready", "OK", true, "", "Compute", "", 42, "", "Sling", "X86", "Mountain", false, true},
 		},
 		dbInsertError:           nil,
@@ -6442,7 +6443,7 @@ func TestPgInsertCompReservations(t *testing.T) {
 		expectedGetCompIDsPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedGetCompIDsArgs:    []driver.Value{"x3000c0s9b0n0"},
 		dbGetCompIDsReturnCols:    []string{"id", "type", "state", "flag", "enabled", "admin", "role", "subrole", "nid", "subtype", "nettype", "arch", "class", "reservation_disabled", "locked"},
-		dbGetCompIDsReturnRows:    [][]driver.Value{
+		dbGetCompIDsReturnRows: [][]driver.Value{
 			[]driver.Value{"x3000c0s9b0n0", "Node", "Ready", "OK", true, "", "Compute", "", 42, "", "Sling", "X86", "Mountain", false, false},
 		},
 		dbInsertError:           nil,
@@ -6462,7 +6463,7 @@ func TestPgInsertCompReservations(t *testing.T) {
 		expectedGetCompIDsPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedGetCompIDsArgs:    []driver.Value{"x3000c0s9b0n0"},
 		dbGetCompIDsReturnCols:    []string{"id", "type", "state", "flag", "enabled", "admin", "role", "subrole", "nid", "subtype", "nettype", "arch", "class", "reservation_disabled", "locked"},
-		dbGetCompIDsReturnRows:    [][]driver.Value{
+		dbGetCompIDsReturnRows: [][]driver.Value{
 			[]driver.Value{"x3000c0s9b0n0", "Node", "Ready", "OK", true, "", "Compute", "", 42, "", "Sling", "X86", "Mountain", true, false},
 		},
 		dbInsertError:           nil,
@@ -6573,14 +6574,14 @@ func TestPgDeleteCompReservationsForce(t *testing.T) {
 		expectedGetCompIDsPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedGetCompIDsArgs:    []driver.Value{"x3000c0s9b0n0"},
 		dbGetCompIDsReturnCols:    []string{"id", "type", "state", "flag", "enabled", "admin", "role", "subrole", "nid", "subtype", "nettype", "arch", "class", "reservation_disabled", "locked"},
-		dbGetCompIDsReturnRows:    [][]driver.Value{
+		dbGetCompIDsReturnRows: [][]driver.Value{
 			[]driver.Value{"x3000c0s9b0n0", "Node", "Ready", "OK", true, "", "Compute", "", 42, "", "Sling", "X86", "Mountain", false, false},
 		},
 		dbDeleteError:         nil,
 		expectedDeletePrepare: regexp.QuoteMeta(resDeleteReservation),
 		expectedDeleteArgs:    []driver.Value{"x3000c0s9b0n0"},
 		dbDeleteReturnCols:    []string{"component_id"},
-		dbDeleteReturnRows:    [][]driver.Value{
+		dbDeleteReturnRows: [][]driver.Value{
 			[]driver.Value{"x3000c0s9b0n0"},
 		},
 		expectedSuccess: 1,
@@ -6595,7 +6596,7 @@ func TestPgDeleteCompReservationsForce(t *testing.T) {
 		expectedGetCompIDsPrepare: regexp.QuoteMeta(tGetCompBaseQuery + " WHERE c.id IN ($1)"),
 		expectedGetCompIDsArgs:    []driver.Value{"x3000c0s9b0n0"},
 		dbGetCompIDsReturnCols:    []string{"id", "type", "state", "flag", "enabled", "admin", "role", "subrole", "nid", "subtype", "nettype", "arch", "class", "reservation_disabled", "locked"},
-		dbGetCompIDsReturnRows:    [][]driver.Value{
+		dbGetCompIDsReturnRows: [][]driver.Value{
 			[]driver.Value{"x3000c0s9b0n0", "Node", "Ready", "OK", true, "", "Compute", "", 42, "", "Sling", "X86", "Mountain", false, false},
 		},
 		dbDeleteError:         nil,
@@ -6706,12 +6707,12 @@ func TestPgDeleteCompReservations(t *testing.T) {
 		expectedDeletePrepare: regexp.QuoteMeta(resDeleteReservation),
 		expectedDeleteArgs:    []driver.Value{"x3000c0s9b0n0:rk:cbff2077-952f-4536-a102-c442227fdc5d"},
 		dbDeleteReturnCols:    []string{"component_id"},
-		dbDeleteReturnRows:    [][]driver.Value{
+		dbDeleteReturnRows: [][]driver.Value{
 			[]driver.Value{"x3000c0s9b0n0"},
 		},
-		expectedSuccess:    1,
-		expectedFailure:    0,
-		expectErr:          false,
+		expectedSuccess: 1,
+		expectedFailure: 0,
+		expectErr:       false,
 	}, {
 		f: sm.CompLockV2ReservationFilter{
 			ReservationKeys: []sm.CompLockV2Key{
@@ -6797,11 +6798,11 @@ func TestPgDeleteCompReservationsExpired(t *testing.T) {
 		dbDeleteError:         nil,
 		expectedDeletePrepare: regexp.QuoteMeta(resDeleteReservation),
 		dbDeleteReturnCols:    []string{"component_id"},
-		dbDeleteReturnRows:    [][]driver.Value{
+		dbDeleteReturnRows: [][]driver.Value{
 			[]driver.Value{"x3000c0s9b0n0"},
 		},
-		expectedSuccess:    1,
-		expectErr:          false,
+		expectedSuccess: 1,
+		expectErr:       false,
 	}}
 
 	for i, test := range tests {

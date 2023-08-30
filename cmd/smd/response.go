@@ -27,7 +27,7 @@ import (
 	"fmt"
 	"net/http"
 
-	base "github.com/Cray-HPE/hms-base"
+	base "github.com/Cray-HPE/hms-base/v2"
 	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
 )
 
@@ -48,7 +48,7 @@ func sendJsonError(w http.ResponseWriter, ecode int, message string) {
 	if ecode < 400 {
 		sendJsonResponse(w, ecode, message)
 	} else {
-		// Use library function in HMS base.  Problem will be
+		// Use library function in HMS xnametypes.  Problem will be
 		// a generic one with title matching the HTTP Status code text
 		// with message as the details field.  For this type of problem
 		// title can just be set to "about:blank" so we need no

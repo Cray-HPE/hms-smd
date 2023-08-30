@@ -28,13 +28,13 @@ package slsapi
 
 import (
 	"bytes"
-	"github.com/hashicorp/go-retryablehttp"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"testing"
-	"github.com/Cray-HPE/hms-base"
+
+	"github.com/hashicorp/go-retryablehttp"
 )
 
 var client *retryablehttp.Client
@@ -109,7 +109,7 @@ func TestIsReady(t *testing.T) {
 
 	for i, test := range tests {
 		sls := SLS{
-			Url: test.SLSUrl,
+			Url:    test.SLSUrl,
 			Client: test.Client,
 		}
 		out, err := sls.IsReady()
@@ -138,30 +138,30 @@ func TestGetNodeInfo(t *testing.T) {
 		expectedInfo ComptypeNode
 		expectErr    bool
 	}{{
-		SLSUrl:       defaultUrl,
-		Client:       client,
-		id:           "x0c0s0b0n0",
+		SLSUrl: defaultUrl,
+		Client: client,
+		id:     "x0c0s0b0n0",
 		expectedInfo: ComptypeNode{
 			NID:  1,
 			Role: "Application",
 		},
-		expectErr:    false,
+		expectErr: false,
 	}, {
-		SLSUrl:       defaultUrl,
-		Client:       client,
-		id:           "x0c0s1b0n0",
+		SLSUrl: defaultUrl,
+		Client: client,
+		id:     "x0c0s1b0n0",
 		expectedInfo: ComptypeNode{
 			Role: "Application",
 		},
-		expectErr:    false,
+		expectErr: false,
 	}, {
-		SLSUrl:       defaultUrl,
-		Client:       client,
-		id:           "x0c0s2b0n0",
+		SLSUrl: defaultUrl,
+		Client: client,
+		id:     "x0c0s2b0n0",
 		expectedInfo: ComptypeNode{
-			NID:  1,
+			NID: 1,
 		},
-		expectErr:    false,
+		expectErr: false,
 	}, {
 		SLSUrl:       defaultUrl,
 		Client:       client,
@@ -196,7 +196,7 @@ func TestGetNodeInfo(t *testing.T) {
 
 	for i, test := range tests {
 		sls := SLS{
-			Url: test.SLSUrl,
+			Url:    test.SLSUrl,
 			Client: test.Client,
 		}
 		out, err := sls.GetNodeInfo(test.id)
@@ -284,18 +284,18 @@ const testPayloadSLSAPI_comp_noData = `
 func NewRTFuncSLSAPI() RTFunc {
 	return func(req *http.Request) *http.Response {
 		bad := true
-		if (len(req.Header) > 0) {
-			vals,ok := req.Header[base.USERAGENT]
-			if (ok) {
-				for _,v := range(vals) {
-					if (v == testSvcName) {
+		if len(req.Header) > 0 {
+			vals, ok := req.Header[xnametypes.USERAGENT]
+			if ok {
+				for _, v := range vals {
+					if v == testSvcName {
 						bad = false
 						break
 					}
 				}
 			}
 		}
-		if (bad) {
+		if bad {
 			return &http.Response{
 				StatusCode: http.StatusInternalServerError,
 				// Send mock response for rpath

@@ -24,7 +24,8 @@ package sm
 
 import (
 	"strings"
-	base "github.com/Cray-HPE/hms-base"
+
+	base "github.com/Cray-HPE/hms-base/v2"
 )
 
 var ErrHWHistEventTypeInvalid = base.NewHMSError("sm", "Invalid hardware inventory history event type")
@@ -61,7 +62,7 @@ type HWInvHist struct {
 }
 
 type HWInvHistArray struct {
-	ID      string       `json:"ID"`      // xname or FruId (if ByFRU)
+	ID      string       `json:"ID"` // xname or FruId (if ByFRU)
 	History []*HWInvHist `json:"History"`
 }
 
@@ -89,7 +90,7 @@ func NewHWInvHistResp(hwHists []*HWInvHist, format HWInvHistFmt) (*HWInvHistResp
 			compHistMap[id] = idx
 			idx++
 			compHistArray := HWInvHistArray{
-				ID: id,
+				ID:      id,
 				History: []*HWInvHist{hwHist},
 			}
 			compHist.Components = append(compHist.Components, compHistArray)

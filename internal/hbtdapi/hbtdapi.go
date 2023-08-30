@@ -27,13 +27,14 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/go-retryablehttp"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"time"
-	"github.com/Cray-HPE/hms-base"
+
+	base "github.com/Cray-HPE/hms-base/v2"
+	"github.com/hashicorp/go-retryablehttp"
+	"github.com/sirupsen/logrus"
 )
 
 const DefaultHbtdUrl string = "http://cray-hbtd/hmi/v1"

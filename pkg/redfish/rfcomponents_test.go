@@ -32,8 +32,8 @@ import (
 	"net/http"
 	"testing"
 
-	base "github.com/Cray-HPE/hms-base"
 	"github.com/Cray-HPE/hms-certs/pkg/hms_certs"
+	"github.com/Cray-HPE/hms-xname/xnametypes"
 )
 
 // RoundTrip method override
@@ -835,8 +835,8 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 				}
 			}
 			// Verify xname and type
-			stype := base.GetHMSType(s.ID)
-			if stype != base.Node || s.Type != stype.String() {
+			stype := xnametypes.GetHMSType(s.ID)
+			if stype != xnametypes.Node || s.Type != stype.String() {
 				return fmt.Errorf("bad xname ID ('%s') or Type ('%s') for %s\n",
 					s.ID, s.Type, sysId)
 			}
@@ -866,7 +866,7 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 			return fmt.Errorf("ManagerId: " + v.ManagerId + ": bad Target/AllowableValues")
 		}
 		// Verify xname and type
-		mtype := base.GetHMSTypeString(m.ID)
+		mtype := xnametypes.GetHMSTypeString(m.ID)
 		if m.ID == "" || mtype != v.ManagerType || m.Type != v.ManagerType {
 			return fmt.Errorf("bad xname ID ('%s') or Type ('%s') for %s\n",
 				m.ID, m.Type, v.ManagerId)
@@ -891,8 +891,8 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 			return fmt.Errorf("NodeEnclosureId: " + neId + ": bad Target/AllowableValues")
 		}
 		// Verify xname and type
-		ctype := base.GetHMSType(c.ID)
-		if ctype != base.NodeEnclosure || c.Type != ctype.String() {
+		ctype := xnametypes.GetHMSType(c.ID)
+		if ctype != xnametypes.NodeEnclosure || c.Type != ctype.String() {
 			return fmt.Errorf("bad xname ID ('%s') or Type ('%s') for %s\n",
 				c.ID, c.Type, neId)
 		}
@@ -915,8 +915,8 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 			return fmt.Errorf("ChassisEnclosureId: " + ceId + ": bad Target/AllowableValues")
 		}
 		// Verify xname and type
-		ctype := base.GetHMSType(c.ID)
-		if ctype != base.Chassis || c.Type != ctype.String() {
+		ctype := xnametypes.GetHMSType(c.ID)
+		if ctype != xnametypes.Chassis || c.Type != ctype.String() {
 			return fmt.Errorf("bad xname ID ('%s') or Type ('%s') for %s\n",
 				c.ID, c.Type, ceId)
 		}
@@ -939,8 +939,8 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 				return fmt.Errorf("ComputeBladeId: " + cbId + ": bad Target/AllowableValues")
 			}
 			// Verify xname and type
-			cbtype := base.GetHMSType(cb.ID)
-			if cbtype != base.ComputeModule || cb.Type != cbtype.String() {
+			cbtype := xnametypes.GetHMSType(cb.ID)
+			if cbtype != xnametypes.ComputeModule || cb.Type != cbtype.String() {
 				return fmt.Errorf("bad xname ID ('%s') or Type ('%s') for %s\n",
 					cb.ID, cb.Type, cbId)
 			}
@@ -968,8 +968,8 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 				return fmt.Errorf("RouterBladeId: " + rbId + ": bad Target/AllowableValues")
 			}
 			// Verify xname and type
-			rbtype := base.GetHMSType(rb.ID)
-			if rbtype != base.RouterModule || rb.Type != rbtype.String() {
+			rbtype := xnametypes.GetHMSType(rb.ID)
+			if rbtype != xnametypes.RouterModule || rb.Type != rbtype.String() {
 				return fmt.Errorf("bad xname ID ('%s') or Type ('%s') for %s\n",
 					rb.ID, rb.Type, rbId)
 			}
@@ -994,8 +994,8 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 			// No current actions to verify.
 
 			// Verify xname and type
-			pdutype := base.GetHMSType(pdu.ID)
-			if pdutype != base.CabinetPDU || pdu.Type != pdutype.String() {
+			pdutype := xnametypes.GetHMSType(pdu.ID)
+			if pdutype != xnametypes.CabinetPDU || pdu.Type != pdutype.String() {
 				return fmt.Errorf("bad xname ID ('%s') or Type ('%s') for %s\n",
 					pdu.ID, pdu.Type, pduId)
 			}
@@ -1068,8 +1068,8 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 			// No current actions to verify.
 
 			// Verify xname and type
-			outtype := base.GetHMSType(out.ID)
-			if outtype != base.CabinetPDUPowerConnector || out.Type != outtype.String() {
+			outtype := xnametypes.GetHMSType(out.ID)
+			if outtype != xnametypes.CabinetPDUPowerConnector || out.Type != outtype.String() {
 				return fmt.Errorf("bad xname ID ('%s') or Type ('%s') for %s\n",
 					out.ID, out.Type, outId)
 			}
@@ -15274,7 +15274,7 @@ const testPayloadRtsPDUManagers_BMC_NICs_Dedicated = `
                 "Messages": [
                         {
                                 "@odata.type": "#Message.v1_0_0.Message",
-                                "MessageId": "Base.1.0.SettingsFailed",
+                                "MessageId": "xnametypes.1.0.SettingsFailed",
                                 "RelatedProperties": [
                                         "#/IPv6Addresses/PrefixLength"
                                 ]

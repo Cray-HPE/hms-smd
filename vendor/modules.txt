@@ -1,6 +1,8 @@
 # github.com/Cray-HPE/hms-base v1.15.0
-## explicit
 github.com/Cray-HPE/hms-base
+# github.com/Cray-HPE/hms-base/v2 v2.0.1
+## explicit
+github.com/Cray-HPE/hms-base/v2
 # github.com/Cray-HPE/hms-certs v1.3.2
 ## explicit
 github.com/Cray-HPE/hms-certs/pkg/hms_certs
@@ -18,6 +20,7 @@ github.com/Cray-HPE/hms-msgbus
 github.com/Cray-HPE/hms-securestorage
 # github.com/Cray-HPE/hms-xname v1.2.0
 ## explicit
+github.com/Cray-HPE/hms-xname/xnametypes
 # github.com/DATA-DOG/go-sqlmock v1.3.3
 ## explicit
 github.com/DATA-DOG/go-sqlmock

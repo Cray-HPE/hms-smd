@@ -26,13 +26,15 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/go-retryablehttp"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	base "github.com/Cray-HPE/hms-base"
 	"time"
+
+	base "github.com/Cray-HPE/hms-base/v2"
+	"github.com/Cray-HPE/hms-xname/xnametypes"
+	"github.com/hashicorp/go-retryablehttp"
+	"github.com/sirupsen/logrus"
 )
 
 const DefaultSlsUrl string = "http://cray-sls/"
@@ -49,13 +51,13 @@ type slsReady struct {
 }
 
 type NodeHardware struct {
-	Parent          string       `json:"Parent"`
-	Children        []string     `json:"Children"`
-	Xname           string       `json:"Xname"`
-	Type            string       `json:"Type"`
-	Class           string       `json:"Class"`
-	TypeString      base.HMSType `json:"TypeString"`
-	ExtraProperties ComptypeNode `json:"ExtraProperties"`
+	Parent          string             `json:"Parent"`
+	Children        []string           `json:"Children"`
+	Xname           string             `json:"Xname"`
+	Type            string             `json:"Type"`
+	Class           string             `json:"Class"`
+	TypeString      xnametypes.HMSType `json:"TypeString"`
+	ExtraProperties ComptypeNode       `json:"ExtraProperties"`
 }
 
 type ComptypeNode struct {
@@ -165,10 +167,10 @@ func (sls *SLS) GetNodeInfo(id string) (NodeInfo, error) {
 
 	// Grab the fields we care about
 	nodeInfo := NodeInfo{
-		NID: nh.ExtraProperties.NID,
-		Role: nh.ExtraProperties.Role,
+		NID:     nh.ExtraProperties.NID,
+		Role:    nh.ExtraProperties.Role,
 		SubRole: nh.ExtraProperties.SubRole,
-		Class: nh.Class,
+		Class:   nh.Class,
 	}
 
 	return nodeInfo, nil

@@ -23,7 +23,7 @@
 package hmsds
 
 import (
-	base "github.com/Cray-HPE/hms-base"
+	base "github.com/Cray-HPE/hms-base/v2"
 	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
 )
 
@@ -299,7 +299,7 @@ type HMSDB interface {
 	// Return true if there was a row affected, false if there were zero.
 	DeleteNodeMapByID(id string) (bool, error)
 
-	// Delete all Node NID Mapping entries from database.
+	// Delete all Node NID Mapping entries from dataxnametypes.
 	// Also returns number of deleted rows, if error is nil.
 	DeleteNodeMapsAll() (int64, error)
 
@@ -325,7 +325,7 @@ type HMSDB interface {
 	// Return true if there was a row affected, false if there were zero.
 	DeletePowerMapByID(id string) (bool, error)
 
-	// Delete all Power Mapping entries from database.
+	// Delete all Power Mapping entries from dataxnametypes.
 	// Also returns number of deleted rows, if error is nil.
 	DeletePowerMapsAll() (int64, error)
 
@@ -467,7 +467,7 @@ type HMSDB interface {
 	// do not match ALL of the non-empty strings in the filter struct
 	GetRFEndpointsFilter(f *RedfishEPFilter) ([]*sm.RedfishEndpoint, error)
 
-	// Insert new RedfishEndpoint into database.
+	// Insert new RedfishEndpoint into dataxnametypes.
 	// Does not insert any ComponentEndpoint children.
 	// If ID or FQDN already exists, return ErrHMSDSDuplicateKey
 	// No insertion done on err != nil
@@ -480,7 +480,7 @@ type HMSDB interface {
 	// No insertions are done on err != nil
 	InsertRFEndpoints(eps *sm.RedfishEndpointArray) error
 
-	// Update existing RedfishEndpointArray entry in database.
+	// Update existing RedfishEndpointArray entry in dataxnametypes.
 	// Does not update any ComponentEndpoint children.
 	// Returns updated entry or nil/nul if not found.  If an error occurred,
 	// nil/error will be returned.
@@ -519,7 +519,7 @@ type HMSDB interface {
 	// Return true if there was a row affected, false if there were zero.
 	DeleteRFEndpointByID(id string) (bool, error)
 
-	// Delete all RedfishEndpoints from database.
+	// Delete all RedfishEndpoints from dataxnametypes.
 	// Also returns number of deleted rows, if error is nil.
 	DeleteRFEndpointsAll() (int64, error)
 
@@ -529,7 +529,7 @@ type HMSDB interface {
 	// Return true if there was a row affected, false if there were zero.
 	DeleteRFEndpointByIDSetEmpty(id string) (bool, []string, error)
 
-	// Delete all RedfishEndpoints from database.
+	// Delete all RedfishEndpoints from dataxnametypes.
 	// This also deletes all child ComponentEndpoints, and in addition,
 	// sets the State/Components entries for those ComponentEndpoints to Empty/OK
 	// Also returns number of deleted rows, if error is nil.
@@ -566,7 +566,7 @@ type HMSDB interface {
 	// Return true if there was a row affected, false if there were zero.
 	DeleteCompEndpointByID(id string) (bool, error)
 
-	// Delete all ComponentEndpoints from database.
+	// Delete all ComponentEndpoints from dataxnametypes.
 	// Also returns number of deleted rows, if error is nil.
 	DeleteCompEndpointsAll() (int64, error)
 
@@ -577,7 +577,7 @@ type HMSDB interface {
 	// string array returns the single xname ID that changed state or is empty.
 	DeleteCompEndpointByIDSetEmpty(id string) (bool, []string, error)
 
-	// Delete all ComponentEndpoints from database. In addition,
+	// Delete all ComponentEndpoints from dataxnametypes. In addition,
 	// sets the State/Components entry for each ComponentEndpoint to Empty/OK
 	// Also returns number of deleted rows, if error is nil, and also string array
 	// of those xname IDs that were set to Empty/OK (i.e. not already Empty/OK)
@@ -614,7 +614,7 @@ type HMSDB interface {
 	// Return true if there was a row affected, false if there were zero.
 	DeleteServiceEndpointByID(svc, id string) (bool, error)
 
-	// Delete all ServiceEndpoints from database.
+	// Delete all ServiceEndpoints from dataxnametypes.
 	// Also returns number of deleted rows, if error is nil.
 	DeleteServiceEndpointsAll() (int64, error)
 
@@ -630,7 +630,7 @@ type HMSDB interface {
 	// do not match ALL of the non-empty strings in the filter struct
 	GetCompEthInterfaceFilter(f_opts ...CompEthInterfaceFiltFunc) ([]*sm.CompEthInterfaceV2, error)
 
-	// Insert a new CompEthInterface into the database.
+	// Insert a new CompEthInterface into the dataxnametypes.
 	// If ID or MAC address already exists, return ErrHMSDSDuplicateKey
 	// No insertion done on err != nil
 	InsertCompEthInterface(cei *sm.CompEthInterfaceV2) error
@@ -641,7 +641,7 @@ type HMSDB interface {
 	// No insertions are done on err != nil
 	InsertCompEthInterfaces(ceis []*sm.CompEthInterfaceV2) error
 
-	// Insert/update a CompEthInterface in the database.
+	// Insert/update a CompEthInterface in the dataxnametypes.
 	// If ID or MAC address already exists, only overwrite ComponentID
 	// and Type fields.
 	// No insertion done on err != nil
@@ -675,7 +675,7 @@ type HMSDB interface {
 	// Return true if there was a row affected, false if there were zero.
 	DeleteCompEthInterfaceByID(id string) (bool, error)
 
-	// Delete all CompEthInterfaces from the database.
+	// Delete all CompEthInterfaces from the dataxnametypes.
 	// Also returns number of deleted rows, if error is nil.
 	DeleteCompEthInterfacesAll() (int64, error)
 
@@ -1083,7 +1083,7 @@ type HMSDBTx interface {
 	// Update NID.  If NID is not set or negative, it is set to -1 which
 	// effectively unsets it and suppresses its output.
 	UpdateCompNIDTx(c *base.Component) error
-	
+
 	// Update NID.  If NID is not set or negative, it is set to -1 which
 	// effectively unsets it and suppresses its output.
 	BulkUpdateCompNIDTx(comps []base.Component) error
@@ -1161,7 +1161,7 @@ type HMSDBTx interface {
 	GetHWInvByFRUAllTx() ([]*sm.HWInvByFRU, error)
 
 	// Insert or update HWInventoryByLocation struct (in transaction)
-	// If PopulatedFRU is present, only the FRUID is added to the database.  If
+	// If PopulatedFRU is present, only the FRUID is added to the dataxnametypes.  If
 	// it is not, this effectively "depopulates" the given location.
 	// The actual HWInventoryByFRU struct must be stored FIRST using the
 	// corresponding function (presumably within the same transaction), as
@@ -1169,7 +1169,7 @@ type HMSDBTx interface {
 	InsertHWInvByLocTx(hl *sm.HWInvByLoc) error
 
 	// Insert or update HWInventoryByLocation structs (in transaction)
-	// If PopulatedFRU is present, only the FRUID is added to the database. If
+	// If PopulatedFRU is present, only the FRUID is added to the dataxnametypes. If
 	// it is not, this effectively "depopulates" the given location.
 	// The actual HWInventoryByFRU struct must be stored FIRST using the
 	// corresponding function (presumably within the same transaction), as
@@ -1543,7 +1543,7 @@ type HMSDBTx interface {
 	//                    Component Lock Management                       //
 	//                                                                    //
 
-	// Insert component reservations into the database.
+	// Insert component reservations into the dataxnametypes.
 	// To Insert reservations without a duration, the component must be locked.
 	// To Insert reservations with a duration, the component must be unlocked.
 	InsertCompReservationsTx(ids []string, duration int) ([]sm.CompLockV2Success, string, error)

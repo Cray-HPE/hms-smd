@@ -3,13 +3,13 @@ module github.com/Cray-HPE/hms-smd/v2
 go 1.16
 
 require (
-	github.com/Cray-HPE/hms-base v1.15.0
+	github.com/Cray-HPE/hms-base/v2 v2.0.1
 	github.com/Cray-HPE/hms-certs v1.3.2
 	github.com/Cray-HPE/hms-compcredentials v1.11.2
 	github.com/Cray-HPE/hms-go-http-lib v1.5.3
 	github.com/Cray-HPE/hms-msgbus v1.11.0
 	github.com/Cray-HPE/hms-securestorage v1.12.2
-	github.com/Cray-HPE/hms-xname v1.2.0 // indirect
+	github.com/Cray-HPE/hms-xname v1.2.0
 	github.com/DATA-DOG/go-sqlmock v1.3.3
 	github.com/Masterminds/squirrel v1.4.0
 	github.com/frankban/quicktest v1.7.3 // indirect

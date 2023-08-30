@@ -28,21 +28,23 @@ import (
 	"strings"
 	"sync"
 
-	base "github.com/Cray-HPE/hms-base"
+	base "github.com/Cray-HPE/hms-base/v2"
 	compcreds "github.com/Cray-HPE/hms-compcredentials"
 	rf "github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
 	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
+	"github.com/Cray-HPE/hms-xname/xnametypes"
 )
 
 // When we discover a Redfish Endpoint, the data retrieved is processed
 // in the rf package to associate it with basic data needed to place it
 // within the system and extra HMS-level metadata.
 // We do this discovery and then use the resulting data to create HMS-level
-// structures and place them in the database.
+// structures and place them in the dataxnametypes.
 //
 // Args:
-//   eps is a set of RedfishEndpoints retrieved from the database.
-//   id is the id of the DiscoveryStatus object to write status to.
+//
+//	eps is a set of RedfishEndpoints retrieved from the dataxnametypes.
+//	id is the id of the DiscoveryStatus object to write status to.
 func (s *SmD) discoverFromEndpoints(eps []*sm.RedfishEndpoint, id uint, update, force bool) {
 	idsFiltered := make([]string, 0, len(eps))
 	for _, ep := range eps {
@@ -56,7 +58,7 @@ func (s *SmD) discoverFromEndpoints(eps []*sm.RedfishEndpoint, id uint, update, 
 				ep.ID)
 			continue
 		}
-		idsFiltered = append(idsFiltered, base.VerifyNormalizeCompID(ep.ID))
+		idsFiltered = append(idsFiltered, xnametypes.VerifyNormalizeCompID(ep.ID))
 	}
 	// This should not fail in practice unless eps have not been inserted yet
 	// This will "lock" the LastStatus to in-progress so it can't be started
@@ -125,8 +127,9 @@ func (s *SmD) discoverFromEndpoints(eps []*sm.RedfishEndpoint, id uint, update, 
 // Single-endpoint version of the above.
 //
 // Args:
-//   ep is a single RedfishEndpoint retrieved from the database.
-//   id is the id of the DiscoveryStatus object to write status to.
+//
+//	ep is a single RedfishEndpoint retrieved from the dataxnametypes.
+//	id is the id of the DiscoveryStatus object to write status to.
 func (s *SmD) discoverFromEndpoint(ep *sm.RedfishEndpoint, id uint, force bool) {
 	if ep.RediscOnUpdate != true {
 		s.LogAlways("Skipping discovery for %s: !RediscoverOnUpdate", ep.ID)
@@ -195,7 +198,7 @@ func (s *SmD) doDiscovery(rfEP *rf.RedfishEP) {
 	rfEP.GetRootInfo()
 
 	// Create/update HMS-level components from the retrieved discovery data
-	// from Redfish.  This also inserts the data into the database.
+	// from Redfish.  This also inserts the data into the dataxnametypes.
 	s.updateFromRfEndpoint(rfEP)
 }
 
@@ -204,8 +207,9 @@ func (s *SmD) doDiscovery(rfEP *rf.RedfishEP) {
 // RedfishEndpoint.
 //
 // Args:
-//   rfEP - A discovered rf.RedfishEP, created from a RedfishEndpoint
-//          and then queried via gets to the specified destination.
+//
+//	rfEP - A discovered rf.RedfishEP, created from a RedfishEndpoint
+//	       and then queried via gets to the specified destination.
 func (s *SmD) updateFromRfEndpoint(rfEP *rf.RedfishEP) error {
 	ep := sm.NewRedfishEndpoint(&rfEP.RedfishEPDescription)
 	var savedErr error = nil
@@ -305,7 +309,7 @@ func (s *SmD) updateFromRfEndpoint(rfEP *rf.RedfishEP) error {
 		savedPw = ep.Password
 		savedUn = ep.User
 		if s.readVault {
-			// Empty the password so it doesn't get stored in the database.
+			// Empty the password so it doesn't get stored in the dataxnametypes.
 			ep.Password = ""
 		}
 	}
@@ -316,7 +320,7 @@ func (s *SmD) updateFromRfEndpoint(rfEP *rf.RedfishEP) error {
 		compMap := make(map[string]*base.Component)
 		compList := make([]string, 0, 1)
 		for _, comp := range comps.Components {
-			if comp.Type == base.Node.String() && comp.State == base.StateOn.String() {
+			if comp.Type == xnametypes.Node.String() && comp.State == base.StateOn.String() {
 				compMap[comp.ID] = comp
 				compList = append(compList, comp.ID)
 			}
@@ -385,7 +389,7 @@ func (s *SmD) updateFromRfEndpoint(rfEP *rf.RedfishEP) error {
 				if err != nil {
 					// If we fail to store credentials in vault, we'll lose the
 					// credentials and the component endpoints associated with
-					// them will still be successfully in the database.
+					// them will still be successfully in the dataxnametypes.
 					s.LogAlways("Failed to store credentials for %s in Vault - %s", cep.ID, err)
 					savedErr = err
 				}
@@ -640,7 +644,7 @@ func (s *SmD) DiscoverHWInvByLocArray(rfEP *rf.RedfishEP) ([]*sm.HWInvByLoc, err
 		}
 		hwlocs = append(hwlocs, hwloc)
 		for _, powerSupplyEP := range chEP.PowerSupplies.OIDs {
-			if powerSupplyEP.Type == base.CMMRectifier.String() {
+			if powerSupplyEP.Type == xnametypes.CMMRectifier.String() {
 				hwloc, err := s.DiscoverHWInvByLocCMMRectifier(powerSupplyEP)
 				if err != nil {
 					if err == base.ErrHMSTypeInvalid || err == base.ErrHMSTypeUnsupported {
@@ -652,7 +656,7 @@ func (s *SmD) DiscoverHWInvByLocArray(rfEP *rf.RedfishEP) ([]*sm.HWInvByLoc, err
 					return nil, err
 				}
 				hwlocs = append(hwlocs, hwloc)
-			} else if powerSupplyEP.Type == base.NodeEnclosurePowerSupply.String() {
+			} else if powerSupplyEP.Type == xnametypes.NodeEnclosurePowerSupply.String() {
 				hwloc, err := s.DiscoverHWInvByLocNodeEnclosurePowerSupply(powerSupplyEP)
 				if err != nil {
 					if err == base.ErrHMSTypeInvalid || err == base.ErrHMSTypeUnsupported {
@@ -711,7 +715,7 @@ func (s *SmD) DiscoverHWInvByLocArray(rfEP *rf.RedfishEP) ([]*sm.HWInvByLoc, err
 			}
 			hwlocs = append(hwlocs, hwloc)
 		}
-		
+
 		for _, procEP := range sysEP.Processors.OIDs {
 			hwloc, err := s.DiscoverHWInvByLocProcessor(procEP)
 			if err != nil {
@@ -752,7 +756,7 @@ func (s *SmD) DiscoverHWInvByLocArray(rfEP *rf.RedfishEP) ([]*sm.HWInvByLoc, err
 			hwlocs = append(hwlocs, hwloc)
 		}
 		for _, nodeAccelRiserEP := range sysEP.NodeAccelRisers.OIDs {
-			if nodeAccelRiserEP.Type == base.NodeAccelRiser.String() {
+			if nodeAccelRiserEP.Type == xnametypes.NodeAccelRiser.String() {
 				hwloc, err := s.DiscoverHWInvByLocNodeAccelRiser(nodeAccelRiserEP)
 				if err != nil {
 					if err == base.ErrHMSTypeInvalid || err == base.ErrHMSTypeUnsupported {
@@ -767,7 +771,7 @@ func (s *SmD) DiscoverHWInvByLocArray(rfEP *rf.RedfishEP) ([]*sm.HWInvByLoc, err
 			}
 		}
 		for _, networkAdapterEP := range sysEP.NetworkAdapters.OIDs {
-			if networkAdapterEP.Type == base.NodeHsnNic.String() {
+			if networkAdapterEP.Type == xnametypes.NodeHsnNic.String() {
 				hwloc, err := s.DiscoverHWInvByLocNodeHsnNic(networkAdapterEP)
 				if err != nil {
 					if err == base.ErrHMSTypeInvalid || err == base.ErrHMSTypeUnsupported {
@@ -813,7 +817,7 @@ func (s *SmD) DiscoverHWInvByLocArray(rfEP *rf.RedfishEP) ([]*sm.HWInvByLoc, err
 
 	// Managers from Redfish "Manager" objects
 	for _, managerEP := range rfEP.Managers.OIDs {
-		if managerEP.Type == base.NodeBMC.String() {
+		if managerEP.Type == xnametypes.NodeBMC.String() {
 			hwloc, err := s.DiscoverHWInvByLocNodeBMC(managerEP)
 			if err != nil {
 				if err == base.ErrHMSTypeInvalid || err == base.ErrHMSTypeUnsupported {
@@ -826,7 +830,7 @@ func (s *SmD) DiscoverHWInvByLocArray(rfEP *rf.RedfishEP) ([]*sm.HWInvByLoc, err
 			}
 			hwlocs = append(hwlocs, hwloc)
 		}
-		if managerEP.Type == base.RouterBMC.String() {
+		if managerEP.Type == xnametypes.RouterBMC.String() {
 			hwloc, err := s.DiscoverHWInvByLocRouterBMC(managerEP)
 			if err != nil {
 				if err == base.ErrHMSTypeInvalid || err == base.ErrHMSTypeUnsupported {
@@ -850,11 +854,12 @@ func (s *SmD) DiscoverHWInvByLocArray(rfEP *rf.RedfishEP) ([]*sm.HWInvByLoc, err
 
 // Generate HWInv history entries. This determines the historical event type
 // based on the most recent entry for that FRU.
-// - No history means we are adding.
-// - Previously removed means we are adding.
-// - Same location means we are scanning.
-// - Different location mean we are removing from the previous location and
-//   adding to the new location. (Removal event wasn't generated)
+//   - No history means we are adding.
+//   - Previously removed means we are adding.
+//   - Same location means we are scanning.
+//   - Different location mean we are removing from the previous location and
+//     adding to the new location. (Removal event wasn't generated)
+//
 // If a eventType is specified, all generated entries will be forced to that
 // event type.
 func (s *SmD) GenerateHWInvHist(hwlocs []*sm.HWInvByLoc) error {
@@ -926,35 +931,35 @@ func (s *SmD) DiscoverHWInvByLocChassis(chEP *rf.EpChassis) (*sm.HWInvByLoc, err
 		hwloc.PopulatedFRU = hwfru
 	}
 	//rfChassisLocationInfo := &chEP.ChassisRF.ChassisLocationInfoRF
-	switch base.ToHMSType(hwloc.Type) {
-	case base.Cabinet:
+	switch xnametypes.ToHMSType(hwloc.Type) {
+	case xnametypes.Cabinet:
 		hwloc.HMSCabinetLocationInfo = &chEP.ChassisRF.ChassisLocationInfoRF
 		hwloc.HWInventoryByLocationType = sm.HWInvByLocCabinet
-	case base.Chassis:
+	case xnametypes.Chassis:
 		hwloc.HMSChassisLocationInfo = &chEP.ChassisRF.ChassisLocationInfoRF
 		hwloc.HWInventoryByLocationType = sm.HWInvByLocChassis
-	case base.ComputeModule:
+	case xnametypes.ComputeModule:
 		hwloc.HMSComputeModuleLocationInfo = &chEP.ChassisRF.ChassisLocationInfoRF
 		hwloc.HWInventoryByLocationType = sm.HWInvByLocComputeModule
-	case base.RouterModule:
+	case xnametypes.RouterModule:
 		hwloc.HMSRouterModuleLocationInfo = &chEP.ChassisRF.ChassisLocationInfoRF
 		hwloc.HWInventoryByLocationType = sm.HWInvByLocRouterModule
-	case base.NodeEnclosure:
+	case xnametypes.NodeEnclosure:
 		hwloc.HMSNodeEnclosureLocationInfo = &chEP.ChassisRF.ChassisLocationInfoRF
 		hwloc.HWInventoryByLocationType = sm.HWInvByLocNodeEnclosure
-	case base.HSNBoard:
+	case xnametypes.HSNBoard:
 		hwloc.HMSHSNBoardLocationInfo = &chEP.ChassisRF.ChassisLocationInfoRF
 		hwloc.HWInventoryByLocationType = sm.HWInvByLocHSNBoard
-	case base.MgmtSwitch:
+	case xnametypes.MgmtSwitch:
 		hwloc.HMSMgmtSwitchLocationInfo = &chEP.ChassisRF.ChassisLocationInfoRF
 		hwloc.HWInventoryByLocationType = sm.HWInvByLocMgmtSwitch
-	case base.MgmtHLSwitch:
+	case xnametypes.MgmtHLSwitch:
 		hwloc.HMSMgmtHLSwitchLocationInfo = &chEP.ChassisRF.ChassisLocationInfoRF
 		hwloc.HWInventoryByLocationType = sm.HWInvByLocMgmtHLSwitch
-	case base.CDUMgmtSwitch:
+	case xnametypes.CDUMgmtSwitch:
 		hwloc.HMSCDUMgmtSwitchLocationInfo = &chEP.ChassisRF.ChassisLocationInfoRF
 		hwloc.HWInventoryByLocationType = sm.HWInvByLocCDUMgmtSwitch
-	case base.HMSTypeInvalid:
+	case xnametypes.HMSTypeInvalid:
 		err := base.ErrHMSTypeInvalid
 		return nil, err
 	default:
@@ -1015,8 +1020,8 @@ func (s *SmD) DiscoverHWInvByLocHpeDevice(hpeDeviceEP *rf.EpHpeDevice) (*sm.HWIn
 		}
 		hwloc.PopulatedFRU = hwfru
 	}
-	switch base.ToHMSType(hwloc.Type) {
-	case base.NodeAccel:
+	switch xnametypes.ToHMSType(hwloc.Type) {
+	case xnametypes.NodeAccel:
 		accelInfo := rf.ProcessorLocationInfoRF{
 			Id:          hpeDeviceEP.DeviceRF.Id,
 			Name:        hpeDeviceEP.DeviceRF.Name,
@@ -1024,7 +1029,7 @@ func (s *SmD) DiscoverHWInvByLocHpeDevice(hpeDeviceEP *rf.EpHpeDevice) (*sm.HWIn
 		}
 		hwloc.HMSNodeAccelLocationInfo = &accelInfo
 		hwloc.HWInventoryByLocationType = sm.HWInvByLocNodeAccel
-	case base.NodeHsnNic:
+	case xnametypes.NodeHsnNic:
 		nicInfo := rf.NALocationInfoRF{
 			Id:          hpeDeviceEP.DeviceRF.Id,
 			Name:        hpeDeviceEP.DeviceRF.Name,
@@ -1032,7 +1037,7 @@ func (s *SmD) DiscoverHWInvByLocHpeDevice(hpeDeviceEP *rf.EpHpeDevice) (*sm.HWIn
 		}
 		hwloc.HMSHSNNICLocationInfo = &nicInfo
 		hwloc.HWInventoryByLocationType = sm.HWInvByLocHSNNIC
-	case base.HMSTypeInvalid:
+	case xnametypes.HMSTypeInvalid:
 		err := base.ErrHMSTypeInvalid
 		return nil, err
 	default:
@@ -1380,35 +1385,35 @@ func (s *SmD) DiscoverHWInvByFRUChassis(chEP *rf.EpChassis) (*sm.HWInvByFRU, err
 	hwfru.Subtype = chEP.Subtype
 
 	rfChassisFRUInfo := &chEP.ChassisRF.ChassisFRUInfoRF
-	switch base.ToHMSType(hwfru.Type) {
-	case base.Cabinet:
+	switch xnametypes.ToHMSType(hwfru.Type) {
+	case xnametypes.Cabinet:
 		hwfru.HMSCabinetFRUInfo = rfChassisFRUInfo
 		hwfru.HWInventoryByFRUType = sm.HWInvByFRUCabinet
-	case base.Chassis:
+	case xnametypes.Chassis:
 		hwfru.HMSChassisFRUInfo = rfChassisFRUInfo
 		hwfru.HWInventoryByFRUType = sm.HWInvByFRUChassis
-	case base.ComputeModule:
+	case xnametypes.ComputeModule:
 		hwfru.HMSComputeModuleFRUInfo = rfChassisFRUInfo
 		hwfru.HWInventoryByFRUType = sm.HWInvByFRUComputeModule
-	case base.RouterModule:
+	case xnametypes.RouterModule:
 		hwfru.HMSRouterModuleFRUInfo = rfChassisFRUInfo
 		hwfru.HWInventoryByFRUType = sm.HWInvByFRURouterModule
-	case base.NodeEnclosure:
+	case xnametypes.NodeEnclosure:
 		hwfru.HMSNodeEnclosureFRUInfo = rfChassisFRUInfo
 		hwfru.HWInventoryByFRUType = sm.HWInvByFRUNodeEnclosure
-	case base.HSNBoard:
+	case xnametypes.HSNBoard:
 		hwfru.HMSHSNBoardFRUInfo = rfChassisFRUInfo
 		hwfru.HWInventoryByFRUType = sm.HWInvByFRUHSNBoard
-	case base.MgmtSwitch:
+	case xnametypes.MgmtSwitch:
 		hwfru.HMSMgmtSwitchFRUInfo = rfChassisFRUInfo
 		hwfru.HWInventoryByFRUType = sm.HWInvByFRUMgmtSwitch
-	case base.MgmtHLSwitch:
+	case xnametypes.MgmtHLSwitch:
 		hwfru.HMSMgmtHLSwitchFRUInfo = rfChassisFRUInfo
 		hwfru.HWInventoryByFRUType = sm.HWInvByFRUMgmtHLSwitch
-	case base.CDUMgmtSwitch:
+	case xnametypes.CDUMgmtSwitch:
 		hwfru.HMSCDUMgmtSwitchFRUInfo = rfChassisFRUInfo
 		hwfru.HWInventoryByFRUType = sm.HWInvByFRUCDUMgmtSwitch
-	case base.HMSTypeInvalid:
+	case xnametypes.HMSTypeInvalid:
 		err := base.ErrHMSTypeInvalid
 		return nil, err
 	default:
@@ -1464,27 +1469,27 @@ func (s *SmD) DiscoverHWInvByFRUHpeDevice(hpeDeviceEP *rf.EpHpeDevice) (*sm.HWIn
 	hwfru.Type = hpeDeviceEP.Type
 	hwfru.Subtype = hpeDeviceEP.Subtype
 
-	switch base.ToHMSType(hwfru.Type) {
-	case base.NodeAccel:
+	switch xnametypes.ToHMSType(hwfru.Type) {
+	case xnametypes.NodeAccel:
 		accelInfo := rf.ProcessorFRUInfoRF{
-			Manufacturer: hpeDeviceEP.DeviceRF.Manufacturer,
-			Model: hpeDeviceEP.DeviceRF.Model,
-			SerialNumber: hpeDeviceEP.DeviceRF.SerialNumber,
-			PartNumber: hpeDeviceEP.DeviceRF.PartNumber,
+			Manufacturer:  hpeDeviceEP.DeviceRF.Manufacturer,
+			Model:         hpeDeviceEP.DeviceRF.Model,
+			SerialNumber:  hpeDeviceEP.DeviceRF.SerialNumber,
+			PartNumber:    hpeDeviceEP.DeviceRF.PartNumber,
 			ProcessorType: hpeDeviceEP.DeviceRF.DeviceType,
 		}
 		hwfru.HMSNodeAccelFRUInfo = &accelInfo
 		hwfru.HWInventoryByFRUType = sm.HWInvByFRUNodeAccel
-	case base.NodeHsnNic:
+	case xnametypes.NodeHsnNic:
 		nicInfo := rf.NAFRUInfoRF{
 			Manufacturer: hpeDeviceEP.DeviceRF.Manufacturer,
-			Model: hpeDeviceEP.DeviceRF.Model,
+			Model:        hpeDeviceEP.DeviceRF.Model,
 			SerialNumber: hpeDeviceEP.DeviceRF.SerialNumber,
-			PartNumber: hpeDeviceEP.DeviceRF.PartNumber,
+			PartNumber:   hpeDeviceEP.DeviceRF.PartNumber,
 		}
 		hwfru.HMSHSNNICFRUInfo = &nicInfo
 		hwfru.HWInventoryByFRUType = sm.HWInvByFRUHSNNIC
-	case base.HMSTypeInvalid:
+	case xnametypes.HMSTypeInvalid:
 		err := base.ErrHMSTypeInvalid
 		return nil, err
 	default:
@@ -1515,14 +1520,13 @@ func (s *SmD) DiscoverHWInvByFRUProcessor(procEP *rf.EpProcessor) (*sm.HWInvByFR
 	hwfru.Type = procEP.Type
 	hwfru.Subtype = procEP.Subtype
 
-	if procEP.Type == base.NodeAccel.String() {
+	if procEP.Type == xnametypes.NodeAccel.String() {
 		hwfru.HMSNodeAccelFRUInfo = &procEP.ProcessorRF.ProcessorFRUInfoRF
 		hwfru.HWInventoryByFRUType = sm.HWInvByFRUNodeAccel
 	} else {
 		hwfru.HMSProcessorFRUInfo = &procEP.ProcessorRF.ProcessorFRUInfoRF
 		hwfru.HWInventoryByFRUType = sm.HWInvByFRUProcessor
 	}
-
 
 	return hwfru, nil
 }

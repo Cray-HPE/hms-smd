@@ -30,7 +30,7 @@ import (
 	"database/sql"
 	"strings"
 
-	base "github.com/Cray-HPE/hms-base"
+	"github.com/Cray-HPE/hms-xname/xnametypes"
 
 	sq "github.com/Masterminds/squirrel"
 )
@@ -102,7 +102,7 @@ var compGroupPartCols = []string{
 // Queries for various Components column filter options
 //
 
-//  FLTR_DEFAULT
+// FLTR_DEFAULT
 var compColsDefault = []string{
 	compIdCol,
 	compTypeCol,
@@ -121,7 +121,7 @@ var compColsDefault = []string{
 	compLockedCol,
 }
 
-//	FLTR_STATEONLY
+// FLTR_STATEONLY
 var compColsStateOnly = []string{
 	compIdCol,
 	compTypeCol,
@@ -129,14 +129,14 @@ var compColsStateOnly = []string{
 	compFlagCol,
 }
 
-//	FLTR_FLAGONLY
+// FLTR_FLAGONLY
 var compColsFlagOnly = []string{
 	compIdCol,
 	compTypeCol,
 	compFlagCol,
 }
 
-//	FLTR_ROLEONLY
+// FLTR_ROLEONLY
 var compColsRoleOnly = []string{
 	compIdCol,
 	compTypeCol,
@@ -144,14 +144,14 @@ var compColsRoleOnly = []string{
 	compSubRoleCol,
 }
 
-//	FLTR_NIDONLY
+// FLTR_NIDONLY
 var compColsNIDOnly = []string{
 	compIdCol,
 	compTypeCol,
 	compNIDCol,
 }
 
-//	FLTR_ID_ONLY
+// FLTR_ID_ONLY
 var compColsIdOnly = []string{
 	compIdCol,
 }
@@ -159,11 +159,11 @@ var compColsIdOnly = []string{
 // These two combine group-related columns in addition to the standard
 // Component ones.
 
-//	FLTR_ALL_W_GROUP
+// FLTR_ALL_W_GROUP
 var compColsAllWithGroup1 []string = compColsDefault
 var compColsAllWithGroup2 []string = compGroupPartCols
 
-//	FLTR_ID_W_GROUP
+// FLTR_ID_W_GROUP
 var compColsIdWithGroup1 []string = compColsIdOnly
 var compColsIdWithGroup2 []string = compGroupPartCols
 
@@ -280,20 +280,20 @@ const compResTable = `reservations`
 const compResAlias = `cr` // used during joins, i.e. cr.component.id
 
 const (
-	compResCompIdCol   = `component_id`
-	compResCreatedCol  = `create_timestamp`
-	compResExpireCol   = `expiration_timestamp`
-	compResDKCol       = `deputy_key`
-	compResRKCol       = `reservation_key`
+	compResCompIdCol  = `component_id`
+	compResCreatedCol = `create_timestamp`
+	compResExpireCol  = `expiration_timestamp`
+	compResDKCol      = `deputy_key`
+	compResRKCol      = `reservation_key`
 )
 
 // This adds the base table alias to each column.  it can later be appended to.
 const (
-	compResCompIdColAlias   = compResAlias + "." + compResCompIdCol
-	compResCreatedColAlias  = compResAlias + "." + compResCreatedCol
-	compResExpireColAlias   = compResAlias + "." + compResExpireCol
-	compResDKColAlias       = compResAlias + "." + compResDKCol
-	compResRKColAlias       = compResAlias + "." + compResRKCol
+	compResCompIdColAlias  = compResAlias + "." + compResCompIdCol
+	compResCreatedColAlias = compResAlias + "." + compResCreatedCol
+	compResExpireColAlias  = compResAlias + "." + compResExpireCol
+	compResDKColAlias      = compResAlias + "." + compResDKCol
+	compResRKColAlias      = compResAlias + "." + compResRKCol
 )
 
 // reservations table columns.
@@ -913,7 +913,7 @@ func selectComponentsHierarchy(
 				// Build a regex for the id.
 				// TODO: Explore the performance implications of making all
 				//       the ids one big regex instead of a regex per id.
-				arg := base.NormalizeHMSCompID(ids[i]) + "([[:alpha:]][[:alnum:]]*)?"
+				arg := xnametypes.NormalizeHMSCompID(ids[i]) + "([[:alpha:]][[:alnum:]]*)?"
 				args = append(args, arg)
 			}
 			query = query.Where(sq.Expr(filterQuery, args...))
@@ -922,7 +922,7 @@ func selectComponentsHierarchy(
 			// specified literally, (e.g. no component expansion).
 			// No need to use REGEXP.
 			for i := 0; i < len(ids); i++ {
-				args = append(args, base.NormalizeHMSCompID(ids[i]))
+				args = append(args, xnametypes.NormalizeHMSCompID(ids[i]))
 			}
 			query = query.Where(sq.Eq{idCol: args})
 		}
@@ -932,7 +932,7 @@ func selectComponentsHierarchy(
 
 // Create a select builder based on fieldfilter and the component filter.
 // If needed, join with group/partition table for additional fields/filtering.
-// returns squirrel.SelectBuilder for building onto or sending to database.
+// returns squirrel.SelectBuilder for building onto or sending to dataxnametypes.
 func makeComponentQuery(alias string, f *ComponentFilter, fltr FieldFilter) (
 	sq.SelectBuilder, error,
 ) {
@@ -1293,7 +1293,7 @@ func getHWInvByLocQuery(f_opts ...HWInvLocFiltFunc) (sq.SelectBuilder, error) {
 				if f.Parents {
 					childId := id
 					for {
-						childId = base.GetHMSCompParent(childId)
+						childId = xnametypes.GetHMSCompParent(childId)
 						if len(childId) > 0 {
 							// Put it in a map to ensure uniqueness
 							parentIDs[childId] = true
@@ -1311,7 +1311,7 @@ func getHWInvByLocQuery(f_opts ...HWInvLocFiltFunc) (sq.SelectBuilder, error) {
 					filterQuery += "(" + idCol + " SIMILAR TO ?)"
 				}
 				// Build a regex for the id.
-				arg := base.NormalizeHMSCompID(id) + "([[:alpha:]][[:alnum:]]*)?"
+				arg := xnametypes.NormalizeHMSCompID(id) + "([[:alpha:]][[:alnum:]]*)?"
 				args = append(args, arg)
 			}
 		} else {
@@ -1323,7 +1323,7 @@ func getHWInvByLocQuery(f_opts ...HWInvLocFiltFunc) (sq.SelectBuilder, error) {
 				if f.Parents {
 					childId := id
 					for {
-						childId = base.GetHMSCompParent(childId)
+						childId = xnametypes.GetHMSCompParent(childId)
 						if len(childId) > 0 {
 							// Put it in a map to ensure uniqueness
 							parentIDs[childId] = true
@@ -1340,7 +1340,7 @@ func getHWInvByLocQuery(f_opts ...HWInvLocFiltFunc) (sq.SelectBuilder, error) {
 					}
 					parentIDs = make(map[string]bool)
 				}
-				args = append(args, base.NormalizeHMSCompID(id))
+				args = append(args, xnametypes.NormalizeHMSCompID(id))
 			}
 			filterQuery, args, _ = sq.Eq{idCol: args}.ToSql()
 		}
@@ -1350,7 +1350,7 @@ func getHWInvByLocQuery(f_opts ...HWInvLocFiltFunc) (sq.SelectBuilder, error) {
 	if len(f.Type) > 0 && !(f.Parents && f.Children) {
 		targs := []string{}
 		for _, t := range f.Type {
-			normType := base.VerifyNormalizeType(t)
+			normType := xnametypes.VerifyNormalizeType(t)
 			if normType == "" {
 				return query, ErrHMSDSArgBadType
 			}

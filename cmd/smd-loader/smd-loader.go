@@ -25,15 +25,16 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/go-retryablehttp"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
-	"github.com/Cray-HPE/hms-base"
-	hmshttp "github.com/Cray-HPE/hms-go-http-lib"
 	"syscall"
 	"time"
+
+	base "github.com/Cray-HPE/hms-base/v2"
+	hmshttp "github.com/Cray-HPE/hms-go-http-lib"
+	"github.com/hashicorp/go-retryablehttp"
 )
 
 var ctx context.Context
@@ -127,8 +128,8 @@ func main() {
 		CustomHeaders:       make(map[string]string),
 	}
 
-	svcName,serr := base.GetServiceInstanceName()
-	if (serr != nil) {
+	svcName, serr := base.GetServiceInstanceName()
+	if serr != nil {
 		svcName = "SMD-LOADER"
 	}
 

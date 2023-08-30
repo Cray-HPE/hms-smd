@@ -28,13 +28,13 @@ package hbtdapi
 
 import (
 	"bytes"
-	"github.com/hashicorp/go-retryablehttp"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"testing"
-	"github.com/Cray-HPE/hms-base"
+
+	"github.com/hashicorp/go-retryablehttp"
 )
 
 var client *retryablehttp.Client
@@ -203,18 +203,18 @@ const testPayloadHBTDAPI_goodNoHB = `
 func NewRTFuncSLSAPI() RTFunc {
 	return func(req *http.Request) *http.Response {
 		bad := true
-		if (len(req.Header) > 0) {
-			vals,ok := req.Header[base.USERAGENT]
-			if (ok) {
-				for _,v := range(vals) {
-					if (v == testSvcName) {
+		if len(req.Header) > 0 {
+			vals, ok := req.Header[xnametypes.USERAGENT]
+			if ok {
+				for _, v := range vals {
+					if v == testSvcName {
 						bad = false
 						break
 					}
 				}
 			}
 		}
-		if (bad) {
+		if bad {
 			return &http.Response{
 				StatusCode: http.StatusInternalServerError,
 				// Send mock response for rpath

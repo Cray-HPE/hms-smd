@@ -25,7 +25,8 @@ package hmsds
 import (
 	"strings"
 
-	base "github.com/Cray-HPE/hms-base"
+	base "github.com/Cray-HPE/hms-base/v2"
+	"github.com/Cray-HPE/hms-xname/xnametypes"
 )
 
 type FieldFilter int
@@ -50,23 +51,23 @@ type PCondition struct {
 
 type ComponentFilter struct {
 	// User-writable options
-	ID        []string `json:"id"`
-	NID       []string `json:"nid"`
-	NIDStart  []string `json:"nid_start"`
-	NIDEnd    []string `json:"nid_end"`
-	Type      []string `json:"type"`
-	State     []string `json:"state"`
-	Flag      []string `json:"flag"`
-	Enabled   []string `json:"enabled"`
-	SwStatus  []string `json:"softwarestatus"`
-	Role      []string `json:"role"`
-	SubRole   []string `json:"subrole"`
-	Subtype   []string `json:"subtype"`
-	Arch      []string `json:"arch"`
-	Class     []string `json:"class"`
-	Group     []string `json:"group"` // Arbitrary Groups have UUID ids as well as globally unique names
-	Partition []string `json:"partition"`
-	Locked    []string `json:"locked"`
+	ID                  []string `json:"id"`
+	NID                 []string `json:"nid"`
+	NIDStart            []string `json:"nid_start"`
+	NIDEnd              []string `json:"nid_end"`
+	Type                []string `json:"type"`
+	State               []string `json:"state"`
+	Flag                []string `json:"flag"`
+	Enabled             []string `json:"enabled"`
+	SwStatus            []string `json:"softwarestatus"`
+	Role                []string `json:"role"`
+	SubRole             []string `json:"subrole"`
+	Subtype             []string `json:"subtype"`
+	Arch                []string `json:"arch"`
+	Class               []string `json:"class"`
+	Group               []string `json:"group"` // Arbitrary Groups have UUID ids as well as globally unique names
+	Partition           []string `json:"partition"`
+	Locked              []string `json:"locked"`
 	ReservationDisabled []string `json:"reservation_disabled"`
 
 	// private options
@@ -209,8 +210,9 @@ type CompFiltFunc func(*ComponentFilter)
 // negated with "!" and all such ids will be excluded.
 //
 // NOTE: will add the empty string if ids is zero length to select no ids.
-//       The assumption is that this isn't being used to select any ID as
-//       this option would be unneccessary otherwise.
+//
+//	The assumption is that this isn't being used to select any ID as
+//	this option would be unneccessary otherwise.
 func IDs(ids []string) CompFiltFunc {
 	return func(f *ComponentFilter) {
 		if f != nil {
@@ -448,7 +450,7 @@ func (f *ComponentFilter) VerifyNormalize() error {
 	if err != nil {
 		return ErrHMSDSArgBadID
 	}
-	err = checkFilterField(f.Type, base.VerifyNormalizeType, true)
+	err = checkFilterField(f.Type, xnametypes.VerifyNormalizeType, true)
 	if err != nil {
 		return ErrHMSDSArgBadType
 	}
@@ -574,8 +576,9 @@ type CompEPFiltFunc func(*CompEPFilter)
 // negated with "!" and all such ids will be excluded.
 //
 // NOTE: will add the empty string if ids is zero length to select no ids.
-//       The assumption is that this isn't being used to select any ID as
-//       this option would be unneccessary otherwise.
+//
+//	The assumption is that this isn't being used to select any ID as
+//	this option would be unneccessary otherwise.
 func CE_IDs(ids []string) CompEPFiltFunc {
 	return func(f *CompEPFilter) {
 		if f != nil {
@@ -664,8 +667,9 @@ type RedfishEPFiltFunc func(*RedfishEPFilter)
 // negated with "!" and all such ids will be excluded.
 //
 // NOTE: will add the empty string if ids is zero length to select no ids.
-//       The assumption is that this isn't being used to select any ID as
-//       this option would be unneccessary otherwise.
+//
+//	The assumption is that this isn't being used to select any ID as
+//	this option would be unneccessary otherwise.
 func RFE_IDs(ids []string) RedfishEPFiltFunc {
 	return func(f *RedfishEPFilter) {
 		if f != nil {
@@ -945,8 +949,9 @@ type HWInvLocFiltFunc func(*HWInvLocFilter)
 // negated with "!" and all such ids will be excluded.
 //
 // NOTE: will add the empty string if ids is zero length to select no ids.
-//       The assumption is that this isn't being used to select any ID as
-//       this option would be unneccessary otherwise.
+//
+//	The assumption is that this isn't being used to select any ID as
+//	this option would be unneccessary otherwise.
 func HWInvLoc_IDs(ids []string) HWInvLocFiltFunc {
 	return func(f *HWInvLocFilter) {
 		if f != nil {
@@ -1090,8 +1095,9 @@ type HWInvHistFiltFunc func(*HWInvHistFilter)
 // negated with "!" and all such ids will be excluded.
 //
 // NOTE: will add the empty string if ids is zero length to select no ids.
-//       The assumption is that this isn't being used to select any ID as
-//       this option would be unneccessary otherwise.
+//
+//	The assumption is that this isn't being used to select any ID as
+//	this option would be unneccessary otherwise.
 func HWInvHist_IDs(ids []string) HWInvHistFiltFunc {
 	return func(f *HWInvHistFilter) {
 		if f != nil {
@@ -1183,8 +1189,9 @@ type CompEthInterfaceFiltFunc func(*CompEthInterfaceFilter)
 // negated with "!" and all such ids will be excluded.
 //
 // NOTE: will add the empty string if ids is zero length to select no ids.
-//       The assumption is that this isn't being used to select any ID as
-//       this option would be unneccessary otherwise.
+//
+//	The assumption is that this isn't being used to select any ID as
+//	this option would be unneccessary otherwise.
 func CEI_IDs(ids []string) CompEthInterfaceFiltFunc {
 	return func(f *CompEthInterfaceFilter) {
 		if f != nil {

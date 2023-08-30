@@ -24,8 +24,9 @@ package sm
 
 import (
 	"reflect"
-	base "github.com/Cray-HPE/hms-base"
 	"testing"
+
+	base "github.com/Cray-HPE/hms-base/v2"
 )
 
 //

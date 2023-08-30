@@ -34,9 +34,10 @@ import (
 	"strings"
 	"time"
 
-	base "github.com/Cray-HPE/hms-base"
+	base "github.com/Cray-HPE/hms-base/v2"
 	rf "github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
 	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
+	"github.com/Cray-HPE/hms-xname/xnametypes"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/lib/pq"
@@ -643,7 +644,8 @@ func (d *hmsdbPg) UpsertComponents(comps []*base.Component, force bool) (map[str
 }
 
 // Update state and flag fields only in DB for a list of components
-//   Note: If flag is not set, it will be set to OK (i.e. no flag)
+//
+//	Note: If flag is not set, it will be set to OK (i.e. no flag)
 func (d *hmsdbPg) BulkUpdateCompState(ids []string, state string, flag string) ([]string, error) {
 	return d.UpdateCompStates(ids, state, flag, false, new(PartInfo))
 }
@@ -654,7 +656,8 @@ func (d *hmsdbPg) BulkUpdateCompState(ids []string, state string, flag string) (
 //
 // If force = true ignores any starting state restrictions and will
 // always set ids to 'state', unless it is already set.
-//   Note: If flag is not set, it will be set to OK (i.e. no flag)
+//
+//	Note: If flag is not set, it will be set to OK (i.e. no flag)
 func (d *hmsdbPg) UpdateCompStates(
 	ids []string,
 	state string,
@@ -686,7 +689,7 @@ func (d *hmsdbPg) UpdateCompStates(
 	affectedIDs := []string{}
 	if numIds == 1 {
 		// Normalize the input as it comes from the user.
-		idArray := []string{base.NormalizeHMSCompID(ids[0])}
+		idArray := []string{xnametypes.NormalizeHMSCompID(ids[0])}
 
 		// Let the Update itself verify the starting states.
 		cnt, err := t.UpdateCompStatesTx(idArray, state, nflag, force, false, pi)
@@ -750,7 +753,8 @@ func (d *hmsdbPg) UpdateCompStates(
 // Update state and flag fields only in DB from those in c
 // Returns the number of affected rows. < 0 means RowsAffected() is not
 // supported.
-//   Note: If flag is not set, it will be set to OK (i.e. no flag)
+//
+//	Note: If flag is not set, it will be set to OK (i.e. no flag)
 func (d *hmsdbPg) UpdateCompState(c *base.Component) (int64, error) {
 	ids, err := d.UpdateCompStates([]string{c.ID}, c.State, c.Flag,
 		false, new(PartInfo))
@@ -1183,7 +1187,7 @@ func (d *hmsdbPg) DeleteNodeMapByID(id string) (bool, error) {
 	return didDelete, err
 }
 
-// Delete all Node NID Mapping entries from database.
+// Delete all Node NID Mapping entries from dataxnametypes.
 // Also returns number of deleted rows, if error is nil.
 func (d *hmsdbPg) DeleteNodeMapsAll() (int64, error) {
 	t, err := d.Begin()
@@ -1290,7 +1294,7 @@ func (d *hmsdbPg) DeletePowerMapByID(id string) (bool, error) {
 	return didDelete, err
 }
 
-// Delete all Power Mapping entries from database.
+// Delete all Power Mapping entries from dataxnametypes.
 // Also returns number of deleted rows, if error is nil.
 func (d *hmsdbPg) DeletePowerMapsAll() (int64, error) {
 	t, err := d.Begin()
@@ -1379,7 +1383,7 @@ func (d *hmsdbPg) GetHWInvByLocFilter(f_opts ...HWInvLocFiltFunc) ([]*sm.HWInvBy
 		idCol := hwInvAlias + "." + hwInvIdCol
 		idArgs := []string{}
 		for _, id := range f.ID {
-			idArgs = append(idArgs, base.NormalizeHMSCompID(id))
+			idArgs = append(idArgs, xnametypes.NormalizeHMSCompID(id))
 		}
 		query = query.Where(sq.Eq{idCol: idArgs})
 	}
@@ -1387,7 +1391,7 @@ func (d *hmsdbPg) GetHWInvByLocFilter(f_opts ...HWInvLocFiltFunc) ([]*sm.HWInvBy
 		typeCol := hwInvAlias + "." + hwInvTypeCol
 		tArgs := []string{}
 		for _, t := range f.Type {
-			normType := base.VerifyNormalizeType(t)
+			normType := xnametypes.VerifyNormalizeType(t)
 			if normType == "" {
 				return nil, ErrHMSDSArgBadType
 			}
@@ -1525,7 +1529,7 @@ func (d *hmsdbPg) GetHWInvByFRUFilter(f_opts ...HWInvLocFiltFunc) ([]*sm.HWInvBy
 		typeCol := hwInvFruAlias + "." + hwInvFruTblTypeCol
 		tArgs := []string{}
 		for _, t := range f.Type {
-			normType := base.VerifyNormalizeType(t)
+			normType := xnametypes.VerifyNormalizeType(t)
 			if normType == "" {
 				return nil, ErrHMSDSArgBadType
 			}
@@ -1994,7 +1998,7 @@ func (d *hmsdbPg) GetRFEndpointsFilter(f *RedfishEPFilter) ([]*sm.RedfishEndpoin
 	return reps, nil
 }
 
-// Insert new RedfishEndpoint into database.
+// Insert new RedfishEndpoint into dataxnametypes.
 // Does not update any ComponentEndpoint children.
 // If ID or FQDN already exists, return ErrHMSDSDuplicateKey
 // No insertion done on err != nil
@@ -2037,7 +2041,7 @@ func (d *hmsdbPg) InsertRFEndpoints(eps *sm.RedfishEndpointArray) error {
 	return nil
 }
 
-// Update existing RedfishEndpointArray entry in database.
+// Update existing RedfishEndpointArray entry in dataxnametypes.
 // Does not update any ComponentEndpoint children.
 // Returns updated entry or nil/nil if not found.  If an error occurred,
 // nil/error will be returned.
@@ -2375,7 +2379,7 @@ func (d *hmsdbPg) DeleteRFEndpointByID(id string) (bool, error) {
 	return didDelete, err
 }
 
-// Delete all RedfishEndpoints from database.
+// Delete all RedfishEndpoints from dataxnametypes.
 // Also returns number of deleted rows, if error is nil.
 func (d *hmsdbPg) DeleteRFEndpointsAll() (int64, error) {
 	t, err := d.Begin()
@@ -2434,7 +2438,7 @@ func (d *hmsdbPg) DeleteRFEndpointByIDSetEmpty(id string) (bool, []string, error
 	return true, affectedIDs, nil
 }
 
-// Delete all RedfishEndpoints from database.
+// Delete all RedfishEndpoints from dataxnametypes.
 // This also deletes all child ComponentEndpoints, and in addition,
 // sets the State/Components entries for those ComponentEndpoints to Empty/OK
 // Also returns number of deleted rows, if error is nil.
@@ -2572,7 +2576,7 @@ func (d *hmsdbPg) DeleteCompEndpointByID(id string) (bool, error) {
 	return didDelete, err
 }
 
-// Delete all ComponentEndpoints from database.
+// Delete all ComponentEndpoints from dataxnametypes.
 // Also returns number of deleted rows, if error is nil.
 func (d *hmsdbPg) DeleteCompEndpointsAll() (int64, error) {
 	t, err := d.Begin()
@@ -2631,7 +2635,7 @@ func (d *hmsdbPg) DeleteCompEndpointByIDSetEmpty(id string) (bool, []string, err
 	return true, affectedIDs, nil
 }
 
-// Delete all ComponentEndpoints from database. In addition,
+// Delete all ComponentEndpoints from dataxnametypes. In addition,
 // sets the State/Components entry for each ComponentEndpoint to Empty/OK
 // Also returns number of deleted rows, if error is nil, and also string array
 // of those xname IDs that were set to Empty/OK (i.e. not already Empty/OK)
@@ -2772,7 +2776,7 @@ func (d *hmsdbPg) DeleteServiceEndpointByID(svc, id string) (bool, error) {
 	return didDelete, err
 }
 
-// Delete all ServiceEndpoints from database.
+// Delete all ServiceEndpoints from dataxnametypes.
 // Also returns number of deleted rows, if error is nil.
 func (d *hmsdbPg) DeleteServiceEndpointsAll() (int64, error) {
 	t, err := d.Begin()
@@ -2898,7 +2902,7 @@ func (d *hmsdbPg) GetCompEthInterfaceFilter(f_opts ...CompEthInterfaceFiltFunc) 
 	return ceis, err
 }
 
-// Insert a new CompEthInterface into the database.
+// Insert a new CompEthInterface into the dataxnametypes.
 // If ID or MAC address already exists, return ErrHMSDSDuplicateKey
 // No insertion done on err != nil
 func (d *hmsdbPg) InsertCompEthInterface(cei *sm.CompEthInterfaceV2) error {
@@ -2937,7 +2941,7 @@ func (d *hmsdbPg) InsertCompEthInterfaces(ceis []*sm.CompEthInterfaceV2) error {
 	return nil
 }
 
-// Insert/update a CompEthInterface in the database.
+// Insert/update a CompEthInterface in the dataxnametypes.
 // If ID or MAC address already exists, only overwrite ComponentID
 // and Type fields.
 // No insertion done on err != nil
@@ -3097,7 +3101,7 @@ func (d *hmsdbPg) DeleteCompEthInterfaceByID(id string) (bool, error) {
 	return didDelete, err
 }
 
-// Delete all CompEthInterfaces from the database.
+// Delete all CompEthInterfaces from the dataxnametypes.
 // Also returns number of deleted rows, if error is nil.
 func (d *hmsdbPg) DeleteCompEthInterfacesAll() (int64, error) {
 	t, err := d.Begin()
@@ -3118,9 +3122,9 @@ func (d *hmsdbPg) DeleteCompEthInterfacesAll() (int64, error) {
 
 // Add IP Address mapping to the existing component ethernet interface.
 // returns:
-//	- ErrHMSDSNoCompEthInterface if the parent component ethernet interface
-// 	- ErrHMSDSDuplicateKey if the parent component ethernet interface already
-//    has that IP address
+//   - ErrHMSDSNoCompEthInterface if the parent component ethernet interface
+//   - ErrHMSDSDuplicateKey if the parent component ethernet interface already
+//     has that IP address
 //
 // Returns key of new IP Address Mapping id, should be the IP address
 func (d *hmsdbPg) AddCompEthInterfaceIPAddress(id string, ipmIn *sm.IPAddressMapping) (string, error) {
@@ -3341,16 +3345,15 @@ func (d *hmsdbPg) UpsertDiscoveryStatus(stat *sm.DiscoveryStatus) error {
 
 // Atomically:
 //
-// 1. Update discovery-writable fields for RedfishEndpoint
-// 2. Upsert ComponentEndpointArray into database within the
-//    same transaction.
-// 3. Insert or update array of HWInventoryByLocation structs.
-//    If PopulatedFRU is present, these is also added to the DB  If
-//    it is not, this effectively "depopulates" the given locations.
-//    The actual HWInventoryByFRU is stored using within the same
-//    transaction.
-// 4. Inserts or updates HMS Components entries in ComponentArray
-//
+//  1. Update discovery-writable fields for RedfishEndpoint
+//  2. Upsert ComponentEndpointArray into database within the
+//     same transaction.
+//  3. Insert or update array of HWInventoryByLocation structs.
+//     If PopulatedFRU is present, these is also added to the DB  If
+//     it is not, this effectively "depopulates" the given locations.
+//     The actual HWInventoryByFRU is stored using within the same
+//     transaction.
+//  4. Inserts or updates HMS Components entries in ComponentArray
 func (d *hmsdbPg) UpdateAllForRFEndpoint(
 	ep *sm.RedfishEndpoint,
 	ceps *sm.ComponentEndpointArray,
@@ -3418,7 +3421,7 @@ func (d *hmsdbPg) UpdateAllForRFEndpoint(
 		nodeList := make([]string, 0, 1)
 		for _, comp := range comps.Components {
 			compMap[comp.ID] = comp
-			if comp.Type == base.Node.String() {
+			if comp.Type == xnametypes.Node.String() {
 				nodeList = append(nodeList, comp.ID)
 			} else {
 				d.Log(LOG_INFO,
@@ -4633,9 +4636,9 @@ func (d *hmsdbPg) GetCompLocksV2(f sm.CompLockV2Filter) ([]sm.CompLockV2, error)
 // best try.
 func (d *hmsdbPg) UpdateCompLocksV2(f sm.CompLockV2Filter, action string) (sm.CompLockV2UpdateResult, error) {
 	var (
-		result          sm.CompLockV2UpdateResult
-		affectedIds     []string
-		lockKeys        []sm.CompLockV2Key
+		result      sm.CompLockV2UpdateResult
+		affectedIds []string
+		lockKeys    []sm.CompLockV2Key
 	)
 	result.Success.ComponentIDs = make([]string, 0, 1)
 	result.Failure = make([]sm.CompLockV2Failure, 0, 1)

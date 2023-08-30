@@ -24,13 +24,15 @@ package main
 
 import (
 	"encoding/json"
-	base "github.com/Cray-HPE/hms-base"
-	"github.com/Cray-HPE/hms-smd/v2/internal/hmsds"
-	"github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
-	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
 	"strconv"
 	"strings"
 	"time"
+
+	base "github.com/Cray-HPE/hms-base/v2"
+	"github.com/Cray-HPE/hms-smd/v2/internal/hmsds"
+	rf "github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
+	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
+	"github.com/Cray-HPE/hms-xname/xnametypes"
 )
 
 var e = base.NewHMSError("sm", "server error")
@@ -145,7 +147,7 @@ func (s *SmD) doCompUpdate(u *CompUpdate, name string) error {
 		return ErrSMDNoIDs
 	} else {
 		for _, id := range u.ComponentIDs {
-			normID := base.VerifyNormalizeCompID(id)
+			normID := xnametypes.VerifyNormalizeCompID(id)
 			if normID == "" {
 				return ErrSMDBadID
 			}
@@ -176,7 +178,7 @@ func (s *SmD) doCompUpdate(u *CompUpdate, name string) error {
 				// Start State Redfish Polling jobs for any nodes
 				// transitioning to standby.
 				for _, id := range scnIDs {
-					if base.GetHMSTypeString(id) == base.Node.String() {
+					if xnametypes.GetHMSTypeString(id) == xnametypes.Node.String() {
 						s.doStateRFPoll(id, 30)
 					}
 				}
@@ -487,7 +489,7 @@ func (s *SmD) doPollRFState(job *Job) {
 					pw = rep.Password
 				}
 				// Minimally populate a redfish description struct
-				rfEPType := base.GetHMSType(cep.RfEndpointID)
+				rfEPType := xnametypes.GetHMSType(cep.RfEndpointID)
 				epDesc := rf.RedfishEPDescription{
 					ID:       cep.RfEndpointID,
 					Type:     rfEPType.String(),

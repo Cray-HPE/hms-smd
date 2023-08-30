@@ -22,9 +22,7 @@
 
 package sharedtest
 
-import (
-	base "github.com/Cray-HPE/hms-base"
-)
+import base "github.com/Cray-HPE/hms-base/v2"
 
 func CompareComp(comp1 *base.Component, comp2 *base.Component) bool {
 	return CompareComps([]*base.Component{comp1}, []*base.Component{comp2})

@@ -25,8 +25,10 @@ package sm
 import (
 	"fmt"
 	"reflect"
-	base "github.com/Cray-HPE/hms-base"
 	"testing"
+
+	base "github.com/Cray-HPE/hms-base/v2"
+	"github.com/Cray-HPE/hms-xname/xnametypes"
 )
 
 //
@@ -50,7 +52,7 @@ func TestNewCompPost(t *testing.T) {
 				Components: []*base.Component{
 					&base.Component{
 						ID:    "x0c0s0b0n0",
-						Type:  base.Node.String(),
+						Type:  xnametypes.Node.String(),
 						State: base.StateEmpty.String(),
 						Flag:  base.FlagOK.String(),
 					},
@@ -137,7 +139,7 @@ func TestNewCompPost(t *testing.T) {
 				Components: []*base.Component{
 					&base.Component{
 						ID:      "x0c0s0b0n0",
-						Type:    base.Node.String(),
+						Type:    xnametypes.Node.String(),
 						State:   base.StateEmpty.String(),
 						Flag:    base.FlagOK.String(),
 						Role:    base.RoleCompute.String(),
@@ -146,7 +148,7 @@ func TestNewCompPost(t *testing.T) {
 					},
 					&base.Component{
 						ID:    "x0c0s0b0n1",
-						Type:  base.Node.String(),
+						Type:  xnametypes.Node.String(),
 						State: base.StateEmpty.String(),
 						Flag:  base.FlagOK.String(),
 					},
@@ -190,7 +192,7 @@ func TestVerifyNormalizeCompPost(t *testing.T) {
 				Components: []*base.Component{
 					&base.Component{
 						ID:    "x0c0s0b0n0",
-						Type:  base.Node.String(),
+						Type:  xnametypes.Node.String(),
 						State: base.StateEmpty.String(),
 						Flag:  base.FlagOK.String(),
 					},
@@ -388,7 +390,7 @@ func TestVerifyNormalizeCompPost(t *testing.T) {
 				Components: []*base.Component{
 					&base.Component{
 						ID:      "x0c0s0b0n0",
-						Type:    base.Node.String(),
+						Type:    xnametypes.Node.String(),
 						State:   base.StateEmpty.String(),
 						Flag:    base.FlagOK.String(),
 						Role:    base.RoleCompute.String(),
@@ -397,7 +399,7 @@ func TestVerifyNormalizeCompPost(t *testing.T) {
 					},
 					&base.Component{
 						ID:    "x0c0s0b0n1",
-						Type:  base.Node.String(),
+						Type:  xnametypes.Node.String(),
 						State: base.StateEmpty.String(),
 						Flag:  base.FlagOK.String(),
 					},
@@ -434,7 +436,7 @@ func TestNewCompPut(t *testing.T) {
 		expectedOut: &ComponentPut{
 			Component: base.Component{
 				ID:    "x0c0s0b0n0",
-				Type:  base.Node.String(),
+				Type:  xnametypes.Node.String(),
 				State: base.StateEmpty.String(),
 				Flag:  base.FlagOK.String(),
 			},
@@ -512,7 +514,7 @@ func TestNewCompPut(t *testing.T) {
 		expectedOut: &ComponentPut{
 			Component: base.Component{
 				ID:      "x0c0s0b0n0",
-				Type:    base.Node.String(),
+				Type:    xnametypes.Node.String(),
 				State:   base.StateEmpty.String(),
 				Flag:    base.FlagOK.String(),
 				Role:    base.RoleCompute.String(),
@@ -551,7 +553,7 @@ func TestVerifyNormalizeCompPut(t *testing.T) {
 		expectedOut: ComponentPut{
 			Component: base.Component{
 				ID:    "x0c0s0b0n0",
-				Type:  base.Node.String(),
+				Type:  xnametypes.Node.String(),
 				State: base.StateEmpty.String(),
 				Flag:  base.FlagOK.String(),
 			},
@@ -688,7 +690,7 @@ func TestVerifyNormalizeCompPut(t *testing.T) {
 		expectedOut: ComponentPut{
 			Component: base.Component{
 				ID:      "x0c0s0b0n0",
-				Type:    base.Node.String(),
+				Type:    xnametypes.Node.String(),
 				State:   base.StateEmpty.String(),
 				Flag:    base.FlagOK.String(),
 				Role:    base.RoleCompute.String(),

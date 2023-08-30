@@ -27,9 +27,10 @@ import (
 	"fmt"
 	"strconv"
 
-	base "github.com/Cray-HPE/hms-base"
+	base "github.com/Cray-HPE/hms-base/v2"
 	"github.com/Cray-HPE/hms-smd/v2/internal/hmsds"
 	rf "github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
+	"github.com/Cray-HPE/hms-xname/xnametypes"
 )
 
 ////////////////////////////////////////////////////////////////////////////
@@ -99,16 +100,16 @@ func (s *SmD) DiscoverComponentChassis(chEP *rf.EpChassis) *base.Component {
 	comp.Class = chEP.DefaultClass
 
 	if comp.Class == "" {
-		if comp.Type == base.Chassis.String() {
+		if comp.Type == xnametypes.Chassis.String() {
 			comp.Class = base.ClassMountain.String()
 			// Just incase our redfish endpoint didn't exist when our child
 			// components were discovered, update them to be Mountain too.
 			f := hmsds.ComponentFilter{
 				Type: []string{
-					base.NodeBMC.String(),
-					base.NodeEnclosure.String(),
-					base.Node.String(),
-					base.RouterBMC.String(),
+					xnametypes.NodeBMC.String(),
+					xnametypes.NodeEnclosure.String(),
+					xnametypes.Node.String(),
+					xnametypes.RouterBMC.String(),
 				},
 			}
 			children, err := s.db.GetComponentsQuery(&f, hmsds.FLTR_ID_ONLY, []string{comp.ID})
@@ -131,12 +132,12 @@ func (s *SmD) DiscoverComponentChassis(chEP *rf.EpChassis) *base.Component {
 			// Chassis first then go down a level to the chassisBMC
 			p := comp.ID
 			for {
-				p = base.GetHMSCompParent(p)
+				p = xnametypes.GetHMSCompParent(p)
 				if p == "" {
 					s.LogAlways("DiscoverComponentChassis: Could not determine ChassisBMC ID for %s", comp.ID)
 					break
 				}
-				if base.GetHMSType(p) != base.Chassis {
+				if xnametypes.GetHMSType(p) != xnametypes.Chassis {
 					continue
 				}
 				chassisBmc := p + "b0"
@@ -194,12 +195,12 @@ func (s *SmD) DiscoverComponentSystem(sysEP *rf.EpSystem) *base.Component {
 		// Chassis first then go down a level to the chassisBMC
 		p := comp.ID
 		for {
-			p = base.GetHMSCompParent(p)
+			p = xnametypes.GetHMSCompParent(p)
 			if p == "" {
 				s.LogAlways("DiscoverComponentChassis: Could not determine ChassisBMC ID for %s", comp.ID)
 				break
 			}
-			if base.GetHMSType(p) != base.Chassis {
+			if xnametypes.GetHMSType(p) != xnametypes.Chassis {
 				continue
 			}
 			chassisBmc := p + "b0"
@@ -246,19 +247,19 @@ func (s *SmD) DiscoverComponentManager(mEP *rf.EpManager) *base.Component {
 	comp.Class = mEP.DefaultClass
 
 	if comp.Class == "" {
-		if comp.Type == base.ChassisBMC.String() {
+		if comp.Type == xnametypes.ChassisBMC.String() {
 			comp.Class = base.ClassMountain.String()
 		} else {
 			// Get the ID for the parent Chassis BMC. Need to find the
 			// Chassis first then go down a level to the chassisBMC
 			p := comp.ID
 			for {
-				p = base.GetHMSCompParent(p)
+				p = xnametypes.GetHMSCompParent(p)
 				if p == "" {
 					s.LogAlways("DiscoverComponentChassis: Could not determine ChassisBMC ID for %s", comp.ID)
 					break
 				}
-				if base.GetHMSType(p) != base.Chassis {
+				if xnametypes.GetHMSType(p) != xnametypes.Chassis {
 					continue
 				}
 				chassisBmc := p + "b0"

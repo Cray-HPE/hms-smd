@@ -35,9 +35,10 @@ const (
 )
 
 // Resource link, often found in collection array or "Links" section.
-// Example: {
-//                "@odata.id": "/redfish/v1/Systems/System.Embedded.1"
-//          }
+//
+//	Example: {
+//	               "@odata.id": "/redfish/v1/Systems/System.Embedded.1"
+//	         }
 type ResourceID struct {
 	Oid string `json:"@odata.id"`
 }
@@ -121,7 +122,8 @@ type Storage GenericCollection
 
 // JSON decoded collection struct of Redfish type "EthernetInterfaceCollection"
 // Examples: /redfish/v1/Systems/<system_id>/EthernetInterfaces
-//           /redfish/v1/Managers/<manager_id>/EthernetInterfaces
+//
+//	/redfish/v1/Managers/<manager_id>/EthernetInterfaces
 type EthernetInterfaceCollection GenericCollection
 
 // JSON decoded collection struct of Redfish type "SerialInterfaceCollection"
@@ -170,7 +172,8 @@ type ServiceRootLinks struct {
 }
 
 // JSON decoded struct returned from an entry in the BMC "Managers" collection
-//  Example: /redfish/v1/Managers/iDRAC.Embedded.1
+//
+//	Example: /redfish/v1/Managers/iDRAC.Embedded.1
 type Manager struct {
 	OContext string `json:"@odata.context"`
 	Oid      string `json:"@odata.id"`
@@ -271,7 +274,8 @@ type ManagerLinks struct {
 }
 
 // JSON decoded struct returned from the BMC of type "Chassis"
-//  Example: /redfish/v1/Chassis/System.Embedded.1
+//
+//	Example: /redfish/v1/Chassis/System.Embedded.1
 type Chassis struct {
 	OContext string `json:"@odata.context"`
 	Oid      string `json:"@odata.id"`
@@ -402,7 +406,9 @@ type ChassisFRUInfoRF struct {
 }
 
 // Redfish pass-through from Redfish Processor
-//   Example: /redfish/v1/Systems/System.Embedded.1
+//
+//	Example: /redfish/v1/Systems/System.Embedded.1
+//
 // This is the set of Redfish fields for this object that HMS understands
 // and/or finds useful.  Those assigned to either the *LocationInfo
 // or *FRUInfo subfields consitiute the type specific fields in the
@@ -507,7 +513,8 @@ type SystemFRUInfoRF struct {
 
 // JSON decoded struct returned from Redfish of type "EthernetInterface"
 // Example:
-//   /redfish/v1/Systems/System.Embedded.1/EthernetInterfaces/NIC.Integrated.1-3-1
+//
+//	/redfish/v1/Systems/System.Embedded.1/EthernetInterfaces/NIC.Integrated.1-3-1
 type EthernetInterface struct {
 	OContext               string              `json:"@odata.context"`
 	Oid                    string              `json:"@odata.id"`
@@ -902,15 +909,19 @@ type Task struct {
 //
 // There is a "Registries" link at the service root that has a link to
 // message registries that may be specific to the implementation.
-//   e.g. /redfish/v1/Registries -> /redfish/v1/Registries/Messages/En
+//
+//	e.g. /redfish/v1/Registries -> /redfish/v1/Registries/Messages/En
 //
 // "Standard" registries are available at:
-//      http://redfish.dmtf.org/schemas/registries
-// For example: http://redfish.dmtf.org/schemas/registries/v1/Base.1.1.0.json
+//
+//	http://redfish.dmtf.org/schemas/registries
+//
+// For example: http://redfish.dmtf.org/schemas/registries/v1/xnametypes.1.1.0.json
 //
 // The MessageId format is registry.version.message.
-//    e.g. Base.1.0.0.PropertyUnknown  (Standard Redfish Base schema)
-//         iDRAC.1.4.0.AMP0300         (via /redfish/v1/Registries/Messages/En)
+//
+//	e.g. xnametypes.1.0.0.PropertyUnknown  (Standard Redfish Base schema)
+//	     iDRAC.1.4.0.AMP0300         (via /redfish/v1/Registries/Messages/En)
 type Message struct {
 	MessageId         string   `json:"MessageId"`
 	Message           string   `json:"Message"`
@@ -973,7 +984,9 @@ type HttpPushUriApplyTime struct {
 // the message in the message registry. ExtendedInfo - An array of message
 // objects describing one or more error message(s).
 // Schemas are available at:
-//       https://redfish.dmtf.org/redfish/schema_index
+//
+//	https://redfish.dmtf.org/redfish/schema_index
+//
 // redfish-error: https://redfish.dmtf.org/schemas/redfish-error.v1_0_0.json
 type RedfishErrorContents struct {
 	Code         string    `json:"code"`
@@ -984,7 +997,9 @@ type RedfishErrorContents struct {
 // RedfishError - Contains an error payload from a Redfish service. Error -
 // Contains properties used to describe an error from a Redfish Service.
 // Schemas are available at:
-//       https://redfish.dmtf.org/redfish/schema_index
+//
+//	https://redfish.dmtf.org/redfish/schema_index
+//
 // redfish-error: https://redfish.dmtf.org/schemas/redfish-error.v1_0_0.json
 type RedfishError struct {
 	Error RedfishErrorContents `json:"error"`

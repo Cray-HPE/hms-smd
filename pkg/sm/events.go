@@ -22,9 +22,7 @@
 
 package sm
 
-import (
-	base "github.com/Cray-HPE/hms-base"
-)
+import base "github.com/Cray-HPE/hms-base/v2"
 
 type SMEventType string
 

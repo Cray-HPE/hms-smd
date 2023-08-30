@@ -30,11 +30,12 @@ import (
 	"strconv"
 	"strings"
 
-	base "github.com/Cray-HPE/hms-base"
+	base "github.com/Cray-HPE/hms-base/v2"
 	compcreds "github.com/Cray-HPE/hms-compcredentials"
 	"github.com/Cray-HPE/hms-smd/v2/internal/hmsds"
 	rf "github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
 	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
+	"github.com/Cray-HPE/hms-xname/xnametypes"
 
 	"github.com/gorilla/mux"
 )
@@ -373,7 +374,7 @@ func (s *SmD) getHMSValues(valSelect HMSValueSelect, w http.ResponseWriter, r *h
 	case HMSValState:
 		values.State = base.GetHMSStateList()
 	case HMSValType:
-		values.Type = base.GetHMSTypeList()
+		values.Type = xnametypes.GetHMSTypeList()
 	case HMSValAll:
 		values.Arch = base.GetHMSArchList()
 		values.Class = base.GetHMSClassList()
@@ -382,7 +383,7 @@ func (s *SmD) getHMSValues(valSelect HMSValueSelect, w http.ResponseWriter, r *h
 		values.Role = base.GetHMSRoleList()
 		values.SubRole = base.GetHMSSubRoleList()
 		values.State = base.GetHMSStateList()
-		values.Type = base.GetHMSTypeList()
+		values.Type = xnametypes.GetHMSTypeList()
 	}
 	sendJsonValueRsp(w, values)
 }
@@ -394,7 +395,7 @@ func (s *SmD) getHMSValues(valSelect HMSValueSelect, w http.ResponseWriter, r *h
 // Get single HMS component by xname ID
 func (s *SmD) doComponentGet(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	xname := base.NormalizeHMSCompID(vars["xname"])
+	xname := xnametypes.NormalizeHMSCompID(vars["xname"])
 
 	cmp, err := s.db.GetComponentByID(xname)
 	if err != nil {
@@ -414,9 +415,9 @@ func (s *SmD) doComponentGet(w http.ResponseWriter, r *http.Request) {
 func (s *SmD) doComponentDelete(w http.ResponseWriter, r *http.Request) {
 	s.lg.Printf("doComponentDelete(): trying...")
 	vars := mux.Vars(r)
-	xname := base.NormalizeHMSCompID(vars["xname"])
+	xname := xnametypes.NormalizeHMSCompID(vars["xname"])
 
-	if !base.IsHMSCompIDValid(xname) {
+	if !xnametypes.IsHMSCompIDValid(xname) {
 		sendJsonError(w, http.StatusBadRequest, "invalid xname")
 		return
 	}
@@ -505,7 +506,7 @@ func (s *SmD) doComponentsPost(w http.ResponseWriter, r *http.Request) {
 	}
 	// Get the nid and role defaults for all node types
 	for _, comp := range compsIn.Components {
-		if comp.Type == base.Node.String() {
+		if comp.Type == xnametypes.Node.String() {
 			if len(comp.Role) == 0 || len(comp.NID) == 0 || len(comp.Class) == 0 {
 				newNID, defRole, defSubRole, defClass := s.GetCompDefaults(comp.ID, base.RoleCompute.String(), "", "")
 				if len(comp.Role) == 0 {
@@ -649,7 +650,7 @@ func (s *SmD) doComponentsQueryGet(w http.ResponseWriter, r *http.Request) {
 	ids := make([]string, 0, 1)
 	var err error
 	vars := mux.Vars(r)
-	xname := base.NormalizeHMSCompID(vars["xname"])
+	xname := xnametypes.NormalizeHMSCompID(vars["xname"])
 
 	// Parse arguments
 	if err := r.ParseForm(); err != nil {
@@ -1019,7 +1020,7 @@ func (s *SmD) componentPatch(
 // otherwise be write-only fields.
 func (s *SmD) doComponentPut(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	xname := base.NormalizeHMSCompID(vars["xname"])
+	xname := xnametypes.NormalizeHMSCompID(vars["xname"])
 
 	var compIn sm.ComponentPut
 	body, err := ioutil.ReadAll(r.Body)
@@ -1037,7 +1038,7 @@ func (s *SmD) doComponentPut(w http.ResponseWriter, r *http.Request) {
 		} else {
 			component.ID = xname
 		}
-	} else if base.NormalizeHMSCompID(component.ID) != xname {
+	} else if xnametypes.NormalizeHMSCompID(component.ID) != xname {
 		sendJsonError(w, http.StatusBadRequest,
 			"ID in URL and POST body do not match")
 		return
@@ -1050,7 +1051,7 @@ func (s *SmD) doComponentPut(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Get the nid and role defaults for all node types
-	if component.Type == base.Node.String() {
+	if component.Type == xnametypes.Node.String() {
 		if len(component.Role) == 0 || len(component.NID) == 0 || len(component.Class) == 0 {
 			newNID, defRole, defSubRole, defClass := s.GetCompDefaults(component.ID, base.RoleCompute.String(), "", "")
 			if len(component.Role) == 0 {
@@ -1215,7 +1216,7 @@ func (s *SmD) doNodeMapsPost(w http.ResponseWriter, r *http.Request) {
 // UPDATE EXISTING Node->NID mapping by it's xname URI.
 func (s *SmD) doNodeMapPut(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	xname := base.NormalizeHMSCompID(vars["xname"])
+	xname := xnametypes.NormalizeHMSCompID(vars["xname"])
 
 	var m sm.NodeMap
 	body, err := ioutil.ReadAll(r.Body)
@@ -1229,7 +1230,7 @@ func (s *SmD) doNodeMapPut(w http.ResponseWriter, r *http.Request) {
 		if xname != "" {
 			m.ID = xname
 		}
-	} else if base.NormalizeHMSCompID(m.ID) != xname {
+	} else if xnametypes.NormalizeHMSCompID(m.ID) != xname {
 		sendJsonError(w, http.StatusBadRequest,
 			"xname in URL and PUT body do not match")
 		return
@@ -1268,9 +1269,9 @@ func (s *SmD) doNodeMapPut(w http.ResponseWriter, r *http.Request) {
 func (s *SmD) doNodeMapDelete(w http.ResponseWriter, r *http.Request) {
 	s.lg.Printf("doNodeMapDelete(): trying...")
 	vars := mux.Vars(r)
-	xname := base.NormalizeHMSCompID(vars["xname"])
+	xname := xnametypes.NormalizeHMSCompID(vars["xname"])
 
-	if !base.IsHMSCompIDValid(xname) {
+	if !xnametypes.IsHMSCompIDValid(xname) {
 		sendJsonError(w, http.StatusBadRequest, "invalid xname")
 		return
 	}
@@ -1354,7 +1355,7 @@ func (s *SmD) doHWInvByLocationGetAll(w http.ResponseWriter, r *http.Request) {
 
 	if len(hwInvIn.ID) > 0 {
 		for i, id := range hwInvIn.ID {
-			normId := base.VerifyNormalizeCompID(id)
+			normId := xnametypes.VerifyNormalizeCompID(id)
 			if normId == "" {
 				s.lg.Printf("doHWInvByLocationGetAll(): Invalid xname: %s", id)
 				sendJsonError(w, http.StatusBadRequest, "Invalid xname")
@@ -1368,7 +1369,7 @@ func (s *SmD) doHWInvByLocationGetAll(w http.ResponseWriter, r *http.Request) {
 	// Validate types
 	if len(hwInvIn.Type) > 0 {
 		for i, cType := range hwInvIn.Type {
-			normType := base.VerifyNormalizeType(cType)
+			normType := xnametypes.VerifyNormalizeType(cType)
 			if normType == "" {
 				s.lg.Printf("doHWInvByLocationGetAll(): Invalid HMS type: %s", cType)
 				sendJsonError(w, http.StatusBadRequest, "Invalid HMS type")
@@ -1499,7 +1500,7 @@ func (s *SmD) doHWInvByFRUGetAll(w http.ResponseWriter, r *http.Request) {
 	// Validate types
 	if len(hwInvIn.Type) > 0 {
 		for i, cType := range hwInvIn.Type {
-			normType := base.VerifyNormalizeType(cType)
+			normType := xnametypes.VerifyNormalizeType(cType)
 			if normType == "" {
 				s.lg.Printf("doHWInvByFRUGetAll(): Invalid HMS type: %s", cType)
 				sendJsonError(w, http.StatusBadRequest, "Invalid HMS type")
@@ -1543,7 +1544,7 @@ func (s *SmD) doHWInvByFRUGetAll(w http.ResponseWriter, r *http.Request) {
 // and optionally nested (fully, or node subcomponents only).
 func (s *SmD) doHWInvByLocationQueryGet(w http.ResponseWriter, r *http.Request) {
 	var (
-		compType    base.HMSType
+		compType    xnametypes.HMSType
 		parentQuery bool
 	)
 	vars := mux.Vars(r)
@@ -1576,28 +1577,28 @@ func (s *SmD) doHWInvByLocationQueryGet(w http.ResponseWriter, r *http.Request) 
 
 	// Treat blanks as s0
 	if xname == "" {
-		compType = base.System
+		compType = xnametypes.System
 	} else {
-		compType = base.GetHMSType(xname)
+		compType = xnametypes.GetHMSType(xname)
 	}
 
 	// Validate xnames
-	if compType == base.HMSTypeInvalid {
+	if compType == xnametypes.HMSTypeInvalid {
 		s.lg.Printf("doHWInvByLocationQueryGet(): Invalid xname: %s", xname)
 		sendJsonError(w, http.StatusBadRequest, "Invalid xname")
 		return
-	} else if compType == base.Partition {
+	} else if compType == xnametypes.Partition {
 		hwInvIn.Partition = append(hwInvIn.Partition, xname)
-	} else if !(compType == base.System || compType == base.HMSTypeAll) {
+	} else if !(compType == xnametypes.System || compType == xnametypes.HMSTypeAll) {
 		// Add anything other than s0 or "all". If it is s0 or "all" we
 		// leave ID empty so it will cause the filter to query everything.
-		hwInvLocFilter = append(hwInvLocFilter, hmsds.HWInvLoc_ID(base.NormalizeHMSCompID(xname)))
+		hwInvLocFilter = append(hwInvLocFilter, hmsds.HWInvLoc_ID(xnametypes.NormalizeHMSCompID(xname)))
 	}
 
 	// Validate types
 	if len(hwInvIn.Type) > 0 {
 		for i, cType := range hwInvIn.Type {
-			normType := base.VerifyNormalizeType(cType)
+			normType := xnametypes.VerifyNormalizeType(cType)
 			if normType == "" {
 				s.lg.Printf("doHWInvByLocationQueryGet(): Invalid HMS type: %s", cType)
 				sendJsonError(w, http.StatusBadRequest, "Invalid HMS type")
@@ -1820,7 +1821,7 @@ func (s *SmD) hwInvHistGet(w http.ResponseWriter, r *http.Request, format sm.HWI
 
 	switch format {
 	case sm.HWInvHistFmtByLoc:
-		normId := base.VerifyNormalizeCompID(id)
+		normId := xnametypes.VerifyNormalizeCompID(id)
 		if normId == "" {
 			s.lg.Printf("hwInvHistGet(%s): Invalid xname: %s", id, id)
 			sendJsonError(w, http.StatusBadRequest, "Invalid xname")
@@ -1928,7 +1929,7 @@ func (s *SmD) hwInvHistGetAll(w http.ResponseWriter, r *http.Request, format sm.
 
 	if len(hwInvHistIn.ID) > 0 {
 		for i, id := range hwInvHistIn.ID {
-			normId := base.VerifyNormalizeCompID(id)
+			normId := xnametypes.VerifyNormalizeCompID(id)
 			if normId == "" {
 				s.lg.Printf("hwInvHistGetAll(%s): Invalid xname: %s", fmtStr, id)
 				sendJsonError(w, http.StatusBadRequest, "Invalid xname")
@@ -1987,7 +1988,7 @@ func (s *SmD) hwInvHistGetAll(w http.ResponseWriter, r *http.Request, format sm.
 func (s *SmD) doHWInvHistByLocationDelete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	xname := vars["xname"]
-	normId := base.VerifyNormalizeCompID(xname)
+	normId := xnametypes.VerifyNormalizeCompID(xname)
 	if normId == "" {
 		s.lg.Printf("doHWInvHistByLocationDelete(%s): Invalid xname: %s", xname, xname)
 		sendJsonError(w, http.StatusBadRequest, "Invalid xname")
@@ -2181,7 +2182,7 @@ func (s *SmD) doRedfishEndpointsDeleteAll(w http.ResponseWriter, r *http.Request
 // user-writable portions).
 func (s *SmD) doRedfishEndpointPut(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	xname := base.NormalizeHMSCompID(vars["xname"])
+	xname := xnametypes.NormalizeHMSCompID(vars["xname"])
 
 	var rep rf.RawRedfishEP
 	var cred compcreds.CompCredentials
@@ -2196,7 +2197,7 @@ func (s *SmD) doRedfishEndpointPut(w http.ResponseWriter, r *http.Request) {
 		if xname != "" {
 			rep.ID = xname
 		}
-	} else if base.NormalizeHMSCompID(rep.ID) != xname {
+	} else if xnametypes.NormalizeHMSCompID(rep.ID) != xname {
 		sendJsonError(w, http.StatusBadRequest,
 			"xname in URL and PUT body do not match")
 		return
@@ -2250,7 +2251,7 @@ func (s *SmD) doRedfishEndpointPut(w http.ResponseWriter, r *http.Request) {
 				// redfish endpoint changes we just made in the database? If we
 				// fail to store credentials in vault, we'll lose the credentials
 				// and the redfish endpoints associated with them will still be
-				// successfully in the database. I think this is ok for now
+				// successfully in the dataxnametypes. I think this is ok for now
 				// since the future plan is for HSM to only read credentials
 				// from Vault. Other services like REDS should be writing the
 				// credentials to Vault.
@@ -2285,7 +2286,7 @@ func (s *SmD) doRedfishEndpointPut(w http.ResponseWriter, r *http.Request) {
 // PATCH existing RedfishEndpoint entry but only the fields specified.
 func (s *SmD) doRedfishEndpointPatch(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	xname := base.VerifyNormalizeCompID(vars["xname"])
+	xname := xnametypes.VerifyNormalizeCompID(vars["xname"])
 
 	var rep sm.RedfishEndpointPatch
 	var epUser string
@@ -2354,7 +2355,7 @@ func (s *SmD) doRedfishEndpointPatch(w http.ResponseWriter, r *http.Request) {
 				// redfish endpoint changes we just made in the database? If we
 				// fail to store credentials in vault, we'll lose the credentials
 				// and the redfish endpoints associated with them will still be
-				// successfully in the database. I think this is ok for now
+				// successfully in the dataxnametypes. I think this is ok for now
 				// since the future plan is for HSM to only read credentials
 				// from Vault. Other services like REDS should be writing the
 				// credentials to Vault.
@@ -2478,7 +2479,7 @@ func (s *SmD) doRedfishEndpointsPost(w http.ResponseWriter, r *http.Request) {
 					// endpoints we just inserted into the database? If we fail to
 					// store credentials in vault, we'll lose the credentials and
 					// the redfish endpoints associated with them will still be
-					// successfully in the database. I think this is ok for now
+					// successfully in the dataxnametypes. I think this is ok for now
 					// since the future plan is for HSM to only read credentials
 					// from Vault. Other services like REDS should be writing the
 					// credentials to Vault.
@@ -2884,7 +2885,7 @@ func (s *SmD) doCompEthInterfacesGetV2(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(filter.CompID) > 0 {
 		for i, xname := range filter.CompID {
-			xnameNorm := base.VerifyNormalizeCompID(xname)
+			xnameNorm := xnametypes.VerifyNormalizeCompID(xname)
 			if len(xnameNorm) == 0 && len(xname) != 0 {
 				s.lg.Printf("doCompEthInterfacesGetV2(): Invalid CompID.")
 				sendJsonError(w, http.StatusBadRequest, "Invalid CompID.")
@@ -2897,7 +2898,7 @@ func (s *SmD) doCompEthInterfacesGetV2(w http.ResponseWriter, r *http.Request) {
 
 	if len(filter.Type) > 0 {
 		for i, compType := range filter.Type {
-			compTypeNorm := base.VerifyNormalizeType(compType)
+			compTypeNorm := xnametypes.VerifyNormalizeType(compType)
 			if len(compTypeNorm) == 0 {
 				s.lg.Printf("doCompEthInterfacesGetV2(): Invalid HMS type.")
 				sendJsonError(w, http.StatusBadRequest, "Invalid HMS type.")
@@ -3383,7 +3384,7 @@ func (s *SmD) doPostSCNSubscription(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.scnSubLock.Lock()
-	// Insert the subscription into the database.
+	// Insert the subscription into the dataxnametypes.
 	// Existing subscriptions will be updated.
 	id, err := s.db.InsertSCNSubscription(*subIn)
 	if err != nil {
@@ -3555,7 +3556,7 @@ func (s *SmD) doPutSCNSubscription(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.scnSubLock.Lock()
-	// Update the subscription in the database.
+	// Update the subscription in the dataxnametypes.
 	didUpdate, err := s.db.UpdateSCNSubscription(id, *subIn)
 	if err != nil {
 		s.scnSubLock.Unlock()
@@ -3676,7 +3677,7 @@ func (s *SmD) doPatchSCNSubscription(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.scnSubLock.Lock()
-	// Patch the subscription in the database.
+	// Patch the subscription in the dataxnametypes.
 	didPatch, err := s.db.PatchSCNSubscription(id, patchIn.Op, *patchIn)
 	if err != nil {
 		s.scnSubLock.Unlock()
@@ -3691,7 +3692,7 @@ func (s *SmD) doPatchSCNSubscription(w http.ResponseWriter, r *http.Request) {
 	// Patch the cached subscription table.
 	// Look for an existing subscription. Patch it.
 	// Note: There is a possibility that the cached subscription table is out
-	//       of sync with the database. Patch what we have anyway. We'll get
+	//       of sync with the dataxnametypes. Patch what we have anyway. We'll get
 	//       corrected by the SCNSubscriptionRefresh() thread.
 	for i, sub := range s.scnSubs.SubscriptionList {
 		if sub.ID == id {
@@ -4144,8 +4145,9 @@ func (s *SmD) doGroupDelete(w http.ResponseWriter, r *http.Request) {
 // To update the tags array and/or description, a PATCH operation can be used.
 // Omitted fields are not updated.
 // NOTE: This cannot be used to completely replace the members list. Rather,
-//       individual members can be removed or added with the
-//       POST/DELETE {group_label}/members API.
+//
+//	individual members can be removed or added with the
+//	POST/DELETE {group_label}/members API.
 func (s *SmD) doGroupPatch(w http.ResponseWriter, r *http.Request) {
 	var groupPatch sm.GroupPatch
 	vars := mux.Vars(r)
@@ -4293,8 +4295,8 @@ func (s *SmD) doGroupMembersPost(w http.ResponseWriter, r *http.Request) {
 			"error decoding JSON "+err.Error())
 		return
 	}
-	normID := base.NormalizeHMSCompID(memberIn.ID)
-	if !base.IsHMSCompIDValid(normID) {
+	normID := xnametypes.NormalizeHMSCompID(memberIn.ID)
+	if !xnametypes.IsHMSCompIDValid(normID) {
 		s.lg.Printf("doGroupMemberPost(): Invalid xname ID.")
 		sendJsonError(w, http.StatusBadRequest, "invalid xname ID")
 		return
@@ -4327,7 +4329,7 @@ func (s *SmD) doGroupMembersPost(w http.ResponseWriter, r *http.Request) {
 func (s *SmD) doGroupMemberDelete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	label := sm.NormalizeGroupField(vars["group_label"])
-	id := base.NormalizeHMSCompID(vars["xname_id"])
+	id := xnametypes.NormalizeHMSCompID(vars["xname_id"])
 
 	if sm.VerifyGroupField(label) != nil {
 		s.lg.Printf("doGroupMemberDelete(): Invalid group label.")
@@ -4335,7 +4337,7 @@ func (s *SmD) doGroupMemberDelete(w http.ResponseWriter, r *http.Request) {
 			"Invalid group label.")
 		return
 	}
-	if !base.IsHMSCompIDValid(id) {
+	if !xnametypes.IsHMSCompIDValid(id) {
 		s.lg.Printf("doGroupMemberDelete(): Invalid xname ID.")
 		sendJsonError(w, http.StatusBadRequest, "invalid xname ID")
 		return
@@ -4569,8 +4571,9 @@ func (s *SmD) doPartitionDelete(w http.ResponseWriter, r *http.Request) {
 // To update the tags array and/or description, a PATCH operation can be used.
 // Omitted fields are not updated.
 // NOTE: This cannot be used to completely replace the members list. Rather,
-//       individual members can be removed or added with the POST/DELETE
-//       {partition_name}/members API.
+//
+//	individual members can be removed or added with the POST/DELETE
+//	{partition_name}/members API.
 func (s *SmD) doPartitionPatch(w http.ResponseWriter, r *http.Request) {
 	var partPatch sm.PartitionPatch
 	vars := mux.Vars(r)
@@ -4693,8 +4696,8 @@ func (s *SmD) doPartitionMembersPost(w http.ResponseWriter, r *http.Request) {
 			"error decoding JSON "+err.Error())
 		return
 	}
-	normID := base.NormalizeHMSCompID(memberIn.ID)
-	if !base.IsHMSCompIDValid(normID) {
+	normID := xnametypes.NormalizeHMSCompID(memberIn.ID)
+	if !xnametypes.IsHMSCompIDValid(normID) {
 		s.lg.Printf("doPartitionMembersPost(): Invalid xname ID.")
 		sendJsonError(w, http.StatusBadRequest, "invalid xname ID")
 		return
@@ -4728,7 +4731,7 @@ func (s *SmD) doPartitionMembersPost(w http.ResponseWriter, r *http.Request) {
 func (s *SmD) doPartitionMemberDelete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := sm.NormalizeGroupField(vars["partition_name"])
-	id := base.NormalizeHMSCompID(vars["xname_id"])
+	id := xnametypes.NormalizeHMSCompID(vars["xname_id"])
 
 	if sm.VerifyGroupField(name) != nil {
 		s.lg.Printf("doPartitionMemberDelete(): Invalid partition name.")
@@ -4736,7 +4739,7 @@ func (s *SmD) doPartitionMemberDelete(w http.ResponseWriter, r *http.Request) {
 			"Invalid partition name.")
 		return
 	}
-	if !base.IsHMSCompIDValid(id) {
+	if !xnametypes.IsHMSCompIDValid(id) {
 		s.lg.Printf("doPartitionMemberDelete(): Invalid xname ID.")
 		sendJsonError(w, http.StatusBadRequest, "invalid xname ID")
 		return
@@ -4800,9 +4803,9 @@ func (s *SmD) doMembershipsGet(w http.ResponseWriter, r *http.Request) {
 func (s *SmD) doMembershipGet(w http.ResponseWriter, r *http.Request) {
 	var err error
 	vars := mux.Vars(r)
-	xname := base.NormalizeHMSCompID(vars["xname"])
+	xname := xnametypes.NormalizeHMSCompID(vars["xname"])
 
-	if !base.IsHMSCompIDValid(xname) {
+	if !xnametypes.IsHMSCompIDValid(xname) {
 		s.lg.Printf("doMembershipGet(): Invalid xname.")
 		sendJsonError(w, http.StatusBadRequest, "invalid xname")
 		return
@@ -5184,8 +5187,8 @@ func (s *SmD) doCompLocksDisable(w http.ResponseWriter, r *http.Request) {
 func (s *SmD) doPowerMapGet(w http.ResponseWriter, r *http.Request) {
 	s.lg.Printf("doPowerMapGet(): trying...")
 	vars := mux.Vars(r)
-	xname := base.NormalizeHMSCompID(vars["xname"])
-	if !base.IsHMSCompIDValid(xname) {
+	xname := xnametypes.NormalizeHMSCompID(vars["xname"])
+	if !xnametypes.IsHMSCompIDValid(xname) {
 		s.lg.Printf("doPowerMapGet(): Invalid xname.")
 		sendJsonError(w, http.StatusBadRequest, "invalid xname")
 		return
@@ -5264,7 +5267,7 @@ func (s *SmD) doPowerMapsPost(w http.ResponseWriter, r *http.Request) {
 // UPDATE EXISTING Power mapping by it's xname URI.
 func (s *SmD) doPowerMapPut(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	xname := base.NormalizeHMSCompID(vars["xname"])
+	xname := xnametypes.NormalizeHMSCompID(vars["xname"])
 
 	var mIn sm.PowerMap
 	body, err := ioutil.ReadAll(r.Body)
@@ -5278,7 +5281,7 @@ func (s *SmD) doPowerMapPut(w http.ResponseWriter, r *http.Request) {
 		if xname != "" {
 			mIn.ID = xname
 		}
-	} else if base.NormalizeHMSCompID(mIn.ID) != xname {
+	} else if xnametypes.NormalizeHMSCompID(mIn.ID) != xname {
 		sendJsonError(w, http.StatusBadRequest,
 			"xname in URL and PUT body do not match")
 		return
@@ -5313,9 +5316,9 @@ func (s *SmD) doPowerMapPut(w http.ResponseWriter, r *http.Request) {
 func (s *SmD) doPowerMapDelete(w http.ResponseWriter, r *http.Request) {
 	s.lg.Printf("doPowerMapDelete(): trying...")
 	vars := mux.Vars(r)
-	xname := base.NormalizeHMSCompID(vars["xname"])
+	xname := xnametypes.NormalizeHMSCompID(vars["xname"])
 
-	if !base.IsHMSCompIDValid(xname) {
+	if !xnametypes.IsHMSCompIDValid(xname) {
 		sendJsonError(w, http.StatusBadRequest, "invalid xname")
 		return
 	}
