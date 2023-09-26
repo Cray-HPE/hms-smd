@@ -860,7 +860,7 @@ func (s *SmD) DiscoverHWInvByLocArray(rfEP *rf.RedfishEP) ([]*sm.HWInvByLoc, err
 func (s *SmD) GenerateHWInvHist(hwlocs []*sm.HWInvByLoc) error {
 	hwhists := make([]*sm.HWInvHist, 0, 1)
 	locIDs := make([]string, 0, len(hwlocs))
-	lhsMap := make(map[string]string, 0)
+	lhsMap := make(map[string]*sm.HWInvHist, 0)
 
 	// Get a list of the LocIDs
 	for _, hwloc := range hwlocs {
@@ -876,7 +876,7 @@ func (s *SmD) GenerateHWInvHist(hwlocs []*sm.HWInvByLoc) error {
 	}
 	// Create a map linking the locIDs to the last recorded history entry
 	for _, lh := range lhs {
-		lhsMap[lh.ID] = lh.FruId
+		lhsMap[lh.ID] = lh
 	}
 	for _, hwloc := range hwlocs {
 		// Skip hwlocs that have no FRU
@@ -888,7 +888,11 @@ func (s *SmD) GenerateHWInvHist(hwlocs []*sm.HWInvByLoc) error {
 			FruId:     hwloc.PopulatedFRU.FRUID,
 			EventType: sm.HWInvHistEventTypeDetected,
 		}
-		if fruID, ok := lhsMap[hwloc.ID]; !ok || fruID != hwloc.PopulatedFRU.FRUID {
+		// Only create a new 'detected' event if the previous event for that location
+		// is not a Location+FRUID+EventType duplicate.
+		if lastHist, ok := lhsMap[hwloc.ID]; !ok ||
+		   lastHist.FruId != hwloc.PopulatedFRU.FRUID ||
+		   lastHist.EventType != sm.HWInvHistEventTypeDetected {
 			hwhists = append(hwhists, &newHist)
 		}
 	}
