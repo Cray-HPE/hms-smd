@@ -1423,6 +1423,7 @@ paths:
             - MgmtHLSwitch
             - CDUMgmtSwitch
             - Node
+            - VirtualNode
             - Processor
             - Drive
             - StorageGroup
@@ -1437,7 +1438,6 @@ paths:
             - HSNLink
             - HSNConnector
             - INVALID
-            - VirtualNode
         - $ref: '#/parameters/compStateParam'
         - $ref: '#/parameters/compFlagParam'
         - $ref: '#/parameters/compRoleParam'
@@ -11795,6 +11795,7 @@ definitions:
       - MgmtHLSwitch
       - CDUMgmtSwitch
       - Node
+      - VirtualNode
       - Processor
       - Drive
       - StorageGroup
@@ -11809,7 +11810,6 @@ definitions:
       - HSNLink
       - HSNConnector
       - INVALID
-      - VirtualNode
     type: string
     readOnly: true
     example: Node
@@ -12084,6 +12084,7 @@ parameters:
       - MgmtHLSwitch
       - CDUMgmtSwitch
       - Node
+      - VirtualNode
       - Processor
       - Drive
       - StorageGroup
@@ -12098,7 +12099,6 @@ parameters:
       - HSNLink
       - HSNConnector
       - INVALID
-      - VirtualNode
   compStateParam:
     name: state
     in: query
