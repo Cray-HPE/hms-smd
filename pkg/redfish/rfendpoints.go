@@ -39,8 +39,8 @@ import (
 	"unicode"
 
 	base "github.com/Cray-HPE/hms-base/v2"
-	"github.com/Cray-HPE/hms-xname/xnametypes"
 	"github.com/Cray-HPE/hms-certs/pkg/hms_certs"
+	"github.com/Cray-HPE/hms-xname/xnametypes"
 )
 
 const PKG_VERSION = "0.2"
@@ -341,9 +341,9 @@ func NewRedfishEPDescription(rep *RawRedfishEP) (*RedfishEPDescription, error) {
 	// valid controller type.
 	hmsType := xnametypes.GetHMSType(ep.ID)
 	if xnametypes.IsHMSTypeController(hmsType) ||
-	   hmsType == xnametypes.MgmtSwitch ||
-	   hmsType == xnametypes.MgmtHLSwitch ||
-	   hmsType == xnametypes.CDUMgmtSwitch {
+		hmsType == xnametypes.MgmtSwitch ||
+		hmsType == xnametypes.MgmtHLSwitch ||
+		hmsType == xnametypes.CDUMgmtSwitch {
 		ep.Type = hmsType.String()
 	} else if hmsType == xnametypes.HMSTypeInvalid {
 		// No type found.  Not a valid xname
@@ -1145,10 +1145,10 @@ func (ep *RedfishEP) CheckPrePhase1() error {
 	}
 	hmsType := xnametypes.GetHMSType(ep.ID)
 	if (!xnametypes.IsHMSTypeController(hmsType) &&
-	    hmsType != xnametypes.MgmtSwitch &&
+		hmsType != xnametypes.MgmtSwitch &&
 		hmsType != xnametypes.MgmtHLSwitch &&
 		hmsType != xnametypes.CDUMgmtSwitch) ||
-	    ep.Type != hmsType.String() {
+		ep.Type != hmsType.String() {
 		err := fmt.Errorf("bad xname ID ('%s') or Type ('%s') for %s\n",
 			ep.ID, ep.Type, ep.FQDN)
 		return err
@@ -1203,8 +1203,8 @@ func (ep *RedfishEP) getChassisHMSID(c *EpChassis, hmsType string, ordinal int) 
 		return ""
 	}
 	if hmsTypeStr == xnametypes.MgmtSwitch.String() ||
-	   hmsTypeStr == xnametypes.MgmtHLSwitch.String() ||
-	   hmsTypeStr == xnametypes.CDUMgmtSwitch.String() {
+		hmsTypeStr == xnametypes.MgmtHLSwitch.String() ||
+		hmsTypeStr == xnametypes.CDUMgmtSwitch.String() {
 		return ep.ID
 	}
 	// If the RedfishEndpoint ID is valid, there will be a b in the xname.
@@ -1304,8 +1304,8 @@ func (ep *RedfishEP) getChassisHMSType(c *EpChassis) string {
 		return xnametypes.HMSTypeInvalid.String()
 	case RFSubtypeDrawer:
 		if ep.Type == xnametypes.MgmtSwitch.String() ||
-		   ep.Type == xnametypes.MgmtHLSwitch.String() ||
-		   ep.Type == xnametypes.CDUMgmtSwitch.String() {
+			ep.Type == xnametypes.MgmtHLSwitch.String() ||
+			ep.Type == xnametypes.CDUMgmtSwitch.String() {
 			return ep.Type
 		}
 		return xnametypes.HMSTypeInvalid.String()
@@ -1794,8 +1794,8 @@ func (ep *RedfishEP) getManagerHMSID(m *EpManager, hmsType string, ordinal int) 
 func (ep *RedfishEP) getManagerHMSType(m *EpManager) string {
 	// Don't discover Management switch BMCs.
 	if ep.Type == xnametypes.MgmtSwitch.String() ||
-	   ep.Type == xnametypes.MgmtHLSwitch.String() ||
-	   ep.Type == xnametypes.CDUMgmtSwitch.String() {
+		ep.Type == xnametypes.MgmtHLSwitch.String() ||
+		ep.Type == xnametypes.CDUMgmtSwitch.String() {
 		return xnametypes.HMSTypeInvalid.String()
 	}
 	// Just one?  That's this endpoint's type.
@@ -1856,6 +1856,7 @@ const (
 	IntelMfr    = "Intel"
 	DellMfr     = "Dell"
 	GigabyteMfr = "Gigabyte"
+	NvidiaMfr   = "NVIDIA"
 )
 
 // This should only return 1 if the RF manufacturer string (mfrCheckStr) is mfr
@@ -1888,6 +1889,10 @@ func IsManufacturer(mfrCheckStr, mfr string) int {
 				}
 			case GigabyteMfr:
 				if s == "gigabyte" {
+					return 1
+				}
+			case NvidiaMfr:
+				if s == "nvidia" {
 					return 1
 				}
 			}
@@ -1931,14 +1936,17 @@ func GetProcessorArch(p *EpProcessor) (procArch string) {
 	if rfArch == "" {
 		rfArch = p.ProcessorRF.InstructionSet
 	}
-	switch(rfArch) {
+	switch rfArch {
 	case "":
 		procArch = base.ArchUnknown.String()
-	case ProcessorArchX86:           fallthrough
+	case ProcessorArchX86:
+		fallthrough
 	case ProcessorInstructionSetX86_64:
 		procArch = base.ArchX86.String()
-	case ProcessorArchARM:              fallthrough
-	case ProcessorInstructionSetARMA32: fallthrough
+	case ProcessorArchARM:
+		fallthrough
+	case ProcessorInstructionSetARMA32:
+		fallthrough
 	case ProcessorInstructionSetARMA64:
 		procArch = base.ArchARM.String()
 	default:
@@ -1951,20 +1959,22 @@ func GetProcessorArch(p *EpProcessor) (procArch string) {
 // System architecture detection
 ////////////////////////////////////////////////////////////////////////////
 
-// These *ArchMaps are used for working around redfish on Cray EX hardware not
+// These *ArchMaps are used for working around redfish on hardware not
 // supplying the 'ProcessorArchitecture' or 'InstructionSet' fields for the
-// processors. They are used for matching known Cray EX hardware types to a
+// processors. They are used for matching known hardware types to a
 // processor architecture.
 //
-// These lists should not need to be maintained or expanded because future
-// Cray EX hardware should provide the needed processor fields.
+// These lists are needed for at least early bring-up of hardware as the Redfish
+// does not always provide the needed information in the early firmware.
 
 // Model matching strings for Cray EX hardware.
 var CrayEXModelArchMap = map[string]string{
-	"ex235": base.ArchX86.String(),
-	"ex420": base.ArchX86.String(),
-	"ex425": base.ArchX86.String(),
-	"ex254": base.ArchARM.String(),
+	"ex235":  base.ArchX86.String(), // Grizzly Peak (ex235n), Bard Peak (ex235a)
+	"ex420":  base.ArchX86.String(), // Castle (ex420)
+	"ex425":  base.ArchX86.String(), // Windom (ex425)
+	"ex254":  base.ArchARM.String(), // Blanca Peak (ex254n)
+	"ex255":  base.ArchX86.String(), // Parry Peak (ex255a)
+	"ex4252": base.ArchX86.String(), // Antero (ex4252)
 }
 
 // Drescription matching strings for Cray EX hardware
@@ -1976,8 +1986,12 @@ var CrayEXDescrArchMap = map[string]string{
 	"grizzlypknodecard": base.ArchX86.String(),
 	"antero":            base.ArchX86.String(),
 	"blancapeaknc":      base.ArchARM.String(),
+	"parrypeaknc":       base.ArchX86.String(),
 }
 
+var NvidiaModelArchMap = map[string]string{
+	"dgx dragon": base.ArchARM.String(),
+}
 
 func GetSystemArch(s *EpSystem) string {
 	sysArch := base.ArchUnknown.String()
@@ -1988,13 +2002,13 @@ func GetSystemArch(s *EpSystem) string {
 			continue
 		}
 		if sysArch == base.ArchUnknown.String() ||
-		   (sysArch == base.ArchOther.String() &&
-		    proc.Arch != base.ArchUnknown.String()) {
+			(sysArch == base.ArchOther.String() &&
+				proc.Arch != base.ArchUnknown.String()) {
 			// Try for the best identification (X86/ARM > Other > UNKNOWN).
 			sysArch = proc.Arch
 		}
 		if sysArch != base.ArchUnknown.String() &&
-		   sysArch != base.ArchOther.String() {
+			sysArch != base.ArchOther.String() {
 			// Found x86 or ARM
 			break
 		}
@@ -2004,21 +2018,33 @@ func GetSystemArch(s *EpSystem) string {
 	// is not supplying the 'ProcessorArchitecture' or 'InstructionSet' fields
 	// for the processors or the processor collection wasn't present. Try to
 	// determine the processor architecture based on the node's model.
-	if sysArch == base.ArchUnknown.String() &&
-	   IsManufacturer(s.SystemRF.Manufacturer, CrayMfr) == 1 {
-		if len(s.SystemRF.Model) > 0 {
-			rfModel := strings.ToLower(s.SystemRF.Model)
-			for matchStr, arch := range CrayEXModelArchMap {
-				if strings.Contains(rfModel, matchStr) {
-					return arch
+	if sysArch == base.ArchUnknown.String() {
+		if IsManufacturer(s.SystemRF.Manufacturer, CrayMfr) == 1 {
+			if len(s.SystemRF.Model) > 0 {
+				rfModel := strings.ToLower(s.SystemRF.Model)
+				for matchStr, arch := range CrayEXModelArchMap {
+					if strings.Contains(rfModel, matchStr) {
+						return arch
+					}
+				}
+			}
+			if len(s.SystemRF.Description) > 0 {
+				rfDescr := strings.ToLower(s.SystemRF.Description)
+				for matchStr, arch := range CrayEXDescrArchMap {
+					if strings.Contains(rfDescr, matchStr) {
+						return arch
+					}
 				}
 			}
 		}
-		if len(s.SystemRF.Description) > 0 {
-			rfDescr := strings.ToLower(s.SystemRF.Description)
-			for matchStr, arch := range CrayEXDescrArchMap {
-				if strings.Contains(rfDescr, matchStr) {
-					return arch
+		if IsManufacturer(s.SystemRF.Manufacturer, NvidiaMfr) == 1 {
+			fmt.Printf("%s\n", s.SystemRF.Model)
+			if len(s.SystemRF.Model) > 0 {
+				rfModel := strings.ToLower(s.SystemRF.Model)
+				for matchStr, arch := range NvidiaModelArchMap {
+					if strings.Contains(rfModel, matchStr) {
+						return arch
+					}
 				}
 			}
 		}
