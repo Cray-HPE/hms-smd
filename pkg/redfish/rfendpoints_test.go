@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright [2019-2021] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2019-2021,2024] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -572,3 +572,262 @@ func TestGetStandardFRUID(t *testing.T) {
 		}
 	}
 }
+
+func TestGetSystemArch(t *testing.T) {
+	type args struct {
+		s EpSystem
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{{
+		name: "Test Cray ex235a",
+		args: args{
+			EpSystem{
+				SystemRF: ComputerSystem{
+					SystemFRUInfoRF: SystemFRUInfoRF{
+						Manufacturer: "Cray",
+						Model: "ex235a",
+					},
+					SystemLocationInfoRF: SystemLocationInfoRF{
+						Description: "bardpeaknc",
+					},
+				},
+			},
+		},
+		want: "X86",
+	}, {
+		name: "Test Cray ex420",
+		args: args{
+			EpSystem{
+				SystemRF: ComputerSystem{
+					SystemFRUInfoRF: SystemFRUInfoRF{
+						Manufacturer: "Cray",
+						Model: "ex420",
+					},
+					SystemLocationInfoRF: SystemLocationInfoRF{
+						Description: "cnc",
+					},
+				},
+			},
+		},
+		want: "X86",
+	}, {
+		name: "Test Cray ex425",
+		args: args{
+			EpSystem{
+				SystemRF: ComputerSystem{
+					SystemFRUInfoRF: SystemFRUInfoRF{
+						Manufacturer: "Cray",
+						Model: "ex425",
+					},
+					SystemLocationInfoRF: SystemLocationInfoRF{
+						Description: "wnc",
+					},
+				},
+			},
+		},
+		want: "X86",
+	}, {
+		name: "Test Cray ex254n",
+		args: args{
+			EpSystem{
+				SystemRF: ComputerSystem{
+					SystemFRUInfoRF: SystemFRUInfoRF{
+						Manufacturer: "Cray",
+						Model: "ex254n",
+					},
+					SystemLocationInfoRF: SystemLocationInfoRF{
+						Description: "blancapeaknc",
+					},
+				},
+			},
+		},
+		want: "ARM",
+	}, {
+		name: "Test Cray ex255a",
+		args: args{
+			EpSystem{
+				SystemRF: ComputerSystem{
+					SystemFRUInfoRF: SystemFRUInfoRF{
+						Manufacturer: "Cray",
+						Model: "ex255a",
+					},
+					SystemLocationInfoRF: SystemLocationInfoRF{
+						Description: "parrypeaknc",
+					},
+				},
+			},
+		},
+		want: "X86",
+	}, {
+		name: "Test Cray ex4252",
+		args: args{
+			EpSystem{
+				SystemRF: ComputerSystem{
+					SystemFRUInfoRF: SystemFRUInfoRF{
+						Manufacturer: "Cray",
+						Model: "ex4252",
+					},
+					SystemLocationInfoRF: SystemLocationInfoRF{
+						Description: "antero",
+					},
+				},
+			},
+		},
+		want: "X86",
+	}, {
+		name: "Test NVIDIA DGX Dragon",
+		args: args{
+			EpSystem{
+				SystemRF: ComputerSystem{
+					SystemFRUInfoRF: SystemFRUInfoRF{
+						Manufacturer: "NVIDIA",
+						Model: "DGX Dragon 2U4N Chassis",
+					},
+					SystemLocationInfoRF: SystemLocationInfoRF{
+						Description: "Computer System",
+					},
+				},
+			},
+		},
+		want: "ARM",
+	}, {
+		name: "Test Cray bardpeaknc",
+		args: args{
+			EpSystem{
+				SystemRF: ComputerSystem{
+					SystemFRUInfoRF: SystemFRUInfoRF{
+						Manufacturer: "Cray",
+						Model: "xxxxx",
+					},
+					SystemLocationInfoRF: SystemLocationInfoRF{
+						Description: "bardpeaknc",
+					},
+				},
+			},
+		},
+		want: "X86",
+	}, {
+		name: "Test Cray cnc",
+		args: args{
+			EpSystem{
+				SystemRF: ComputerSystem{
+					SystemFRUInfoRF: SystemFRUInfoRF{
+						Manufacturer: "Cray",
+						Model: "xxxxx",
+					},
+					SystemLocationInfoRF: SystemLocationInfoRF{
+						Description: "cnc",
+					},
+				},
+			},
+		},
+		want: "X86",
+	}, {
+		name: "Test Cray wnc",
+		args: args{
+			EpSystem{
+				SystemRF: ComputerSystem{
+					SystemFRUInfoRF: SystemFRUInfoRF{
+						Manufacturer: "Cray",
+						Model: "xxxxx",
+					},
+					SystemLocationInfoRF: SystemLocationInfoRF{
+						Description: "wnc",
+					},
+				},
+			},
+		},
+		want: "X86",
+	}, {
+		name: "Test Cray blancapeaknc",
+		args: args{
+			EpSystem{
+				SystemRF: ComputerSystem{
+					SystemFRUInfoRF: SystemFRUInfoRF{
+						Manufacturer: "Cray",
+						Model: "xxxxx",
+					},
+					SystemLocationInfoRF: SystemLocationInfoRF{
+						Description: "blancapeaknc",
+					},
+				},
+			},
+		},
+		want: "ARM",
+	}, {
+		name: "Test Cray parrypeaknc",
+		args: args{
+			EpSystem{
+				SystemRF: ComputerSystem{
+					SystemFRUInfoRF: SystemFRUInfoRF{
+						Manufacturer: "Cray",
+						Model: "xxxxx",
+					},
+					SystemLocationInfoRF: SystemLocationInfoRF{
+						Description: "parrypeaknc",
+					},
+				},
+			},
+		},
+		want: "X86",
+	}, {
+		name: "Test Cray antero",
+		args: args{
+			EpSystem{
+				SystemRF: ComputerSystem{
+					SystemFRUInfoRF: SystemFRUInfoRF{
+						Manufacturer: "Cray",
+						Model: "xxxxx",
+					},
+					SystemLocationInfoRF: SystemLocationInfoRF{
+						Description: "antero",
+					},
+				},
+			},
+		},
+		want: "X86",
+	}, {
+		name: "Test NVIDIA DGX Dragon",
+		args: args{
+			EpSystem{
+				SystemRF: ComputerSystem{
+					SystemFRUInfoRF: SystemFRUInfoRF{
+						Manufacturer: "NVIDIA",
+						Model: "xxxxx",
+					},
+					SystemLocationInfoRF: SystemLocationInfoRF{
+						Description: "Computer System",
+					},
+				},
+			},
+		},
+		want: "UNKNOWN",
+	}, {
+		name: "Test Bad",
+		args: args{
+			EpSystem{
+				SystemRF: ComputerSystem{
+					SystemFRUInfoRF: SystemFRUInfoRF{
+						Manufacturer: "Cray",
+						Model: "xxxxx",
+					},
+					SystemLocationInfoRF: SystemLocationInfoRF{
+						Description: "xxxxx",
+					},
+				},
+			},
+		},
+		want: "UNKNOWN",
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetSystemArch(&tt.args.s); got != tt.want {
+				t.Errorf("GetSystemArch() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
