@@ -1161,6 +1161,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 				s.LastStatus = HTTPsGetFailed
 				return
 			}
+			s.PowerURL = path
 			s.LastStatus = HTTPsGetOk
 
 			// Decode JSON into PowerControl structure
