@@ -1996,19 +1996,24 @@ func GetSystemArch(s *EpSystem) string {
 	sysArch := base.ArchUnknown.String()
 	// Search the processor collection for the architecture.
 	for _, proc := range s.Processors.OIDs {
+		fmt.Printf("<---------- JW_DEBUG ----------> proc.Type=%s proc.Arch=%s\n", proc.Type, proc.Arch)
 		if proc.Type != base.Processor.String() {
+			fmt.Printf("<---------- JW_DEBUG ----------> SKIPPING GPU\n")
 			// Skip GPUs
 			continue
 		}
+		fmt.Printf("<---------- JW_DEBUG ----------> checking sysArch=%s\n", sysArch)
 		if sysArch == base.ArchUnknown.String() ||
 			(sysArch == base.ArchOther.String() &&
 				proc.Arch != base.ArchUnknown.String()) {
 			// Try for the best identification (X86/ARM > Other > UNKNOWN).
 			sysArch = proc.Arch
+			fmt.Printf("<---------- JW_DEBUG ----------> WE SET sysArch=%s\n", sysArch)
 		}
 		if sysArch != base.ArchUnknown.String() &&
 			sysArch != base.ArchOther.String() {
 			// Found x86 or ARM
+			fmt.Printf("<---------- JW_DEBUG ----------> FOUND sysArch=%s SO BREAKING\n", sysArch)
 			break
 		}
 	}
@@ -2037,11 +2042,14 @@ func GetSystemArch(s *EpSystem) string {
 			}
 		}
 		if IsManufacturer(s.SystemRF.Manufacturer, NvidiaMfr) == 1 {
-			fmt.Printf("%s\n", s.SystemRF.Model)
+			fmt.Printf("<========== JW_DEBUG ==========> s.SystemRF.Model=%s\n", s.SystemRF.Model)
 			if len(s.SystemRF.Model) > 0 {
 				rfModel := strings.ToLower(s.SystemRF.Model)
+				fmt.Printf("<========== JW_DEBUG ==========> checking rfModel=%s\n", rfModel)
 				for matchStr, arch := range NvidiaModelArchMap {
+					fmt.Printf("<========== JW_DEBUG ==========> checking matchstr=%s arch=%s\n", matchStr, arch)
 					if strings.Contains(rfModel, matchStr) {
+						fmt.Printf("<========== JW_DEBUG ==========> RETURNING arch=%s\n", arch)
 						return arch
 					}
 				}
