@@ -1862,12 +1862,10 @@ const (
 // (see above), 0 for not and -1 if mfrCheckStr is blank or non-alpha-numeric.
 // This should be used in combination with other checks ideally.
 func IsManufacturer(mfrCheckStr, mfr string) int {
-	fmt.Printf("<---------- JW_DEBUG ----------> IsManufacturer: mfr=%s\n", mfr)
 	if strings.IndexFunc(mfrCheckStr, func(c rune) bool {
 		return unicode.IsLetter(c) || unicode.IsNumber(c)
 	}) != -1 {
 		lower := strings.ToLower(mfrCheckStr)
-		fmt.Printf("<---------- JW_DEBUG ----------> IsManufacturer: lower=%s\n", lower)
 		// Split into chunks containing only sequences of letters
 		// so we will find cray unless it's a substring of another word.
 		f := func(c rune) bool { return !unicode.IsLetter(c) }
@@ -1893,9 +1891,7 @@ func IsManufacturer(mfrCheckStr, mfr string) int {
 					return 1
 				}
 			case FoxconnMfr:
-				fmt.Printf("<---------- JW_DEBUG ----------> IsManufacturer: CHECKING FoxconnMfr\n")
 				if s == "foxconn" {
-					fmt.Printf("<---------- JW_DEBUG ----------> IsManufacturer: MATCHED FoxconnMfr\n")
 					return 1
 				}
 			}
@@ -2000,24 +1996,19 @@ func GetSystemArch(s *EpSystem) string {
 	sysArch := base.ArchUnknown.String()
 	// Search the processor collection for the architecture.
 	for _, proc := range s.Processors.OIDs {
-		fmt.Printf("<---------- JW_DEBUG ----------> proc.Type=%s proc.Arch=%s\n", proc.Type, proc.Arch)
 		if proc.Type != base.Processor.String() {
-			fmt.Printf("<---------- JW_DEBUG ----------> SKIPPING GPU\n")
 			// Skip GPUs
 			continue
 		}
-		fmt.Printf("<---------- JW_DEBUG ----------> checking sysArch=%s\n", sysArch)
 		if sysArch == base.ArchUnknown.String() ||
 			(sysArch == base.ArchOther.String() &&
 				proc.Arch != base.ArchUnknown.String()) {
 			// Try for the best identification (X86/ARM > Other > UNKNOWN).
 			sysArch = proc.Arch
-			fmt.Printf("<---------- JW_DEBUG ----------> WE SET sysArch=%s\n", sysArch)
 		}
 		if sysArch != base.ArchUnknown.String() &&
 			sysArch != base.ArchOther.String() {
 			// Found x86 or ARM
-			fmt.Printf("<---------- JW_DEBUG ----------> FOUND sysArch=%s SO BREAKING\n", sysArch)
 			break
 		}
 	}
@@ -2046,14 +2037,10 @@ func GetSystemArch(s *EpSystem) string {
 			}
 		}
 		if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
-			fmt.Printf("<========== JW_DEBUG ==========> s.SystemRF.Model=%s\n", s.SystemRF.Model)
 			if len(s.SystemRF.Model) > 0 {
 				rfModel := strings.ToLower(s.SystemRF.Model)
-				fmt.Printf("<========== JW_DEBUG ==========> checking rfModel=%s\n", rfModel)
 				for matchStr, arch := range FoxconnModelArchMap {
-					fmt.Printf("<========== JW_DEBUG ==========> checking matchstr=%s arch=%s\n", matchStr, arch)
 					if strings.Contains(rfModel, matchStr) {
-						fmt.Printf("<========== JW_DEBUG ==========> RETURNING arch=%s\n", arch)
 						return arch
 					}
 				}
