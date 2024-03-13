@@ -1855,7 +1855,7 @@ const (
 	IntelMfr    = "Intel"
 	DellMfr     = "Dell"
 	GigabyteMfr = "Gigabyte"
-	NvidiaMfr   = "NVIDIA"
+	FoxconnMfr  = "Foxconn"
 )
 
 // This should only return 1 if the RF manufacturer string (mfrCheckStr) is mfr
@@ -1892,10 +1892,10 @@ func IsManufacturer(mfrCheckStr, mfr string) int {
 				if s == "gigabyte" {
 					return 1
 				}
-			case NvidiaMfr:
-				fmt.Printf("<---------- JW_DEBUG ----------> IsManufacturer: CHECKING NvidiaMfr\n")
-				if s == "nvidia" {
-					fmt.Printf("<---------- JW_DEBUG ----------> IsManufacturer: MATCHED NvidiaMfr\n")
+			case FoxconnMfr:
+				fmt.Printf("<---------- JW_DEBUG ----------> IsManufacturer: CHECKING FoxconnMfr\n")
+				if s == "foxconn" {
+					fmt.Printf("<---------- JW_DEBUG ----------> IsManufacturer: MATCHED FoxconnMfr\n")
 					return 1
 				}
 			}
@@ -1992,8 +1992,8 @@ var CrayEXDescrArchMap = map[string]string{
 	"parrypeaknc":       base.ArchX86.String(),
 }
 
-var NvidiaModelArchMap = map[string]string{
-	"dgx dragon": base.ArchARM.String(),
+var FoxconnModelArchMap = map[string]string{
+	"HPE Cray Supercomputing XD224": base.ArchARM.String(),
 }
 
 func GetSystemArch(s *EpSystem) string {
@@ -2045,12 +2045,12 @@ func GetSystemArch(s *EpSystem) string {
 				}
 			}
 		}
-		if IsManufacturer(s.SystemRF.Manufacturer, NvidiaMfr) == 1 {
+		if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
 			fmt.Printf("<========== JW_DEBUG ==========> s.SystemRF.Model=%s\n", s.SystemRF.Model)
 			if len(s.SystemRF.Model) > 0 {
 				rfModel := strings.ToLower(s.SystemRF.Model)
 				fmt.Printf("<========== JW_DEBUG ==========> checking rfModel=%s\n", rfModel)
-				for matchStr, arch := range NvidiaModelArchMap {
+				for matchStr, arch := range FoxconnModelArchMap {
 					fmt.Printf("<========== JW_DEBUG ==========> checking matchstr=%s arch=%s\n", matchStr, arch)
 					if strings.Contains(rfModel, matchStr) {
 						fmt.Printf("<========== JW_DEBUG ==========> RETURNING arch=%s\n", arch)
