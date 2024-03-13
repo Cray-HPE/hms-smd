@@ -1856,7 +1856,7 @@ const (
 	IntelMfr    = "Intel"
 	DellMfr     = "Dell"
 	GigabyteMfr = "Gigabyte"
-	NvidiaMfr   = "NVIDIA"
+	FoxconnMfr  = "Foxconn"
 )
 
 // This should only return 1 if the RF manufacturer string (mfrCheckStr) is mfr
@@ -1891,8 +1891,8 @@ func IsManufacturer(mfrCheckStr, mfr string) int {
 				if s == "gigabyte" {
 					return 1
 				}
-			case NvidiaMfr:
-				if s == "nvidia" {
+			case FoxconnMfr:
+				if s == "foxconn" {
 					return 1
 				}
 			}
@@ -1989,8 +1989,8 @@ var CrayEXDescrArchMap = map[string]string{
 	"parrypeaknc":       base.ArchX86.String(),
 }
 
-var NvidiaModelArchMap = map[string]string{
-	"dgx dragon": base.ArchARM.String(),
+var FoxconnModelArchMap = map[string]string{
+	"hpe cray supercomputing xd224": base.ArchARM.String(),
 }
 
 func GetSystemArch(s *EpSystem) string {
@@ -2037,11 +2037,10 @@ func GetSystemArch(s *EpSystem) string {
 				}
 			}
 		}
-		if IsManufacturer(s.SystemRF.Manufacturer, NvidiaMfr) == 1 {
-			fmt.Printf("%s\n", s.SystemRF.Model)
+		if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
 			if len(s.SystemRF.Model) > 0 {
 				rfModel := strings.ToLower(s.SystemRF.Model)
-				for matchStr, arch := range NvidiaModelArchMap {
+				for matchStr, arch := range FoxconnModelArchMap {
 					if strings.Contains(rfModel, matchStr) {
 						return arch
 					}
