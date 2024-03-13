@@ -790,7 +790,7 @@ func TestGetSystemArch(t *testing.T) {
 		},
 		want: "X86",
 	}, {
-		name: "Test Foxconn HPE Cray Supercomputing XD224"
+		name: "Test Foxconn HPE Cray Supercomputing XD224",
 		args: args{
 			EpSystem{
 				SystemRF: ComputerSystem{
