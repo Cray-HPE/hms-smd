@@ -1862,10 +1862,12 @@ const (
 // (see above), 0 for not and -1 if mfrCheckStr is blank or non-alpha-numeric.
 // This should be used in combination with other checks ideally.
 func IsManufacturer(mfrCheckStr, mfr string) int {
+	fmt.Printf("<---------- JW_DEBUG ----------> IsManufacturer: mfr=%s\n", mfr)
 	if strings.IndexFunc(mfrCheckStr, func(c rune) bool {
 		return unicode.IsLetter(c) || unicode.IsNumber(c)
 	}) != -1 {
 		lower := strings.ToLower(mfrCheckStr)
+		fmt.Printf("<---------- JW_DEBUG ----------> IsManufacturer: lower=%s\n", lower)
 		// Split into chunks containing only sequences of letters
 		// so we will find cray unless it's a substring of another word.
 		f := func(c rune) bool { return !unicode.IsLetter(c) }
@@ -1891,7 +1893,9 @@ func IsManufacturer(mfrCheckStr, mfr string) int {
 					return 1
 				}
 			case NvidiaMfr:
+				fmt.Printf("<---------- JW_DEBUG ----------> IsManufacturer: CHECKING NvidiaMfr\n")
 				if s == "nvidia" {
+					fmt.Printf("<---------- JW_DEBUG ----------> IsManufacturer: MATCHED NvidiaMfr\n")
 					return 1
 				}
 			}
