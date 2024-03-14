@@ -678,13 +678,13 @@ func TestGetSystemArch(t *testing.T) {
 		},
 		want: "X86",
 	}, {
-		name: "Test NVIDIA DGX Dragon",
+		name: "Test Foxconn HPE Cray Supercomputing XD224",
 		args: args{
 			EpSystem{
 				SystemRF: ComputerSystem{
 					SystemFRUInfoRF: SystemFRUInfoRF{
-						Manufacturer: "NVIDIA",
-						Model: "DGX Dragon 2U4N Chassis",
+						Manufacturer: "Foxconn",
+						Model: "HPE Cray Supercomputing XD224",
 					},
 					SystemLocationInfoRF: SystemLocationInfoRF{
 						Description: "Computer System",
@@ -790,12 +790,12 @@ func TestGetSystemArch(t *testing.T) {
 		},
 		want: "X86",
 	}, {
-		name: "Test NVIDIA DGX Dragon",
+		name: "Test Foxconn HPE Cray Supercomputing XD224",
 		args: args{
 			EpSystem{
 				SystemRF: ComputerSystem{
 					SystemFRUInfoRF: SystemFRUInfoRF{
-						Manufacturer: "NVIDIA",
+						Manufacturer: "Foxconn",
 						Model: "xxxxx",
 					},
 					SystemLocationInfoRF: SystemLocationInfoRF{
