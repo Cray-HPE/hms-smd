@@ -1990,6 +1990,7 @@ var CrayEXDescrArchMap = map[string]string{
 
 var FoxconnModelArchMap = map[string]string{
 	"hpe cray supercomputing xd224": base.ArchARM.String(),
+	"1a62wcb00-600-g": base.ArchARM.String(),
 }
 
 func GetSystemArch(s *EpSystem) string {
