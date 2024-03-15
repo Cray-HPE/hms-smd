@@ -2038,10 +2038,14 @@ func GetSystemArch(s *EpSystem) string {
 			}
 		}
 		if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
+			fmt.Printf("<========== JW_DEBUG ==========> s.SystemRF.Model=%s\n", s.SystemRF.Model)
 			if len(s.SystemRF.Model) > 0 {
 				rfModel := strings.ToLower(s.SystemRF.Model)
+				fmt.Printf("<========== JW_DEBUG ==========> checking rfModel=%s\n", rfModel)
 				for matchStr, arch := range FoxconnModelArchMap {
+					fmt.Printf("<========== JW_DEBUG ==========> checking matchstr=%s arch=%s\n", matchStr, arch)
 					if strings.Contains(rfModel, matchStr) {
+						fmt.Printf("<========== JW_DEBUG ==========> RETURNING arch=%s\n", arch)
 						return arch
 					}
 				}
