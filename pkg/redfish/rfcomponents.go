@@ -321,11 +321,13 @@ func (c *EpChassis) discoverRemotePhase1() {
 
 	if c.ChassisRF.Power.Oid == "" {
 		//errlog.Printf("%s: No Power obj found.\n", topURL)
+		errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: no power obj found topURL=%s\n", topURL)
 		c.PowerSupplies.Num = 0
 		c.PowerSupplies.OIDs = make(map[string]*EpPowerSupply)
 	} else {
 		//create a new EpPower object using chassis and Power.OID
 		c.Power = NewEpPower(c, ResourceID{c.ChassisRF.Power.Oid})
+		errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: found power obj=%s topURL=%s\n", c.ChassisRF.Power.Oid, topURL)
 		//retrieve the Power RF
 		c.Power.discoverRemotePhase1()
 		//discover any PowerSupplies
@@ -1181,6 +1183,11 @@ func (s *EpSystem) discoverRemotePhase1() {
 				if err != nil || controlJSON == nil {
 					break
 				}
+
+				if rfDebug > 0 {
+					errlog.Printf("%s: %s\n", url, controlJSON)
+				}
+
 				// Decode JSON into PowerControl structure
 				var rfControl RFControl
 				if err := json.Unmarshal(controlJSON, &rfControl); err != nil {
@@ -1203,11 +1210,18 @@ func (s *EpSystem) discoverRemotePhase1() {
 			pwrCtlURLJSON, err := s.epRF.GETRelative(path)
 			if err != nil || pwrCtlURLJSON == nil {
 				s.LastStatus = HTTPsGetFailed
+				errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: HTTPsGetFailed\n")
 				return
 			}
 			s.PowerURL = path
 			s.LastStatus = HTTPsGetOk
 
+			if rfDebug > 0 {
+				url := s.epRF.FQDN + path
+				errlog.Printf("%s: %s\n", url, pwrCtlURLJSON)
+			}
+
+			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: s.PowerURL=%s\n", s.PowerURL)
 			// Decode JSON into PowerControl structure
 			if err := json.Unmarshal(pwrCtlURLJSON, &s.PowerInfo); err != nil {
 				if IsUnmarshalTypeError(err) {
@@ -1278,6 +1292,8 @@ func (s *EpSystem) discoverRemotePhase1() {
 				s.PowerInfo.PowerControl[0].OEM = &oemPwr
 			}
 			s.PowerCtl = s.PowerInfo.PowerControl
+		} else {
+			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: nodeChassis.ChassisRF.Controls.Oid was NULL\n")
 		}
 
 		//

@@ -677,11 +677,13 @@ func (p *EpPower) discoverRemotePhase1() {
 	powerJSON, err := p.epRF.GETRelative(path)
 	if err != nil || powerJSON == nil {
 		p.LastStatus = HTTPsGetFailed
+		errlog.Printf("<========== JW_DEBUG ==========> EpPower:discoverRemotePhase1: HTTPSGetFailed\n")
 		return
 	}
 	if rfDebug > 0 {
 		errlog.Printf("%s: %s\n", url, powerJSON)
 	}
+	errlog.Printf("<========== JW_DEBUG ==========> EpPower:discoverRemotePhase1: url=%s powerJSON=%s\n", url, powerJSON)
 	p.PowerRaw = &powerJSON
 	p.LastStatus = HTTPsGetOk
 
