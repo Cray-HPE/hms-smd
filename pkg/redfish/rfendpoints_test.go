@@ -678,13 +678,29 @@ func TestGetSystemArch(t *testing.T) {
 		},
 		want: "X86",
 	}, {
-		name: "Test Foxconn HPE Cray Supercomputing XD224",
+		name: "Test Foxconn HPE Cray Supercomputing XD224 (Paradise)",
 		args: args{
 			EpSystem{
 				SystemRF: ComputerSystem{
 					SystemFRUInfoRF: SystemFRUInfoRF{
 						Manufacturer: "Foxconn",
 						Model: "HPE Cray Supercomputing XD224",
+					},
+					SystemLocationInfoRF: SystemLocationInfoRF{
+						Description: "Computer System",
+					},
+				},
+			},
+		},
+		want: "ARM",
+	}, {
+		name: "Test Foxconn 1A62WCB00-600-G (Paradise)",
+		args: args{
+			EpSystem{
+				SystemRF: ComputerSystem{
+					SystemFRUInfoRF: SystemFRUInfoRF{
+						Manufacturer: "Foxconn",
+						Model: "1A62WCB00-600-G",
 					},
 					SystemLocationInfoRF: SystemLocationInfoRF{
 						Description: "Computer System",
