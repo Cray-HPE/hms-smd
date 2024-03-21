@@ -1153,7 +1153,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 		// See if "Baseboard" exists.
 		nodeChassis, ok = s.epRF.Chassis.OIDs["Baseboard"]
 		errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: choosing alternative Baseboard nodeChassis\n")
-		processorModule, ok2 := s.epRF.Chassis.OIDs["ProcessorModule_0"]
+		_, ok2 := s.epRF.Chassis.OIDs["ProcessorModule_0"]
 		if ok2 {
 			errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: there is there a s.epRF.Chassis.OIDs[ProcessorModule_0]\n")
 		} else {
