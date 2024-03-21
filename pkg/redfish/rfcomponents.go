@@ -282,6 +282,7 @@ func (c *EpChassis) discoverRemotePhase1() {
 		} else {
 			c.LastStatus = HTTPsGetFailed
 		}
+		errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: RETURNING EARLY\n")
 		return
 	}
 	if rfDebug > 0 {
@@ -289,6 +290,8 @@ func (c *EpChassis) discoverRemotePhase1() {
 	}
 	c.chassisURLRaw = &chassisURLJSON
 	c.LastStatus = HTTPsGetOk
+
+	errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: c.OdataID=%s c.ChassisURL=%s chassisURLJSON=%s\n", c.OdataID, c.ChassisURL, chassisURLJSON)
 
 	// Decode JSON into Chassis structure
 	if err := json.Unmarshal(*c.chassisURLRaw, &c.ChassisRF); err != nil {
@@ -1143,19 +1146,28 @@ func (s *EpSystem) discoverRemotePhase1() {
 	// Some info (Power, NodeAccelRiser, HSN NIC, etc) is at the chassis level
 	// but we associate it with nodes (systems). There will be a chassis URL
 	// with our system's id if there is info to get.
+	errlog.Printf("<========== JW_DEBUG ==========> s.SystemRF.Id=%s\n", s.SystemRF.Id)
 	nodeChassis, ok := s.epRF.Chassis.OIDs[s.SystemRF.Id]
 	if !ok {
 		// Intel uses /Chassis/Rackmount/Baseboard instead of /Chassis/<sysid>.
 		// See if "Baseboard" exists.
 		nodeChassis, ok = s.epRF.Chassis.OIDs["Baseboard"]
-	}
+		errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: choosing alternative Baseboard nodeChassis\n")
+		processorModule, ok2 := s.epRF.Chassis.OIDs["ProcessorModule_0"]
+		if ok2 {
+			errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: there is there a s.epRF.Chassis.OIDs[ProcessorModule_0]\n")
+		} else {
+			errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: there is NOT A s.epRF.Chassis.OIDs[ProcessorModule_0]\n")
+		}
 
 	if ok {
+		errlog.Printf("<========== JW_DEBUG ==========> ok\n")
 
 		//
 		// Get PowerControl Info if it exists
 		//
 		if nodeChassis.ChassisRF.Controls.Oid != "" {
+			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: Found a Controls endpoint\n")
 			path = nodeChassis.ChassisRF.Controls.Oid
 			ctlURLJSON, err := s.epRF.GETRelative(path)
 			if err != nil || ctlURLJSON == nil {
