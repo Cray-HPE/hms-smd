@@ -1159,6 +1159,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 		} else {
 			errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: there is NOT A s.epRF.Chassis.OIDs[ProcessorModule_0]\n")
 		}
+	}
 
 	if ok {
 		errlog.Printf("<========== JW_DEBUG ==========> ok\n")
