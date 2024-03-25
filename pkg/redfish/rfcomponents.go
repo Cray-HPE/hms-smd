@@ -229,7 +229,7 @@ func NewEpChassis(epRF *RedfishEP, odataID ResourceID, rawOrdinal int) *EpChassi
 	c.Ordinal = -1
 	c.RawOrdinal = rawOrdinal
 	c.epRF = epRF
-	errlog.Printf("<========== JW_DEBUG ==========> NewEpChassis: c=%x\n", c)
+	errlog.Printf("<========== JW_DEBUG ==========> NewEpChassis: c.OdataID=%s c.RFEndpointID=%s c.RawOrdinal=%s c.epRF=%s\n", c.OdataID, c.RFEndpointID, c.RawOrdinal, c.epRF)
 	return c
 }
 
