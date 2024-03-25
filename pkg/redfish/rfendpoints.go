@@ -869,26 +869,31 @@ func (ep *RedfishEP) GetRootInfo() {
 	// First, the set of Redfish Chassis objects for the endpoint.
 	// Start by fetching the Chassis/ set from the root.
 	//
+	errlog.Printf("<========== JW_DEBUG ==========> RedfishEP:GetRootInfo: ep.OdataID=%s ep.ServiceRootRF.Chassis.Oid=%s\n", ep.OdataID, ep.ServiceRootRF.Chassis.Oid)
 	if ep.ServiceRootRF.Chassis.Oid != "" {
 		path = ep.ServiceRootRF.Chassis.Oid
 	} else {
 		path = ep.OdataID + "/Chassis"
 	}
+	errlog.Printf("<========== JW_DEBUG ==========> RedfishEP:GetRootInfo: path=%s\n", path)
 	chassisJSON, err := ep.GETRelative(path)
 	if err != nil && !base.ControllerHasChassisStr(ep.Type) {
 		// Don't expect any Chassis here, so if no collection, no problem.
 		// Just create an empty collection so we don't choke later.
 		ep.NumChassis = 0
 		ep.Chassis.OIDs = make(map[string]*EpChassis)
+		errlog.Printf("<========== JW_DEBUG ==========> RedfishEP:GetRootInfo: no chassis\n")
 	} else if err != nil || chassisJSON == nil {
 		// Expected Chassis collection but didn't get one or it was corrupt.
 		ep.DiscInfo.UpdateLastStatusWithTS(HTTPsGetFailed)
+		errlog.Printf("<========== JW_DEBUG ==========> RedfishEP:GetRootInfo: bad or no chassis\n")
 		return
 	} else {
 		// Found Chassis collection
 		if rfDebug > 0 {
 			errlog.Printf("%s: %s\n", ep.FQDN+path, chassisJSON)
 		}
+		errlog.Printf("<========== JW_DEBUG ==========> RedfishEP:GetRootInfo: chassisJson=%s\n", chassisJSON)
 		ep.chassisRaw = &chassisJSON
 		ep.DiscInfo.UpdateLastStatusWithTS(HTTPsGetOk)
 
@@ -912,6 +917,7 @@ func (ep *RedfishEP) GetRootInfo() {
 		}
 		ep.Chassis.OIDs = make(map[string]*EpChassis)
 		ep.Chassis.Num = ep.NumChassis
+		errlog.Printf("<========== JW_DEBUG ==========> RedfishEP:GetRootInfo: ep.Chassis.Num=%d\n", ep.Chassis.num)
 		sort.Sort(ResourceIDSlice(chInfo.Members))
 		for i, chOID := range chInfo.Members {
 			chID := chOID.Basename()

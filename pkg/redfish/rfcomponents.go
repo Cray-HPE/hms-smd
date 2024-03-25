@@ -229,6 +229,7 @@ func NewEpChassis(epRF *RedfishEP, odataID ResourceID, rawOrdinal int) *EpChassi
 	c.Ordinal = -1
 	c.RawOrdinal = rawOrdinal
 	c.epRF = epRF
+	errlog.Printf("<========== JW_DEBUG ==========> NewEpChassis: c=%x\n", c)
 	return c
 }
 
@@ -240,6 +241,7 @@ func NewEpChassis(epRF *RedfishEP, odataID ResourceID, rawOrdinal int) *EpChassi
 // run only after ALL components (managers, chassis, systems, etc.) have
 // completed phase 1 under a particular endpoint.
 func (cs *EpChassisSet) discoverRemotePhase1() {
+	errlog.Printf("<========== JW_DEBUG ==========> EpChassisSet:discoverRemotePhase1\n")
 	for _, c := range cs.OIDs {
 		c.discoverRemotePhase1()
 	}
@@ -339,6 +341,7 @@ func (c *EpChassis) discoverRemotePhase1() {
 			if c.Power.PowerRF.PowerSuppliesOCount > 0 && c.Power.PowerRF.PowerSuppliesOCount != len(c.Power.PowerRF.PowerSupplies) {
 				errlog.Printf("%s: PowerSupplies@odata.count != PowerSupplies array len\n", url)
 			} else {
+				errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: discovering power supplies\n")
 				c.PowerSupplies.Num = len(c.Power.PowerRF.PowerSupplies)
 				c.PowerSupplies.OIDs = make(map[string]*EpPowerSupply)
 				//FIX: this will not result in the PowerSupplies being sorted
@@ -350,6 +353,8 @@ func (c *EpChassis) discoverRemotePhase1() {
 				//invoke the series of discoverRemotePhase1 calls for each PowerSupply
 				c.PowerSupplies.discoverRemotePhase1()
 			}
+		} else {}
+			errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: no power supplies discovered!!!!\n")
 		}
 
 	}
@@ -1146,23 +1151,24 @@ func (s *EpSystem) discoverRemotePhase1() {
 	// Some info (Power, NodeAccelRiser, HSN NIC, etc) is at the chassis level
 	// but we associate it with nodes (systems). There will be a chassis URL
 	// with our system's id if there is info to get.
-	errlog.Printf("<========== JW_DEBUG ==========> s.SystemRF.Id=%s\n", s.SystemRF.Id)
+	errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: s.SystemRF.Id=%s\n", s.SystemRF.Id)
 	nodeChassis, ok := s.epRF.Chassis.OIDs[s.SystemRF.Id]
 	if !ok {
 		// Intel uses /Chassis/Rackmount/Baseboard instead of /Chassis/<sysid>.
 		// See if "Baseboard" exists.
 		nodeChassis, ok = s.epRF.Chassis.OIDs["Baseboard"]
-		errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: choosing alternative Baseboard nodeChassis\n")
+		errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: choosing alternative Baseboard nodeChassis\n")
 		_, ok2 := s.epRF.Chassis.OIDs["ProcessorModule_0"]
 		if ok2 {
-			errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: there is there a s.epRF.Chassis.OIDs[ProcessorModule_0]\n")
+			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: there is a s.epRF.Chassis.OIDs[ProcessorModule_0]\n")
+			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: s.SystemRF.Manufacturer=%s s.SystemRF.Model=%s\n", s.SystemRF.Manufacturer, s.SystemRF.Model)
 		} else {
-			errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: there is NOT A s.epRF.Chassis.OIDs[ProcessorModule_0]\n")
+			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: there is NOT A s.epRF.Chassis.OIDs[ProcessorModule_0]\n")
 		}
 	}
 
 	if ok {
-		errlog.Printf("<========== JW_DEBUG ==========> ok\n")
+		errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: ok\n")
 
 		//
 		// Get PowerControl Info if it exists
