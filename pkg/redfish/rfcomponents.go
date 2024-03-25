@@ -1172,7 +1172,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 		//
 		// Get PowerControl Info if it exists
 		//
-		if nodeChassis.ChassisRF.Controls.Oid != "" {
+		if nodeChassis.ChassisRF.Controls.Oid != "" && !IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr){
 			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: Found a Controls endpoint\n")
 			path = nodeChassis.ChassisRF.Controls.Oid
 			ctlURLJSON, err := s.epRF.GETRelative(path)
@@ -1310,6 +1310,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 					break
 				}
 				s.PowerInfo.PowerControl[0].OEM = &oemPwr
+				errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: HPE OEM found\n")
 			}
 			s.PowerCtl = s.PowerInfo.PowerControl
 			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: s.PowerCtl=%v\n", s.PowerCtl)
