@@ -917,7 +917,7 @@ func (ep *RedfishEP) GetRootInfo() {
 		}
 		ep.Chassis.OIDs = make(map[string]*EpChassis)
 		ep.Chassis.Num = ep.NumChassis
-		errlog.Printf("<========== JW_DEBUG ==========> RedfishEP:GetRootInfo: ep.Chassis.Num=%d\n", ep.Chassis.num)
+		errlog.Printf("<========== JW_DEBUG ==========> RedfishEP:GetRootInfo: ep.Chassis.Num=%d\n", ep.Chassis.Num)
 		sort.Sort(ResourceIDSlice(chInfo.Members))
 		for i, chOID := range chInfo.Members {
 			chID := chOID.Basename()
