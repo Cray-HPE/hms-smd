@@ -353,7 +353,7 @@ func (c *EpChassis) discoverRemotePhase1() {
 				//invoke the series of discoverRemotePhase1 calls for each PowerSupply
 				c.PowerSupplies.discoverRemotePhase1()
 			}
-		} else {}
+		} else {
 			errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: no power supplies discovered!!!!\n")
 		}
 
