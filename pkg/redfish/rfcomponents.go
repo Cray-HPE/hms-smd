@@ -1725,7 +1725,7 @@ func (s *EpSystem) discoverComponentEPEthInterfaces() {
 	// Select default interface to use as main MAC address
 	ethID := s.epRF.getNodeSvcNetEthIfaceId(s)
 
-	errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces\n")
+	errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces START: s.MACAddr=%s\n", s.MACAddr)
 	// Provide a brief summary of all attached ethernet interfaces
 	// Also, try to chose the main node MAC address.
 	s.EthNICInfo = make([]*EthernetNICInfo, 0, 1)
@@ -1848,6 +1848,7 @@ func (s *EpSystem) discoverComponentEPEthInterfaces() {
 			}
 		}
 	}
+	errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces END: s.MACAddr=%s\n", s.MACAddr)
 }
 
 // Sets up HMS state fields using Status/State/Health info from Redfish
