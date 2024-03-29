@@ -1454,7 +1454,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 		for i, eoid := range ethInfo.Members {
 			eid := eoid.Basename()
 			s.ENetInterfaces.OIDs[eid] = NewEpEthInterface(s.epRF, s.OdataID, s.RedfishType, eoid, i)
-			errlog.Printf("<========== JW_DEBUG ==========> added s.ENetInterfaces.OIDs[%d]\n", eid)
+			errlog.Printf("<========== JW_DEBUG ==========> added s.ENetInterfaces.OIDs[%s]\n", eid)
 		}
 		s.ENetInterfaces.discoverRemotePhase1()
 	}
