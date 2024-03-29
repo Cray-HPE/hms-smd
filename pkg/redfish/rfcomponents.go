@@ -1413,7 +1413,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 	} else {
 		if strings.ToLower(s.SystemRF.Manufacturer) == "foxconn" &&
 			s.SystemRF.OEM != nil && s.SystemRF.OEM.InsydeNcsi != nil &&
-			s.SystemRF.OEM.InsydeNcsi.Ncsi.Oid != nil {
+			s.SystemRF.OEM.InsydeNcsi.Ncsi.Oid != "" {
 			
 			// Foxconn uses /System/system/OEM/InsydeNcsi/Ncsi for ethernet interfaces
 			path = s.SystemRF.OEM.InsydeNcsi.Ncsi.Oid
