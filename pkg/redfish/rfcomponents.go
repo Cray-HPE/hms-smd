@@ -756,6 +756,7 @@ func (m *EpManager) discoverComponentEPEthInterfaces() {
 	enabledIfaceMAC := ""
 	enabledStateMAC := ""
 	enabledOKStateMAC := ""
+	errlog.Printf("<========== JW_DEBUG ==========> EpManager.discoverComponentEPEthInterfaces\n")
 	for _, e := range m.ENetInterfaces.OIDs {
 		ethIDAddr := new(EthernetNICInfo)
 
@@ -771,6 +772,7 @@ func (m *EpManager) discoverComponentEPEthInterfaces() {
 			e.EtherIfaceRF.PermanentMACAddress,
 		)
 
+		errlog.Printf("<========== JW_DEBUG ==========> EpManager.discoverComponentEPEthInterfaces: ethIDAddr.Oid=%s ethIDAddr.MACAddress=%s\n", ethIDAddr.Oid, ethIDAddr.MACAddress)
 		m.EthNICInfo = append(m.EthNICInfo, ethIDAddr)
 
 		// Find MAC.  Should be enabled.
@@ -1403,13 +1405,23 @@ func (s *EpSystem) discoverRemotePhase1() {
 	// Get link to systems's ethernet interfaces
 	//
 
-	if s.SystemRF.EthernetInterfaces.Oid == "" {
+	if s.SystemRF.EthernetInterfaces.Oid == "" && strings.ToLower(s.SystemRF.Manufacturer) != "foxconn" {
 		// TODO: Just try default path?
 		errlog.Printf("%s: No EthernetInterfaces found.\n", url)
 		s.ENetInterfaces.Num = 0
 		s.ENetInterfaces.OIDs = make(map[string]*EpEthInterface)
 	} else {
-		path = s.SystemRF.EthernetInterfaces.Oid
+		if strings.ToLower(s.SystemRF.Manufacturer) == "foxconn" &&
+			s.SystemRF.OEM != nil && s.SystemRF.OEM.InsydeNcsi != nil &&
+			s.SystemRF.OEM.InsydeNcsi.Ncsi.Oid != nil {
+			
+			// Foxconn uses /System/system/OEM/InsydeNcsi/Ncsi for ethernet interfaces
+			path = s.SystemRF.OEM.InsydeNcsi.Ncsi.Oid
+			errlog.Printf("<========== JW_DEBUG ==========> %s\n", path)
+		} else {
+			path = s.SystemRF.EthernetInterfaces.Oid
+			errlog.Printf("<========== JW_DEBUG ==========> NO FOXCONN: %s\n", path)
+		}
 		url = s.epRF.FQDN + path
 		ethIfacesJSON, err := s.epRF.GETRelative(path)
 		if err != nil || ethIfacesJSON == nil {
@@ -1436,11 +1448,13 @@ func (s *EpSystem) discoverRemotePhase1() {
 		}
 		s.ENetInterfaces.Num = len(ethInfo.Members)
 		s.ENetInterfaces.OIDs = make(map[string]*EpEthInterface)
+		errlog.Printf("<========== JW_DEBUG ==========> s.ENetInterfaces.Num=%d\n", s.ENetInterfaces.Num)
 
 		sort.Sort(ResourceIDSlice(ethInfo.Members))
 		for i, eoid := range ethInfo.Members {
 			eid := eoid.Basename()
 			s.ENetInterfaces.OIDs[eid] = NewEpEthInterface(s.epRF, s.OdataID, s.RedfishType, eoid, i)
+			errlog.Printf("<========== JW_DEBUG ==========> added s.ENetInterfaces.OIDs[%d]\n", eid)
 		}
 		s.ENetInterfaces.discoverRemotePhase1()
 	}
@@ -1711,6 +1725,7 @@ func (s *EpSystem) discoverComponentEPEthInterfaces() {
 	// Select default interface to use as main MAC address
 	ethID := s.epRF.getNodeSvcNetEthIfaceId(s)
 
+	errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces\n")
 	// Provide a brief summary of all attached ethernet interfaces
 	// Also, try to chose the main node MAC address.
 	s.EthNICInfo = make([]*EthernetNICInfo, 0, 1)
@@ -1727,16 +1742,19 @@ func (s *EpSystem) discoverComponentEPEthInterfaces() {
 		ethIDAddr.PermanentMACAddress = NormalizeMAC(
 			e.EtherIfaceRF.PermanentMACAddress,
 		)
+		errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces: ethIDAddr.Oid=%s ethIDAddr.MACAddress=%s\n", ethIDAddr.Oid, ethIDAddr.MACAddress)
 		if len(s.ENetInterfaces.OIDs) == 1 || e.BaseOdataID == ethID {
 			// Assign this MAC as the main address, matches default interface
 			// or is the only one.
 			if ethIDAddr.PermanentMACAddress != "" {
 				s.MACAddr = ethIDAddr.PermanentMACAddress
+				errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces: first set main addr to s.MACAddr=%s\n", s.MACAddr)
 				if ethIDAddr.PermanentMACAddress != ethIDAddr.MACAddress {
 					errlog.Printf("%s: %s PermanentMAC and MAC don't match.",
 						s.ID, ethID)
 				}
 			} else {
+				errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces: second set main addr to s.MACAddr=%s\n", s.MACAddr)
 				s.MACAddr = ethIDAddr.MACAddress
 			}
 		}
@@ -1950,6 +1968,7 @@ func (es *EpEthInterfaces) discoverRemotePhase1() {
 func (ei *EpEthInterface) discoverRemotePhase1() {
 	rpath := ei.OdataID
 	url := ei.epRF.FQDN + rpath
+	errlog.Printf("<========== JW_DEBUG ==========> EpEthInterface.discoverRemotePhase1: url=%s\n", url)
 	etherURLJSON, err := ei.epRF.GETRelative(rpath)
 	if err != nil || etherURLJSON == nil {
 		ei.LastStatus = HTTPsGetFailed
@@ -1971,6 +1990,7 @@ func (ei *EpEthInterface) discoverRemotePhase1() {
 			return
 		}
 	}
+	errlog.Printf("<========== JW_DEBUG ==========> EpEthInterface.discoverRemotePhase1: ei.EtherIfaceRF=%v\n", ei.EtherIfaceRF)
 	if rfVerbose > 0 {
 		jout, _ := json.MarshalIndent(ei, "", "   ")
 		errlog.Printf("%s: %s\n", url, jout)
