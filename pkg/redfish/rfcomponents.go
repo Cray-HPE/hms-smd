@@ -1742,7 +1742,7 @@ func (s *EpSystem) discoverComponentEPEthInterfaces() {
 		ethIDAddr.PermanentMACAddress = NormalizeMAC(
 			e.EtherIfaceRF.PermanentMACAddress,
 		)
-		errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces: ethIDAddr.Oid=%s ethIDAddr.MACAddress=%s\n", ethIDAddr.Oid, ethIDAddr.MACAddress)
+		errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces: ethIDAddr.Oid=%s ethIDAddr.MACAddress=%s e.BaseOdataID=%s ethID=%s\n", ethIDAddr.Oid, ethIDAddr.MACAddress, e.BaseOdataID, ethID)
 		if len(s.ENetInterfaces.OIDs) == 1 || e.BaseOdataID == ethID {
 			// Assign this MAC as the main address, matches default interface
 			// or is the only one.
