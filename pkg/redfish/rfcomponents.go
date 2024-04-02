@@ -1405,13 +1405,13 @@ func (s *EpSystem) discoverRemotePhase1() {
 	// Get link to systems's ethernet interfaces
 	//
 
-	if s.SystemRF.EthernetInterfaces.Oid == "" && strings.ToLower(s.SystemRF.Manufacturer) != "foxconn" {
+	if s.SystemRF.EthernetInterfaces.Oid == "" && IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) != 1 {
 		// TODO: Just try default path?
 		errlog.Printf("%s: No EthernetInterfaces found.\n", url)
 		s.ENetInterfaces.Num = 0
 		s.ENetInterfaces.OIDs = make(map[string]*EpEthInterface)
 	} else {
-		if strings.ToLower(s.SystemRF.Manufacturer) == "foxconn" &&
+		if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 &&
 			s.SystemRF.OEM != nil && s.SystemRF.OEM.InsydeNcsi != nil &&
 			s.SystemRF.OEM.InsydeNcsi.Ncsi.Oid != "" {
 			
