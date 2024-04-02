@@ -121,6 +121,7 @@ type PowerControl struct {
 	MemberId           string        `json:"MemberId,omitempty"`
 	Name               string        `json:"Name,omitempty"`
 	PowerCapacityWatts int           `json:"PowerCapacityWatts,omitempty"`
+	PowerConsumedWatts interface{}   `json:"PowerConsumedWatts,omitempty"`	// May come in an int or float, but need an int
 	OEM                *PwrCtlOEM    `json:"OEM,omitempty"`
 	RelatedItem        []*ResourceID `json:"RelatedItem,omitempty"`
 }
@@ -322,6 +323,9 @@ func (c *EpChassis) discoverRemotePhase1() {
 
 	//
 	// Get link to Chassis' Power object
+	//
+	// For Foxconn Paradise, only Chassis/Baseboard_0/Power will have PowerSupplies so nothing special
+	// to do here for Foxconn Paradise since other chassis that come through here won't do anything.
 	//
 
 	if c.ChassisRF.Power.Oid == "" {
@@ -1157,7 +1161,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 		if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
 			// Foxconn uses /Chassis/ProcessorModule_0 instead of /Chassis/<sysid> to find PowerCtl.
 			nodeChassis, ok = s.epRF.Chassis.OIDs["ProcessorModule_0"]
-			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: chose alternative ProcessorModule_0 nodeChassis\n")
+			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: chose alternative ProcessorModule_0 nodeChassis for Power\n")
 		} else {
 			// Intel uses /Chassis/Rackmount/Baseboard instead of /Chassis/<sysid>.
 			// See if "Baseboard" exists.
@@ -1171,6 +1175,8 @@ func (s *EpSystem) discoverRemotePhase1() {
 
 		//
 		// Get PowerControl Info if it exists
+		//
+		// Foxconn Paradise boards have a Controls entry but it is used for something entirely different so check and skip Foxconn
 		//
 		if (nodeChassis.ChassisRF.Controls.Oid != "") && (IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) != 1) {
 			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: Found a Controls endpoint\n")
@@ -1201,11 +1207,6 @@ func (s *EpSystem) discoverRemotePhase1() {
 				if err != nil || controlJSON == nil {
 					break
 				}
-
-				if rfDebug > 0 {
-					errlog.Printf("%s: %s\n", url, controlJSON)
-				}
-
 				// Decode JSON into PowerControl structure
 				var rfControl RFControl
 				if err := json.Unmarshal(controlJSON, &rfControl); err != nil {
@@ -1234,11 +1235,6 @@ func (s *EpSystem) discoverRemotePhase1() {
 			s.PowerURL = path
 			s.LastStatus = HTTPsGetOk
 
-			if rfDebug > 0 {
-				url := s.epRF.FQDN + path
-				errlog.Printf("%s: %s\n", url, pwrCtlURLJSON)
-			}
-
 			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: s.PowerURL=%s\n", s.PowerURL)
 			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: pwrCtlURLJSON=%s\n", pwrCtlURLJSON)
 			// Decode JSON into PowerControl structure
@@ -1251,6 +1247,25 @@ func (s *EpSystem) discoverRemotePhase1() {
 					return
 				}
 			}
+
+			// Convert PowerConsumedWatts to int if not already - Needed for Foxconn Paradise
+			if s.PowerInfo.PowerControl[0].PowerConsumedWatts != nil {
+				switch v := s.PowerInfo.PowerControl[0].PowerConsumedWatts.(type) {
+				case float64:
+					// Convert to int
+					errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: float=%f\n", v)
+					s.PowerInfo.PowerControl[0].PowerConsumedWatts = int(v)
+					errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: converted from float = %d\n", s.PowerInfo.PowerControl[0].PowerConsumedWatts)
+				case int:
+					// noop - no conversion needed
+					errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: not converted v=%d\n", v)
+				default:
+					// unexpected type, set to zero
+					s.PowerInfo.PowerControl[0].PowerConsumedWatts = int(0)
+					errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: unknown type\n")
+				}
+			}
+
 			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: s.PowerInfo=%v\n", s.PowerInfo)
 			if s.PowerInfo.OEM != nil && s.PowerInfo.OEM.HPE != nil && len(s.PowerInfo.PowerControl) > 0 {
 				oemPwr := PwrCtlOEM{HPE: &PwrCtlOEMHPE{
@@ -1320,13 +1335,14 @@ func (s *EpSystem) discoverRemotePhase1() {
 
 		//
 		// Get Chassis assembly (NodeAccelRiser) info if it exists
-		// JW_TODO: ???
 		//
-		if nodeChassis.ChassisRF.Assembly.Oid == "" {
+		if (nodeChassis.ChassisRF.Assembly.Oid == "") || (IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1) {
+			// Foxconn Paradise does not have GPU assemblies
 			//errlog.Printf("%s: No assembly obj found.\n", topURL)
 			s.NodeAccelRisers.Num = 0
 			s.NodeAccelRisers.OIDs = make(map[string]*EpNodeAccelRiser)
 		} else {
+			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: trying to discover assemblies\n")
 			//create a new EpAssembly object using chassis and Assembly.OID
 			s.Assembly = NewEpAssembly(s, nodeChassis.ChassisRF.Assembly, nodeChassis.OdataID, nodeChassis.RedfishType)
 
@@ -1366,7 +1382,6 @@ func (s *EpSystem) discoverRemotePhase1() {
 		// Attempt to discover HSN NICs under '/redfish/v1/Chassis/<sysid>/Devices'
 		// before trying under '/redfish/v1/Chassis/<sysid>/NetworkAdapters' so they
 		// don't get duplicated.
-		// JW_TODO: ???
 		if strings.ToLower(s.SystemRF.Manufacturer) == "hpe" &&
 			nodeChassis.ChassisRF.OEM != nil &&
 			nodeChassis.ChassisRF.OEM.Hpe != nil &&
@@ -1402,8 +1417,18 @@ func (s *EpSystem) discoverRemotePhase1() {
 			s.HpeDevices.Num = 0
 			s.HpeDevices.OIDs = make(map[string]*EpHpeDevice)
 
+			if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
+				// Foxconn uses /Chassis/Baseboard_0 instead of /Chassis/<sysid> to find NetworkAdapters.
+				nodeChassis, ok = s.epRF.Chassis.OIDs["Baseboard_0"]
+				errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: chose alternative Baseboard_0 nodeChassis for NetworkAdapters\n")
+				if !ok {
+					nodeChassis = nil
+					errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: couldn't set Baseboard_0 nodeChassis\n")
+				}
+			}
+
 			// Non-proliant iLO. Just get Chassis NetworkAdapter (HSN NIC) info if it exists
-			if nodeChassis.ChassisRF.NetworkAdapters.Oid == "" {
+			if nodeChassis == nil || nodeChassis.ChassisRF.NetworkAdapters.Oid == "" {
 				//errlog.Printf("%s: No assembly obj found.\n", topURL)
 				s.NetworkAdapters.Num = 0
 				s.NetworkAdapters.OIDs = make(map[string]*EpNetworkAdapter)
