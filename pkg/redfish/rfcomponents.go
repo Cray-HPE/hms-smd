@@ -1267,7 +1267,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 				}
 			}
 
-			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: s.PowerInfo[0]=%+v\n", s.PowerInfo[0])
+			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: s.PowerInfo=%+v\n", s.PowerInfo)
 			if s.PowerInfo.OEM != nil && s.PowerInfo.OEM.HPE != nil && len(s.PowerInfo.PowerControl) > 0 {
 				oemPwr := PwrCtlOEM{HPE: &PwrCtlOEMHPE{
 					Status: "Empty",
