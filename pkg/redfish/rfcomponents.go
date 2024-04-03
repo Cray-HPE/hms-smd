@@ -1250,6 +1250,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 
 			// Convert PowerConsumedWatts to int if not already - Needed for Foxconn Paradise
 			if len(s.PowerInfo.PowerControl) > 0 && s.PowerInfo.PowerControl[0].PowerConsumedWatts != nil {
+				s.PowerInfo.PowerControl[0].PowerConsumedWatts = 255.678
 				switch v := s.PowerInfo.PowerControl[0].PowerConsumedWatts.(type) {
 				case float64:
 					// Convert to int
