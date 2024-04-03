@@ -1267,7 +1267,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 				}
 			}
 
-			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: s.PowerInfo=%+v\n", s.PowerInfo)
+			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: *s.PowerInfo=%+v\n", *s.PowerInfo)
 			if s.PowerInfo.OEM != nil && s.PowerInfo.OEM.HPE != nil && len(s.PowerInfo.PowerControl) > 0 {
 				oemPwr := PwrCtlOEM{HPE: &PwrCtlOEMHPE{
 					Status: "Empty",
@@ -1329,7 +1329,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 				errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: HPE OEM found\n")
 			}
 			s.PowerCtl = s.PowerInfo.PowerControl
-			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: s.PowerCtl=%+v\n", s.PowerCtl)
+			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: *s.PowerCtl=%+v\n", *s.PowerCtl)
 		} else {
 			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: nodeChassis.ChassisRF.Controls.Oid was NULL\n")
 		}
