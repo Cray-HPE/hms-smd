@@ -461,7 +461,7 @@ type ComputerSystemLinks struct {
 
 // Redfish ComputerSystem sub-struct - OEM
 type ComputerSystemOEM struct {
-	InsydeNcsi *InsydOemNcsi `json:"InsydeNcsi,omitempty"`
+	InsydeNcsi *ComputerSystemOemInsydeNcsi `json:"InsydeNcsi,omitempty"`
 }
 
 // Redfish ProcessorSummary struct - Sub-struct of ComputerSystem

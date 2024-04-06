@@ -1405,23 +1405,23 @@ func (s *EpSystem) discoverRemotePhase1() {
 	// Get link to systems's ethernet interfaces
 	//
 
-	if s.SystemRF.EthernetInterfaces.Oid == "" && IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) != 1 {
-		// TODO: Just try default path?
-		errlog.Printf("%s: No EthernetInterfaces found.\n", url)
+	if s.SystemRF.EthernetInterfaces.Oid == "" {
 		s.ENetInterfaces.Num = 0
 		s.ENetInterfaces.OIDs = make(map[string]*EpEthInterface)
-	} else {
+
 		if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 &&
-			s.SystemRF.OEM != nil && s.SystemRF.OEM.InsydeNcsi != nil &&
-			s.SystemRF.OEM.InsydeNcsi.Ncsi.Oid != "" {
-			
-			// Foxconn uses /System/system/OEM/InsydeNcsi/Ncsi for ethernet interfaces
-			path = s.SystemRF.OEM.InsydeNcsi.Ncsi.Oid
-			errlog.Printf("<========== JW_DEBUG ==========> %s\n", path)
+			s.SystemRF.OEM != nil && s.SystemRF.OEM.InsydeNcsi != nil {
+			// Foxconn uses an entirely different hierarchy
+			errlog.Printf("<========== JW_DEBUG ==========> calling discoverFoxconnENetInterfaces\n")
+			discoverFoxconnENetInterfaces(s)
 		} else {
-			path = s.SystemRF.EthernetInterfaces.Oid
-			errlog.Printf("<========== JW_DEBUG ==========> NO FOXCONN: %s\n", path)
+			// TODO: Just try default path?
+			errlog.Printf("%s: No EthernetInterfaces found.\n", url)
 		}
+	} else {
+		path = s.SystemRF.EthernetInterfaces.Oid
+		errlog.Printf("<========== JW_DEBUG ==========> NO FOXCONN: %s\n", path)
+
 		url = s.epRF.FQDN + path
 		ethIfacesJSON, err := s.epRF.GETRelative(path)
 		if err != nil || ethIfacesJSON == nil {
