@@ -242,10 +242,14 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 				//*ei.EtherIfaceRF.InterfaceEnabled = true
 				ei.LastStatus = VerifyingData
 
-				// This is the only (hopefully) unique identifying for the onboard host ethernet
-				// This should be set in phase2 but we know what it is now
+				// This is the only (hopefully) unique identifyer for the onboard host ethernet
 				if strings.TrimSpace(nm.VersionId.FirmwareName) == "X550 FW Ver" {
 					errlog.Printf("<========== JW_DEBUG ==========> discoverFoxconnENetInterfaces: setting system MACAddr=%s\n", ei.MACAddr)
+					// We append a "-node_eth" string to the end of the Description so that we can
+					// identify it later.
+					ei.EtherIfaceRF.Description += "-node_eth"
+
+					// This should be set in phase2 but we know what it is now, so set it.
 					s.MACAddr = ei.MACAddr
 				}
 
