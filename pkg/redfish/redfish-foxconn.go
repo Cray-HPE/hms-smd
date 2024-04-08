@@ -186,7 +186,7 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 	//////////////////////////////////////////////////////
  	// Parse each /redfish/v1/Systems/system/Oem/Insyde/Ncsi/#
 
-	for i, ncsiMember := range n.Members {
+	for _, ncsiMember := range n.Members {
 		path := ncsiMember.Oid
 
 		url := s.epRF.FQDN + path
@@ -235,11 +235,9 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 			if pi.MACAddress != "" {
 				s.ENetInterfaces.Num++
 
-				eoid := nm.Package[0]
+				ei := NewEpEthInterface(s.epRF, ncsiMember.Oid, s.RedfishSubtype, nm.Package[0], s.ENetInterfaces.Num)
 
-				ei := NewEpEthInterface(s.epRF, ncsiMember.Oid, s.RedfishSubtype, eoid, s.ENetInterfaces.Num)
-
-				ei.EtherIfaceRF.Oid = eoid.Oid
+				ei.EtherIfaceRF.Oid = path
 				ei.EtherIfaceRF.MACAddress = pi.MACAddress
 				ei.EtherIfaceRF.Description = "Auto-detected Foxconn NCSI Ethernet Interface"
 
