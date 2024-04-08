@@ -212,6 +212,7 @@ func (s *SmD) updateFromRfEndpoint(rfEP *rf.RedfishEP) error {
 	var savedPw string
 	var savedUn string
 
+	s.LogAlways("<========== JW_DEBUG ==========> updateFromRfEndpoint: ep.ID=%s ep.DiscInfo.LastStatus=%s\n", ep.ID, ep.DiscInfo.LastStatus)
 	// Check if children should be updated.
 	if ep.DiscInfo.LastStatus == rf.EndpointTypeNotSupported ||
 		ep.DiscInfo.LastStatus == rf.EndpointNotEnabled {
@@ -562,6 +563,7 @@ func (s *SmD) DiscoverCompEndpointOutlet(outEP *rf.EpOutlet) *sm.ComponentEndpoi
 }
 
 func (s *SmD) DiscoverCompEthInterfaceArray(ep *sm.RedfishEndpoint, ceps *sm.ComponentEndpointArray) []*sm.CompEthInterfaceV2 {
+	s.LogAlways("<========== JW_DEBUG ==========> DiscoverCompEthInterfaceArray\n")
 	if ceps == nil || ep == nil {
 		return nil
 	}
@@ -585,6 +587,7 @@ func (s *SmD) DiscoverCompEthInterfaceArray(ep *sm.RedfishEndpoint, ceps *sm.Com
 		for _, ei := range ethInfo {
 			mac := rf.NormalizeMACIfValid(ei.MACAddress)
 			pmac := rf.NormalizeMACIfValid(ei.PermanentMACAddress)
+			s.LogAlways("<========== JW_DEBUG ==========> DiscoverCompEthInterfaceArray: mac=%s pmac=%s description=%s\n", mac, pmac, ei.Description)
 			if mac == "" && pmac == "" {
 				continue
 			} else if mac == "" {

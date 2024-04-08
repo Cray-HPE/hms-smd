@@ -199,7 +199,7 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 			s.LastStatus = EPResponseFailedDecode
 		}
 
-		errlog.Printf("<========== JW_DEBUG ==========> FirmwareName=%s\n", nm.VersionId.FirmwareName)
+		errlog.Printf("<========== JW_DEBUG ==========> discoverRemotePhase1: FirmwareName=%s\n", nm.VersionId.FirmwareName)
 
 		// For now, we're only looking for the host ethernet interface which will have a single MAC addr
 		if strings.TrimSpace(nm.VersionId.FirmwareName) != "X550 FW Ver" {
@@ -232,17 +232,21 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 		// so stop parsing after the first MAC address is found.
 
 		for _, pi := range p.PackageInfo {
-			errlog.Printf("<========== JW_DEBUG ==========> channel=%d\n", pi.ChannelIndex)
+			errlog.Printf("<========== JW_DEBUG ==========> discoverRemotePhase1: channel=%d\n", pi.ChannelIndex)
 			if pi.MACAddress != "" {
 				eoid := ncsiMember
 				eid := eoid.Basename()
+				ei := NewEpEthInterface(s.epRF, s.OdataID, s.RedfishSubtype, eoid, i)
+
+				ei.EtherIfaceRF.MACAddress = pi.MACAddress
+				ei.EtherIfaceRF.Description = nm.VersionId.FirmwareName
+				ei.EtherIfaceRF.Oid = nm.Package[0].Oid
+				*ei.EtherIfaceRF.InterfaceEnabled = true
+				ei.LastStatus = VerifyingData
 
 				s.ENetInterfaces.Num++
-				s.ENetInterfaces.OIDs[eid] = NewEpEthInterface(s.epRF, s.OdataID, s.RedfishSubtype, eoid, i)
-				s.ENetInterfaces.OIDs[eid].EtherIfaceRF.MACAddress = pi.MACAddress
-				s.ENetInterfaces.OIDs[eid].EtherIfaceRF.Description = nm.VersionId.FirmwareName
-
-				errlog.Printf("<========== JW_DEBUG ==========> s.ENetInterfaces.OIDs[%s]=%+v\n", eid, s.ENetInterfaces.OIDs[eid])
+				s.ENetInterfaces.OIDs[eid] = ei
+				errlog.Printf("<========== JW_DEBUG ==========> discoverRemotePhase1: s.ENetInterfaces.OIDs[%s]=%+v\n", eid, s.ENetInterfaces.OIDs[eid])
 				break
 			}
 		}

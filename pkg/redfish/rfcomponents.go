@@ -1412,7 +1412,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 		if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 &&
 			s.SystemRF.OEM != nil && s.SystemRF.OEM.InsydeNcsi != nil {
 			// Foxconn uses an entirely different hierarchy
-			errlog.Printf("<========== JW_DEBUG ==========> calling discoverFoxconnENetInterfaces\n")
+			errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverRemotePhase1: calling discoverFoxconnENetInterfaces\n")
 			discoverFoxconnENetInterfaces(s)
 		} else {
 			// TODO: Just try default path?
@@ -1420,7 +1420,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 		}
 	} else {
 		path = s.SystemRF.EthernetInterfaces.Oid
-		errlog.Printf("<========== JW_DEBUG ==========> NO FOXCONN: %s\n", path)
+		errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverRemotePhase1: NO FOXCONN: %s\n", path)
 
 		url = s.epRF.FQDN + path
 		ethIfacesJSON, err := s.epRF.GETRelative(path)
@@ -1448,13 +1448,13 @@ func (s *EpSystem) discoverRemotePhase1() {
 		}
 		s.ENetInterfaces.Num = len(ethInfo.Members)
 		s.ENetInterfaces.OIDs = make(map[string]*EpEthInterface)
-		errlog.Printf("<========== JW_DEBUG ==========> s.ENetInterfaces.Num=%d\n", s.ENetInterfaces.Num)
+		errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverRemotePhase1: s.ENetInterfaces.Num=%d\n", s.ENetInterfaces.Num)
 
 		sort.Sort(ResourceIDSlice(ethInfo.Members))
 		for i, eoid := range ethInfo.Members {
 			eid := eoid.Basename()
 			s.ENetInterfaces.OIDs[eid] = NewEpEthInterface(s.epRF, s.OdataID, s.RedfishType, eoid, i)
-			errlog.Printf("<========== JW_DEBUG ==========> added s.ENetInterfaces.OIDs[%s]\n", eid)
+			errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverRemotePhase1: added s.ENetInterfaces.OIDs[%s]\n", eid)
 		}
 		s.ENetInterfaces.discoverRemotePhase1()
 	}
@@ -1725,7 +1725,7 @@ func (s *EpSystem) discoverComponentEPEthInterfaces() {
 	// Select default interface to use as main MAC address
 	ethID := s.epRF.getNodeSvcNetEthIfaceId(s)
 
-	errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces START: s.MACAddr=%s\n", s.MACAddr)
+	errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces START: s.MACAddr=%s ethID=%s\n", s.MACAddr, ethID)
 	// Provide a brief summary of all attached ethernet interfaces
 	// Also, try to chose the main node MAC address.
 	s.EthNICInfo = make([]*EthernetNICInfo, 0, 1)
@@ -1758,6 +1758,7 @@ func (s *EpSystem) discoverComponentEPEthInterfaces() {
 				s.MACAddr = ethIDAddr.MACAddress
 			}
 		}
+		errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces: ethIDAddr=%+v\n", ethIDAddr)
 		s.EthNICInfo = append(s.EthNICInfo, ethIDAddr)
 	}
 	// No EthernetInterface objects found.  Uh oh.
