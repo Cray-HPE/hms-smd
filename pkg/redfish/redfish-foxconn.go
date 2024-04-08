@@ -235,11 +235,11 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 			if pi.MACAddress != "" {
 				s.ENetInterfaces.Num++
 
-				eoid := nm.Package[0].Oid
+				eoid := nm.Package[0]
 
 				ei := NewEpEthInterface(s.epRF, ncsiMember.Oid, s.RedfishSubtype, eoid, s.ENetInterfaces.Num)
 
-				ei.EtherIfaceRF.Oid = eoid
+				ei.EtherIfaceRF.Oid = eoid.Oid
 				ei.EtherIfaceRF.MACAddress = pi.MACAddress
 				ei.EtherIfaceRF.Description = "Auto-detected Foxconn NCSI Ethernet Interface"
 
