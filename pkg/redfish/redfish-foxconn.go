@@ -24,6 +24,7 @@ package rf
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 )
 
@@ -106,7 +107,7 @@ type InsydeOemNcsiCollection GenericCollection
 type InsydeOemNcsiMember struct {
 	DeviceType              string                  `json: DeviceType`
 	Id                      string                  `json: Id`
-	Package                 []ResourceID  `json:"Package"`
+	Package                 []ResourceID  			`json:"Package"`
 	VersionId               InsydeOemNcsiVersionId  `json:"VersionID"`
 }
 
@@ -145,6 +146,7 @@ type InsydeOemNcsiVersionId struct {
 
 
 type InsydeOemPackage struct {
+	Id                      string                  `json: Id`
 	PackageInfo             []InsydeOemPackageInfo  `json:"PackageInfo"`
 }
 
@@ -199,12 +201,7 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 			s.LastStatus = EPResponseFailedDecode
 		}
 
-		errlog.Printf("<========== JW_DEBUG ==========> discoverRemotePhase1: FirmwareName=%s\n", nm.VersionId.FirmwareName)
-
-		// For now, we're only looking for the host ethernet interface which will have a single MAC addr
-		if strings.TrimSpace(nm.VersionId.FirmwareName) != "X550 FW Ver" {
-			continue
-		}
+		errlog.Printf("<========== JW_DEBUG ==========> discoverFoxconnENetInterfaces: FirmwareName=%s\n", nm.VersionId.FirmwareName)
 
 		//////////////////////////////////////////////////////
  		// Parse /redfish/v1/Systems/system/Oem/Insyde/Ncsi/#/Package/#
@@ -231,23 +228,31 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 		// Some controllers have multiple MACs but the host ethernet controller will have only one
 		// so stop parsing after the first MAC address is found.
 
-		for _, pi := range p.PackageInfo {
-			errlog.Printf("<========== JW_DEBUG ==========> discoverRemotePhase1: channel=%d\n", pi.ChannelIndex)
+		for j, pi := range p.PackageInfo {
+			errlog.Printf("<========== JW_DEBUG ==========> discoverFoxconnENetInterfaces: channel=%d\n", pi.ChannelIndex)
 			if pi.MACAddress != "" {
 				eoid := ncsiMember
 				eid := eoid.Basename()
 				ei := NewEpEthInterface(s.epRF, s.OdataID, s.RedfishSubtype, eoid, i)
 
 				ei.EtherIfaceRF.MACAddress = pi.MACAddress
-				ei.EtherIfaceRF.Description = nm.VersionId.FirmwareName
+				ei.EtherIfaceRF.Description = "foxconn-ncsi-" + nm.Id + "-" + p.Id + "-" + fmt.Sprint(j)
 				ei.EtherIfaceRF.Oid = nm.Package[0].Oid
-				*ei.EtherIfaceRF.InterfaceEnabled = true
+				//ei.EtherIfaceRF.InterfaceEnabled = new(bool)
+				//*ei.EtherIfaceRF.InterfaceEnabled = true
 				ei.LastStatus = VerifyingData
+
+				// This is the only (hopefully) unique identifying for the onboard host ethernet
+				// This should be set in phase2 but we know what it is now
+				if strings.TrimSpace(nm.VersionId.FirmwareName) == "X550 FW Ver" {
+					errlog.Printf("<========== JW_DEBUG ==========> discoverFoxconnENetInterfaces: setting system MACAddr=%s\n", ei.MACAddr)
+					s.MACAddr = ei.MACAddr
+				}
 
 				s.ENetInterfaces.Num++
 				s.ENetInterfaces.OIDs[eid] = ei
-				errlog.Printf("<========== JW_DEBUG ==========> discoverRemotePhase1: s.ENetInterfaces.OIDs[%s]=%+v\n", eid, s.ENetInterfaces.OIDs[eid])
-				break
+
+				errlog.Printf("<========== JW_DEBUG ==========> discoverFoxconnENetInterfaces: s.ENetInterfaces.OIDs[%s]=%+v\n", eid, s.ENetInterfaces.OIDs[eid])
 			}
 		}
 	}
