@@ -138,6 +138,7 @@ func NewCompEthInterfaceV2(desc, macAddr, compID string, ipAddrs []IPAddressMapp
 	cei.MACAddr = strings.ToLower(macAddr)
 	cei.ID = strings.ReplaceAll(cei.MACAddr, ":", "")
 	if cei.ID == "" {
+		errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces returning error 1\n")
 		return nil, ErrCompEthInterfaceBadMAC
 	}
 	// Initialize empty slices
@@ -147,16 +148,19 @@ func NewCompEthInterfaceV2(desc, macAddr, compID string, ipAddrs []IPAddressMapp
 	cei.IPAddrs = ipAddrs
 	for _, ipm := range cei.IPAddrs {
 		if err := ipm.Verify(); err != nil {
+			errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces returning error 2\n")
 			return nil, err
 		}
 	}
 	if compID != "" {
 		cei.CompID = base.VerifyNormalizeCompID(compID)
 		if cei.CompID == "" {
+			errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces returning error 3\n")
 			return nil, ErrCompEthInterfaceBadCompID
 		}
 		cei.Type = base.GetHMSTypeString(cei.CompID)
 	}
+	errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces START: cei=%+v\n", cei)
 	return cei, nil
 }
 

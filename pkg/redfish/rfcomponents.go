@@ -1743,7 +1743,8 @@ func (s *EpSystem) discoverComponentEPEthInterfaces() {
 			e.EtherIfaceRF.PermanentMACAddress,
 		)
 		errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces: ethIDAddr.Oid=%s ethIDAddr.MACAddress=%s e.BaseOdataID=%s ethID=%s\n", ethIDAddr.Oid, ethIDAddr.MACAddress, e.BaseOdataID, ethID)
-		if len(s.ENetInterfaces.OIDs) == 1 || e.BaseOdataID == ethID {
+		if len(s.ENetInterfaces.OIDs) == 1 || e.BaseOdataID == ethID ||
+			(IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 && strings.HasSuffix(e.EtherIfaceRF.Id, FOXCONN_NODE_ETH_SUFFIX)) {
 			// Assign this MAC as the main address, matches default interface
 			// or is the only one.
 			if ethIDAddr.PermanentMACAddress != "" {

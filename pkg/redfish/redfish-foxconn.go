@@ -28,6 +28,8 @@ import (
 	"strings"
 )
 
+const FOXCONN_NODE_ETH_SUFFIX = "-node_eth"
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 //
@@ -231,32 +233,34 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 		for j, pi := range p.PackageInfo {
 			errlog.Printf("<========== JW_DEBUG ==========> discoverFoxconnENetInterfaces: channel=%d\n", pi.ChannelIndex)
 			if pi.MACAddress != "" {
-				eoid := ncsiMember
-				eid := eoid.Basename()
-				ei := NewEpEthInterface(s.epRF, s.OdataID, s.RedfishSubtype, eoid, i)
+				s.ENetInterfaces.Num++
 
+				eoid := nm.Package[0].Oid
+
+				ei := NewEpEthInterface(s.epRF, ncsiMember.Oid, s.RedfishSubtype, eoid, s.ENetInterfaces.Num)
+
+				ei.EtherIfaceRF.Oid = eoid
 				ei.EtherIfaceRF.MACAddress = pi.MACAddress
-				ei.EtherIfaceRF.Description = "foxconn-ncsi-" + nm.Id + "-" + p.Id + "-" + fmt.Sprint(j)
-				ei.EtherIfaceRF.Oid = nm.Package[0].Oid
-				//ei.EtherIfaceRF.InterfaceEnabled = new(bool)
-				//*ei.EtherIfaceRF.InterfaceEnabled = true
-				ei.LastStatus = VerifyingData
+				ei.EtherIfaceRF.Description = "Auto-detected Foxconn NCSI Ethernet Interface"
 
-				// This is the only (hopefully) unique identifyer for the onboard host ethernet
+				// ID = "foxconn-ncsi-" + ncsi number + "-" + package number + "-" + channel index
+				ei.EtherIfaceRF.Id = "foxconn-ncsi-" + nm.Id + "-" + p.Id + "-" + fmt.Sprint(j)
+
+				// This is the only (hopefully) unique identifier for the onboard host ethernet
 				if strings.TrimSpace(nm.VersionId.FirmwareName) == "X550 FW Ver" {
-					errlog.Printf("<========== JW_DEBUG ==========> discoverFoxconnENetInterfaces: setting system MACAddr=%s\n", ei.MACAddr)
 					// We append a "-node_eth" string to the end of the Description so that we can
 					// identify it later.
-					ei.EtherIfaceRF.Description += "-node_eth"
-
-					// This should be set in phase2 but we know what it is now, so set it.
-					s.MACAddr = ei.MACAddr
+					ei.EtherIfaceRF.Id += FOXCONN_NODE_ETH_SUFFIX
+					errlog.Printf("<========== JW_DEBUG ==========> discoverFoxconnENetInterfaces: setting system MACAddr=%s\n", ei.MACAddr)
 				}
 
-				s.ENetInterfaces.Num++
-				s.ENetInterfaces.OIDs[eid] = ei
+				ei.BaseOdataID = ei.EtherIfaceRF.Id
+				ei.etherIfaceRaw = &jsonData
+				ei.LastStatus = VerifyingData
 
-				errlog.Printf("<========== JW_DEBUG ==========> discoverFoxconnENetInterfaces: s.ENetInterfaces.OIDs[%s]=%+v\n", eid, s.ENetInterfaces.OIDs[eid])
+				s.ENetInterfaces.OIDs[ei.EtherIfaceRF.Id] = ei
+
+				errlog.Printf("<========== JW_DEBUG ==========> discoverFoxconnENetInterfaces: s.ENetInterfaces.OIDs[%s]=%+v\n", ei.EtherIfaceRF.Id, s.ENetInterfaces.OIDs[ei.EtherIfaceRF.Id])
 			}
 		}
 	}
