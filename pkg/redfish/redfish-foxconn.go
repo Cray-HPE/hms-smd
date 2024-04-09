@@ -28,9 +28,10 @@ import (
 	"strings"
 )
 
-const FOXCONN_PRIMARY_ETH_SUFFIX        = "-primary_eth"
-const FOXCONN_PRIMARY_ETH_PCIDID        = "0x6315"
-const FOXCONN_PRIMARY_ETH_FIRMWARE_NAME = "X550 FW Ver"
+const FOXCONN_ETH_INT_DESCRIPTION     = "Foxconn NCSI Interface"
+const FOXCONN_PRIMARY_ETH_INT_SUFFIX  = "-primary_eth"
+const FOXCONN_PRIMARY_ETH_INT_PCIDID  = "0x6315"
+const FOXCONN_PRIMARY_ETH_INT_FW_NAME = "X550 FW Ver"
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -292,23 +293,23 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 
 					ei.EtherIfaceRF.Oid = path
 					ei.EtherIfaceRF.MACAddress = pi.MACAddress
-					ei.EtherIfaceRF.Description = "Foxconn NCSI Interface (discovered)"
+					ei.EtherIfaceRF.Description = FOXCONN_ETH_INT_DESCRIPTION
 
 					// ID = "ncsi-" + ncsi number + "-" + package number + "-" + channel index
 					ei.EtherIfaceRF.Id = "ncsi" + nm.Id + "-p" + p.Id + "-c" + fmt.Sprint(j)
 
 					// According to Foxconn, this is the only unique identifier for the primary ethernet
-					if nm.VersionId.PCIDID == FOXCONN_PRIMARY_ETH_PCIDID {
+					if nm.VersionId.PCIDID == FOXCONN_PRIMARY_ETH_INT_PCIDID {
 						// We append a unique string to the end of the ID so that we can identify the
 						// primary ethernet interface later.
-						ei.EtherIfaceRF.Id += FOXCONN_PRIMARY_ETH_SUFFIX
-					} else if strings.TrimSpace(nm.VersionId.FirmwareName) == FOXCONN_PRIMARY_ETH_FIRMWARE_NAME {
+						ei.EtherIfaceRF.Id += FOXCONN_PRIMARY_ETH_INT_SUFFIX
+					} else if strings.TrimSpace(nm.VersionId.FirmwareName) == FOXCONN_PRIMARY_ETH_INT_FW_NAME {
 						// Leave a breadcrumb if Foxconn ever changes the PCIDID for the primary ethernet device
 
 						errlog.Printf("Found suspect PCIDID=%s associated with FW \"%s\" for %s\n", nm.VersionId.PCIDID, nm.VersionId.FirmwareName, ei.EtherIfaceRF.Id)
 
 						// TODO: We could append FOXCONN_PRIMARY_ETH_SUFFIX to the ID as well if we (1) think
-						// Foxconn will ever change the PCIDID and (2) if we trust FOXCONN_PRIMARY_ETH_FIRMWARE_NAME
+						// Foxconn will ever change the PCIDID and (2) if we trust FOXCONN_PRIMARY_ETH_INT_FW_NAME
 						// will always be unique to the primary ethernet device.  When asked about a unique identifier
 						// they said to use the PCIDID.
 					}
