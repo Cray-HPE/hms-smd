@@ -244,6 +244,8 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 					ei.EtherIfaceRF.Oid = path
 					ei.EtherIfaceRF.MACAddress = pi.MACAddress
 					ei.EtherIfaceRF.Description = "Foxconn NCSI Interface"
+					ei.EtherIfaceRF.InterfaceEnabled = new(bool)
+					*ei.EtherIfaceRF.InterfaceEnabled = true
 
 					// ID = "foxconn-ncsi-" + ncsi number + "-" + package number + "-" + channel index
 					ei.EtherIfaceRF.Id = "foxconn-ncsi" + nm.Id + "-p" + p.Id + "-c" + fmt.Sprint(j)
