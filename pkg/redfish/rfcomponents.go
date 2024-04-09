@@ -1755,8 +1755,8 @@ func (s *EpSystem) discoverComponentEPEthInterfaces() {
 						s.ID, ethID)
 				}
 			} else {
-				errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces: second set main addr to s.MACAddr=%s\n", s.MACAddr)
 				s.MACAddr = ethIDAddr.MACAddress
+				errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces: second set main addr to s.MACAddr=%s\n", s.MACAddr)
 			}
 		}
 		errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces: ethIDAddr=%+v\n", ethIDAddr)

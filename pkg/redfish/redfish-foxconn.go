@@ -246,10 +246,10 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 					ei.EtherIfaceRF.Description = "Foxconn NCSI Interface"
 
 					// ID = "foxconn-ncsi-" + ncsi number + "-" + package number + "-" + channel index
-					ei.EtherIfaceRF.Id = "foxconn-ncsi-" + nm.Id + "-p" + p.Id + "-c" + fmt.Sprint(j)
+					ei.EtherIfaceRF.Id = "foxconn-ncsi" + nm.Id + "-p" + p.Id + "-c" + fmt.Sprint(j)
 
 					// This is the only (hopefully) unique identifier for the onboard host ethernet
-					if nm.VersionId.FirmwareName == FOXCONN_NODE_ETH_PCIDID {
+					if nm.VersionId.PCIDID == FOXCONN_NODE_ETH_PCIDID {
 						// We append a "-node_eth" string to the end of the Description so that we can
 						// identify it later.
 						ei.EtherIfaceRF.Id += FOXCONN_NODE_ETH_SUFFIX
