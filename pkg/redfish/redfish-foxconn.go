@@ -28,7 +28,9 @@ import (
 	"strings"
 )
 
-const FOXCONN_NODE_ETH_SUFFIX = "-node_eth"
+const FOXCONN_NODE_ETH_SUFFIX        = "-node_eth"
+const FOXCONN_NODE_ETH_PCIDID        = "0x6315"
+const FOXCONN_NODE_ETH_FIRMWARE_NAME = "X550 FW Ver"
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -113,12 +115,9 @@ type InsydeOemNcsiMember struct {
 	VersionId               InsydeOemNcsiVersionId  `json:"VersionID"`
 }
 
-//type InsydeOemNcsiPackage struct {
-//	Oid                     string          		`json:"@odata.id"`
-//}
-
 type InsydeOemNcsiVersionId struct {
 	FirmwareName            string                  `json:"FirmwareName"`
+	PCIDID                  string                  `json:"PCIDID"`
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -145,7 +144,6 @@ type InsydeOemNcsiVersionId struct {
 // }
 //
 ///////////////////////////////////////////////////////////////////////////////
-
 
 type InsydeOemPackage struct {
 	Id                      string                  `json: Id`
@@ -206,59 +204,71 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 		errlog.Printf("<========== JW_DEBUG ==========> discoverFoxconnENetInterfaces: FirmwareName=%s\n", nm.VersionId.FirmwareName)
 
 		//////////////////////////////////////////////////////
- 		// Parse /redfish/v1/Systems/system/Oem/Insyde/Ncsi/#/Package/#
+ 		// Parse each /redfish/v1/Systems/system/Oem/Insyde/Ncsi/# package member element
+		// Have only ever seen one but we should iterate anyway
 
-		path = nm.Package[0].Oid
+		for _, nmPkg := range nm.Package {
 
-		url = s.epRF.FQDN + path
-		jsonData, err = s.epRF.GETRelative(path)
-		if err != nil || jsonData == nil {
-			s.LastStatus = HTTPsGetFailed
-			return
-		}
-		s.LastStatus = HTTPsGetOk
+			//////////////////////////////////////////////////////
+ 			// Parse /redfish/v1/Systems/system/Oem/Insyde/Ncsi/#/Package/#
 
-		var p InsydeOemPackage
-		if err := json.Unmarshal(jsonData, &p); err != nil {
-			errlog.Printf("Failed to decode %s: %s\n", url, err)
-			s.LastStatus = EPResponseFailedDecode
-		}
+			path = nmPkg.Oid
 
-		//////////////////////////////////////////////////////
- 		// Parse /redfish/v1/Systems/system/Oem/Insyde/Ncsi/#/Package/#.PackageInfo[]
-		//
-		// Some controllers have multiple MACs but the host ethernet controller will have only one
-		// so stop parsing after the first MAC address is found.
+			url = s.epRF.FQDN + path
+			jsonData, err = s.epRF.GETRelative(path)
+			if err != nil || jsonData == nil {
+				s.LastStatus = HTTPsGetFailed
+				return
+			}
+			s.LastStatus = HTTPsGetOk
 
-		for j, pi := range p.PackageInfo {
-			errlog.Printf("<========== JW_DEBUG ==========> discoverFoxconnENetInterfaces: channel=%d\n", pi.ChannelIndex)
-			if pi.MACAddress != "" {
-				s.ENetInterfaces.Num++
+			var p InsydeOemPackage
+			if err := json.Unmarshal(jsonData, &p); err != nil {
+				errlog.Printf("Failed to decode %s: %s\n", url, err)
+				s.LastStatus = EPResponseFailedDecode
+			}
 
-				ei := NewEpEthInterface(s.epRF, ncsiMember.Oid, s.RedfishSubtype, nm.Package[0], s.ENetInterfaces.Num)
+			//////////////////////////////////////////////////////
+ 			// Parse /redfish/v1/Systems/system/Oem/Insyde/Ncsi/#/Package/#.PackageInfo[]
+			//
+			// Some controllers have multiple MACs but the host ethernet controller will have only one
+			// so stop parsing after the first MAC address is found.
 
-				ei.EtherIfaceRF.Oid = path
-				ei.EtherIfaceRF.MACAddress = pi.MACAddress
-				ei.EtherIfaceRF.Description = "Auto-detected Foxconn NCSI Ethernet Interface"
+			for j, pi := range p.PackageInfo {
+				errlog.Printf("<========== JW_DEBUG ==========> discoverFoxconnENetInterfaces: channel=%d\n", pi.ChannelIndex)
+				if pi.MACAddress != "" {
+					s.ENetInterfaces.Num++
 
-				// ID = "foxconn-ncsi-" + ncsi number + "-" + package number + "-" + channel index
-				ei.EtherIfaceRF.Id = "foxconn-ncsi-" + nm.Id + "-" + p.Id + "-" + fmt.Sprint(j)
+					ei := NewEpEthInterface(s.epRF, ncsiMember.Oid, s.RedfishSubtype, nmPkg, s.ENetInterfaces.Num)
 
-				// This is the only (hopefully) unique identifier for the onboard host ethernet
-				if strings.TrimSpace(nm.VersionId.FirmwareName) == "X550 FW Ver" {
-					// We append a "-node_eth" string to the end of the Description so that we can
-					// identify it later.
-					ei.EtherIfaceRF.Id += FOXCONN_NODE_ETH_SUFFIX
-					errlog.Printf("<========== JW_DEBUG ==========> discoverFoxconnENetInterfaces: setting system MACAddr=%s\n", ei.MACAddr)
+					ei.EtherIfaceRF.Oid = path
+					ei.EtherIfaceRF.MACAddress = pi.MACAddress
+					ei.EtherIfaceRF.Description = "Foxconn NCSI Interface"
+
+					// ID = "foxconn-ncsi-" + ncsi number + "-" + package number + "-" + channel index
+					ei.EtherIfaceRF.Id = "foxconn-ncsi-" + nm.Id + "-p" + p.Id + "-c" + fmt.Sprint(j)
+
+					// This is the only (hopefully) unique identifier for the onboard host ethernet
+					if nm.VersionId.FirmwareName == FOXCONN_NODE_ETH_PCIDID {
+						// We append a "-node_eth" string to the end of the Description so that we can
+						// identify it later.
+						ei.EtherIfaceRF.Id += FOXCONN_NODE_ETH_SUFFIX
+					} else if strings.TrimSpace(nm.VersionId.FirmwareName) == FOXCONN_NODE_ETH_FIRMWARE_NAME {
+						// Leave a breadcrumb if Foxconn ever changes the PCIDID on the node's ethernet device
+						errlog.Printf("Found suspect PCIDID=%s associated with FW \"%s\" for %s\n", nm.VersionID.PCIDID, nm.VersionId.FirmwareName, ei.EtherIfaceRF.Id)
+						// TODO: We could append FOXCONN_NODE_ETH_SUFFIX here as well if we (1) think Foxconn
+						// may ever change the PCIDID and (2) if we trust FOXCONN_NODE_ETH_FIRMWARE_NAME will
+						// always be unique to the node's ethernet device.
+					}
+
+					ei.BaseOdataID = ei.EtherIfaceRF.Id
+					ei.etherIfaceRaw = &jsonData
+					ei.LastStatus = VerifyingData
+
+					s.ENetInterfaces.OIDs[ei.EtherIfaceRF.Id] = ei
+
+					errlog.Printf("<========== JW_DEBUG ==========> discoverFoxconnENetInterfaces: s.ENetInterfaces.OIDs[%s]=%+v\n", ei.EtherIfaceRF.Id, s.ENetInterfaces.OIDs[ei.EtherIfaceRF.Id])
 				}
-
-				ei.BaseOdataID = ei.EtherIfaceRF.Id
-				ei.etherIfaceRaw = &jsonData
-				ei.LastStatus = VerifyingData
-
-				s.ENetInterfaces.OIDs[ei.EtherIfaceRF.Id] = ei
-
-				errlog.Printf("<========== JW_DEBUG ==========> discoverFoxconnENetInterfaces: s.ENetInterfaces.OIDs[%s]=%+v\n", ei.EtherIfaceRF.Id, s.ENetInterfaces.OIDs[ei.EtherIfaceRF.Id])
 			}
 		}
 	}
