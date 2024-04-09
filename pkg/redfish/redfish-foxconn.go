@@ -255,7 +255,7 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 						ei.EtherIfaceRF.Id += FOXCONN_NODE_ETH_SUFFIX
 					} else if strings.TrimSpace(nm.VersionId.FirmwareName) == FOXCONN_NODE_ETH_FIRMWARE_NAME {
 						// Leave a breadcrumb if Foxconn ever changes the PCIDID on the node's ethernet device
-						errlog.Printf("Found suspect PCIDID=%s associated with FW \"%s\" for %s\n", nm.VersionID.PCIDID, nm.VersionId.FirmwareName, ei.EtherIfaceRF.Id)
+						errlog.Printf("Found suspect PCIDID=%s associated with FW \"%s\" for %s\n", nm.VersionId.PCIDID, nm.VersionId.FirmwareName, ei.EtherIfaceRF.Id)
 						// TODO: We could append FOXCONN_NODE_ETH_SUFFIX here as well if we (1) think Foxconn
 						// may ever change the PCIDID and (2) if we trust FOXCONN_NODE_ETH_FIRMWARE_NAME will
 						// always be unique to the node's ethernet device.
