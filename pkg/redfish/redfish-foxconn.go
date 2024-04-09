@@ -28,12 +28,11 @@ import (
 	"strings"
 )
 
-const FOXCONN_NODE_ETH_SUFFIX        = "-node_eth"
-const FOXCONN_NODE_ETH_PCIDID        = "0x6315"
-const FOXCONN_NODE_ETH_FIRMWARE_NAME = "X550 FW Ver"
+const FOXCONN_PRIMARY_ETH_SUFFIX        = "-primary_eth"
+const FOXCONN_PRIMARY_ETH_PCIDID        = "0x6315"
+const FOXCONN_PRIMARY_ETH_FIRMWARE_NAME = "X550 FW Ver"
 
 ///////////////////////////////////////////////////////////////////////////////
-//
 //
 // localhost:~ # curl -ks -u root:${BMC_CREDS} https://10.5.1.106/redfish/v1/Systems/system | jq .
 // {
@@ -82,6 +81,34 @@ type InsydeOemNcsiCollection GenericCollection
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+/////// Mellanox Ethernet Interfaces
+//
+// localhost:~ # curl -ks -u root:${BMC_CREDS} https://10.5.1.106/redfish/v1/Systems/system/Oem/Insyde/Ncsi/1 | jq .
+// {
+//   "@odata.type": "#InsydeNcsi.v1_0_0.InsydeNcsi",
+//   "Description": "The InsydeNcsi schema contains properties related to NCSI device.",
+//   "DeviceType": "SMBus",
+//   "Id": "1",
+//   "Name": "1",
+//   "Package": [
+//       {
+//           "@odata.id": "/redfish/v1/Systems/system/Oem/Insyde/Ncsi/1/Package/0"
+//       }
+//   ],
+//   "VersionID": {
+//       "FirmwareName": "mlx0.1",
+//       "FirmwareVersion": "1c.28.03.e8",
+//       "ManufacturerID": "0x8119",
+//       "NcsiVersion": "1.1.0",
+//       "PCIDID": "0x1021",
+//       "PCISSID": "0x0053",
+//       "PCISVID": "0x15b3",
+//       "PCIVID": "0x15b3"
+//   }
+// }
+//
+/////// Primary Ethernet Interface
+//
 // localhost:~ # curl -ks -u root:${BMC_CREDS} https://10.5.1.106/redfish/v1/Systems/system/Oem/Insyde/Ncsi/2 | jq .
 // {
 //   "@odata.id": "/redfish/v1/Systems/system/Oem/Insyde/Ncsi/2",
@@ -122,7 +149,31 @@ type InsydeOemNcsiVersionId struct {
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// The following is heavily redacted due to size.  Only relevant fields are shown.
+// The following are heavily redacted due to size.  Only relevant fields are shown.
+//
+/////// Mellanox Ethernet Interface
+//
+// localhost:~ # curl -ks -u root:${BMC_CREDS} https://10.5.1.106/redfish/v1/Systems/system/Oem/Insyde/Ncsi/1/Package/0 | jq .
+// {
+//   "@odata.id": "/redfish/v1/Systems/system/Oem/Insyde/Ncsi/1/Package/0",
+//   "@odata.type": "#InsydeNcsiPackage.v1_0_0.InsydeNcsiPackage",
+//   "Description": "The InsydeNcsiPackage schema contains properties related to NcsiPackage.",
+//   "Id": "0",
+//   "Name": "0",
+//   "PackageInfo": [
+//     {
+//       "ChannelIndex": 0,
+//       "MACAddress": "a0:88:c2:7b:17:90",
+//     },
+//     {
+//       "ChannelIndex": 1,
+//       "MACAddress": "a0:88:c2:7b:17:91",
+//       }
+//     }
+//   ]
+// }
+//
+/////// Primary Ethernet Interface
 //
 // localhost:~ # curl -ks -u root:${BMC_CREDS} https://10.5.1.106/redfish/v1/Systems/system/Oem/Insyde/Ncsi/2/Package/1 | jq .
 // {
@@ -158,7 +209,7 @@ type InsydeOemPackageInfo struct {
 // Parses redfish to find ethernet interfaces for Foxconn Paradise
 func discoverFoxconnENetInterfaces(s *EpSystem) {
 	//////////////////////////////////////////////////////
- 	// Parse /redfish/v1/Systems/system/Oem/Insyde/Ncsi
+	// Parse /redfish/v1/Systems/system/Oem/Insyde/Ncsi
 
 	path := s.SystemRF.OEM.InsydeNcsi.Ncsi.Oid
 
@@ -182,7 +233,7 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 	}
 
 	//////////////////////////////////////////////////////
- 	// Parse each /redfish/v1/Systems/system/Oem/Insyde/Ncsi/#
+	// Parse each /redfish/v1/Systems/system/Oem/Insyde/Ncsi/# entry
 
 	for _, ncsiMember := range n.Members {
 		path := ncsiMember.Oid
@@ -204,13 +255,13 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 		errlog.Printf("<========== JW_DEBUG ==========> discoverFoxconnENetInterfaces: FirmwareName=%s\n", nm.VersionId.FirmwareName)
 
 		//////////////////////////////////////////////////////
- 		// Parse each /redfish/v1/Systems/system/Oem/Insyde/Ncsi/# package member element
-		// Have only ever seen one but we should iterate anyway
+		// Parse each /redfish/v1/Systems/system/Oem/Insyde/Ncsi/# package member element
+		// Have only ever seen one package but we should iterate anyway in case that ever changes
 
 		for _, nmPkg := range nm.Package {
 
 			//////////////////////////////////////////////////////
- 			// Parse /redfish/v1/Systems/system/Oem/Insyde/Ncsi/#/Package/#
+			// Parse /redfish/v1/Systems/system/Oem/Insyde/Ncsi/#/Package/#
 
 			path = nmPkg.Oid
 
@@ -229,13 +280,11 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 			}
 
 			//////////////////////////////////////////////////////
- 			// Parse /redfish/v1/Systems/system/Oem/Insyde/Ncsi/#/Package/#.PackageInfo[]
-			//
-			// Some controllers have multiple MACs but the host ethernet controller will have only one
-			// so stop parsing after the first MAC address is found.
+			// Parse each /redfish/v1/Systems/system/Oem/Insyde/Ncsi/#/Package/#.PackageInfo[]
 
 			for j, pi := range p.PackageInfo {
 				errlog.Printf("<========== JW_DEBUG ==========> discoverFoxconnENetInterfaces: channel=%d\n", pi.ChannelIndex)
+				// Only process if there is a MAC address
 				if pi.MACAddress != "" {
 					s.ENetInterfaces.Num++
 
@@ -243,24 +292,25 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 
 					ei.EtherIfaceRF.Oid = path
 					ei.EtherIfaceRF.MACAddress = pi.MACAddress
-					ei.EtherIfaceRF.Description = "Foxconn NCSI Interface"
-					ei.EtherIfaceRF.InterfaceEnabled = new(bool)
-					*ei.EtherIfaceRF.InterfaceEnabled = true
+					ei.EtherIfaceRF.Description = "Foxconn NCSI Interface (discovered)"
 
-					// ID = "foxconn-ncsi-" + ncsi number + "-" + package number + "-" + channel index
-					ei.EtherIfaceRF.Id = "foxconn-ncsi" + nm.Id + "-p" + p.Id + "-c" + fmt.Sprint(j)
+					// ID = "ncsi-" + ncsi number + "-" + package number + "-" + channel index
+					ei.EtherIfaceRF.Id = "ncsi" + nm.Id + "-p" + p.Id + "-c" + fmt.Sprint(j)
 
-					// This is the only (hopefully) unique identifier for the onboard host ethernet
-					if nm.VersionId.PCIDID == FOXCONN_NODE_ETH_PCIDID {
-						// We append a "-node_eth" string to the end of the Description so that we can
-						// identify it later.
-						ei.EtherIfaceRF.Id += FOXCONN_NODE_ETH_SUFFIX
-					} else if strings.TrimSpace(nm.VersionId.FirmwareName) == FOXCONN_NODE_ETH_FIRMWARE_NAME {
-						// Leave a breadcrumb if Foxconn ever changes the PCIDID on the node's ethernet device
+					// According to Foxconn, this is the only unique identifier for the primary ethernet
+					if nm.VersionId.PCIDID == FOXCONN_PRIMARY_ETH_PCIDID {
+						// We append a unique string to the end of the ID so that we can identify the
+						// primary ethernet interface later.
+						ei.EtherIfaceRF.Id += FOXCONN_PRIMARY_ETH_SUFFIX
+					} else if strings.TrimSpace(nm.VersionId.FirmwareName) == FOXCONN_PRIMARY_ETH_FIRMWARE_NAME {
+						// Leave a breadcrumb if Foxconn ever changes the PCIDID for the primary ethernet device
+
 						errlog.Printf("Found suspect PCIDID=%s associated with FW \"%s\" for %s\n", nm.VersionId.PCIDID, nm.VersionId.FirmwareName, ei.EtherIfaceRF.Id)
-						// TODO: We could append FOXCONN_NODE_ETH_SUFFIX here as well if we (1) think Foxconn
-						// may ever change the PCIDID and (2) if we trust FOXCONN_NODE_ETH_FIRMWARE_NAME will
-						// always be unique to the node's ethernet device.
+
+						// TODO: We could append FOXCONN_PRIMARY_ETH_SUFFIX to the ID as well if we (1) think
+						// Foxconn will ever change the PCIDID and (2) if we trust FOXCONN_PRIMARY_ETH_FIRMWARE_NAME
+						// will always be unique to the primary ethernet device.  When asked about a unique identifier
+						// they said to use the PCIDID.
 					}
 
 					ei.BaseOdataID = ei.EtherIfaceRF.Id
@@ -268,7 +318,6 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 					ei.LastStatus = VerifyingData
 
 					s.ENetInterfaces.OIDs[ei.EtherIfaceRF.Id] = ei
-
 					errlog.Printf("<========== JW_DEBUG ==========> discoverFoxconnENetInterfaces: s.ENetInterfaces.OIDs[%s]=%+v\n", ei.EtherIfaceRF.Id, s.ENetInterfaces.OIDs[ei.EtherIfaceRF.Id])
 				}
 			}
