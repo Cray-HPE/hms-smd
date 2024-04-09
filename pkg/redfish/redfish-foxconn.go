@@ -292,7 +292,7 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 					ei.EtherIfaceRF.MACAddress = pi.MACAddress
 					ei.EtherIfaceRF.Description = FOXCONN_ETH_INT_DESCRIPTION
 
-					// ID = "ncsi-" + ncsi number + "-" + package number + "-" + channel index
+					// ID = "ncsi-" + ncsi number + "-p" + package number + "-c" + channel index
 					ei.EtherIfaceRF.Id = "ncsi" + nm.Id + "-p" + p.Id + "-c" + fmt.Sprint(j)
 
 					// According to Foxconn, this is the only unique identifier for the primary ethernet
