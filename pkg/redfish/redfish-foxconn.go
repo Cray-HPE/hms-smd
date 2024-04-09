@@ -253,8 +253,6 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 			s.LastStatus = EPResponseFailedDecode
 		}
 
-		errlog.Printf("<========== JW_DEBUG ==========> discoverFoxconnENetInterfaces: FirmwareName=%s\n", nm.VersionId.FirmwareName)
-
 		//////////////////////////////////////////////////////
 		// Parse each /redfish/v1/Systems/system/Oem/Insyde/Ncsi/# package member element
 		// Have only ever seen one package but we should iterate anyway in case that ever changes
@@ -284,7 +282,6 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 			// Parse each /redfish/v1/Systems/system/Oem/Insyde/Ncsi/#/Package/#.PackageInfo[]
 
 			for j, pi := range p.PackageInfo {
-				errlog.Printf("<========== JW_DEBUG ==========> discoverFoxconnENetInterfaces: channel=%d\n", pi.ChannelIndex)
 				// Only process if there is a MAC address
 				if pi.MACAddress != "" {
 					s.ENetInterfaces.Num++
@@ -319,7 +316,6 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 					ei.LastStatus = VerifyingData
 
 					s.ENetInterfaces.OIDs[ei.EtherIfaceRF.Id] = ei
-					errlog.Printf("<========== JW_DEBUG ==========> discoverFoxconnENetInterfaces: s.ENetInterfaces.OIDs[%s]=%+v\n", ei.EtherIfaceRF.Id, s.ENetInterfaces.OIDs[ei.EtherIfaceRF.Id])
 				}
 			}
 		}
