@@ -33,6 +33,9 @@ import (
 	base "github.com/Cray-HPE/hms-base"
 )
 
+var ParadiseMacWarEnabled = false
+var ParadiseMacWarInc = 2
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //
@@ -1759,7 +1762,7 @@ func (s *EpSystem) discoverComponentEPEthInterfaces() {
 			// Gigabyte nodes
 			gigayteMACWorkaround = true
 
-		} else if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
+		} else if ParadiseMacWarEnabled && IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
 			if len(s.SystemRF.Model) > 0 {
 				rfModel := strings.ToLower(s.SystemRF.Model)
 				for matchStr, _ := range FoxconnModelArchMap {
@@ -1864,14 +1867,13 @@ func (s *EpSystem) discoverComponentEPEthInterfaces() {
 		}
 		if mgr != nil {
 			foundMac := false
-			inc := 2
 			for _, eth := range mgr.ENetInterfaces.OIDs {
 				if eth.EtherIfaceRF.Id == "eth0" {
 					bmcMac := eth.EtherIfaceRF.MACAddress
-					mac, err := GetOffsetMACString(bmcMac, int64(inc))
+					mac, err := GetOffsetMACString(bmcMac, int64(ParadiseMacWarInc))
 					if err != nil {
 						errlog.Printf("%s: failed to increment the bmc mac %s by %d, error: %s",
-							s.ID, bmcMac, inc, err)
+							s.ID, bmcMac, ParadiseMacWarInc, err)
 						continue
 					}
 					mac = strings.ToLower(mac)
@@ -1879,7 +1881,7 @@ func (s *EpSystem) discoverComponentEPEthInterfaces() {
 					ethIDAddr.MACAddress = mac
 					ethIDAddr.Description = "MAC computed from the BMC MAC via workaround"
 					s.EthNICInfo = append(s.EthNICInfo, ethIDAddr)
-					errlog.Printf("%s: workaround, mac %s derived from bmc mac %s by adding %d", s.ID, mac, bmcMac, inc)
+					errlog.Printf("%s: workaround, mac %s derived from bmc mac %s by adding %d", s.ID, mac, bmcMac, ParadiseMacWarInc)
 					foundMac = true
 					break
 				}
