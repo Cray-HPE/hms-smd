@@ -81,7 +81,7 @@ type ComponentSystemInfo struct {
 	Actions    *ComputerSystemActions `json:"Actions,omitempty"`
 	EthNICInfo []*EthernetNICInfo     `json:"EthernetNICInfo,omitempty"`
 	PowerCtlInfo
-	Controls   []*Control             `json:"Controls,omitempty"`
+	Controls []*Control `json:"Controls,omitempty"`
 }
 
 type ComponentManagerInfo struct {
@@ -142,10 +142,10 @@ type CrayPwrLimit struct {
 }
 
 type PwrCtlOEMHPE struct {
-	PowerLimit CrayPwrLimit     `json:"PowerLimit"`
-	PowerRegulationEnabled bool `json:"PowerRegulationEnabled"`
-	Status     string           `json:"Status"`
-	Target     string           `json:"Target"`
+	PowerLimit             CrayPwrLimit `json:"PowerLimit"`
+	PowerRegulationEnabled bool         `json:"PowerRegulationEnabled"`
+	Status                 string       `json:"Status"`
+	Target                 string       `json:"Target"`
 }
 
 type PwrCtlRelatedItem struct {
@@ -416,10 +416,10 @@ func (c *EpChassis) discoverLocalPhase2() {
 	// Check if we have something valid to insert into the data store
 	hmsType := base.GetHMSType(c.ID)
 	if (!base.IsHMSTypeContainer(hmsType) &&
-	    hmsType != base.MgmtSwitch &&
+		hmsType != base.MgmtSwitch &&
 		hmsType != base.MgmtHLSwitch &&
 		hmsType != base.CDUMgmtSwitch) ||
-	    c.Type != hmsType.String() {
+		c.Type != hmsType.String() {
 		errlog.Printf("Error: Bad xname ID ('%s') or Type ('%s' != %s) for %s\n",
 			c.ID, c.Type, hmsType.String(), c.ChassisURL)
 		c.LastStatus = VerificationFailed
@@ -935,7 +935,7 @@ type EpSystem struct {
 	// associate it with nodes (systems) so we record it here.
 	Assembly        *EpAssembly       `json:"Assembly"`
 	NodeAccelRisers EpNodeAccelRisers `json:"NodeAccelRisers"`
-	
+
 	// HpeDevice info comes from the Chassis level HPE OEM Links but we
 	// associate it with nodes (systems) so we record it here. We discover
 	// GPUs on HPE hardware as an HpeDevice.
@@ -1192,7 +1192,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 					}
 				}
 				control := Control{
-					URL: url.Oid,
+					URL:     url.Oid,
 					Control: rfControl,
 				}
 				s.Controls = append(s.Controls, &control)
@@ -1226,7 +1226,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 					if s.PowerInfo.OEM.HPE.Links.AccPowerService.Oid == "" {
 						break
 					}
-					
+
 					path = s.PowerInfo.OEM.HPE.Links.AccPowerService.Oid
 					hpeAccPowerServiceJSON, err := s.epRF.GETRelative(path)
 					if err != nil || hpeAccPowerServiceJSON == nil {
@@ -1747,6 +1747,7 @@ func (s *EpSystem) discoverComponentEPEthInterfaces() {
 	// or gigabyte nodes with R05 bios.
 	intelMACWorkaround := false
 	gigayteMACWorkaround := false
+	foxconnMACWorkarround := false
 	if len(s.ENetInterfaces.OIDs) == 0 {
 		// Intel Buchanan Pass, Wolf Pass, etc.
 		if strings.Contains(strings.ToLower(s.SystemRF.Model), "s2600") ||
@@ -1757,7 +1758,19 @@ func (s *EpSystem) discoverComponentEPEthInterfaces() {
 		} else if strings.Contains(strings.ToLower(s.SystemRF.Model), "r272-z30-00") {
 			// Gigabyte nodes
 			gigayteMACWorkaround = true
+
+		} else if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
+			if len(s.SystemRF.Model) > 0 {
+				rfModel := strings.ToLower(s.SystemRF.Model)
+				for matchStr, _ := range FoxconnModelArchMap {
+					if strings.Contains(rfModel, matchStr) {
+						foxconnMACWorkarround = true
+						break
+					}
+				}
+			}
 		}
+
 	}
 	// Use s2600 workaround as we seem to have this type of board and got
 	// zero node/system ethernet interfaces.  We need to get the lowest
@@ -1827,6 +1840,52 @@ func (s *EpSystem) discoverComponentEPEthInterfaces() {
 						idx++
 					}
 				}
+			}
+		}
+	}
+
+	if foxconnMACWorkarround {
+		var mgr *EpManager = nil
+		var ok bool = false
+		// Get the first manager linked to in the system object
+		for _, oid := range s.ManagedBy {
+			mgr, ok = s.epRF.Managers.OIDs[oid.Basename()]
+			if ok {
+				break
+			}
+		}
+		// If no link to ManagedBy Manager in system object, just pick
+		// the first manager (there is likely only one)
+		if !ok {
+			for _, m := range s.epRF.Managers.OIDs {
+				mgr = m
+				break
+			}
+		}
+		if mgr != nil {
+			foundMac := false
+			inc := 2
+			for _, eth := range mgr.ENetInterfaces.OIDs {
+				if eth.EtherIfaceRF.Id == "eth0" {
+					bmcMac := eth.EtherIfaceRF.MACAddress
+					mac, err := GetOffsetMACString(bmcMac, int64(inc))
+					if err != nil {
+						errlog.Printf("%s: failed to increment the bmc mac %s by %d, error: %s",
+							s.ID, bmcMac, inc, err)
+						continue
+					}
+					mac = strings.ToLower(mac)
+					ethIDAddr := new(EthernetNICInfo)
+					ethIDAddr.MACAddress = mac
+					ethIDAddr.Description = "MAC computed from the BMC MAC via workaround"
+					s.EthNICInfo = append(s.EthNICInfo, ethIDAddr)
+					errlog.Printf("%s: workaround, mac %s derived from bmc mac %s by adding %d", s.ID, mac, bmcMac, inc)
+					foundMac = true
+					break
+				}
+			}
+			if !foundMac {
+				errlog.Printf("%s: workaround, failed to find eth0 interface on the bmc", s.ID)
 			}
 		}
 	}
@@ -2159,7 +2218,7 @@ func (p *EpProcessor) discoverLocalPhase2() {
 			errlog.Printf("Using untrackable FRUID: %s\n", generatedFRUID)
 		}
 		p.FRUID = generatedFRUID
-		
+
 		// Discover processor arch
 		if p.Type == base.Processor.String() {
 			p.Arch = GetProcessorArch(p)
@@ -2345,7 +2404,7 @@ func (m *EpMemory) discoverLocalPhase2() {
 	if m.MemoryRF.Status.State == "" && m.MemoryRF.SerialNumber == "NO DIMM" {
 		m.MemoryRF.Status.State = "Absent"
 	}
-	
+
 	if m.MemoryRF.Status.State != "Absent" {
 		m.Status = "Populated"
 		m.State = base.StatePopulated.String()
