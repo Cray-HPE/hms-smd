@@ -324,8 +324,13 @@ func (c *EpChassis) discoverRemotePhase1() {
 	//
 	// Get link to Chassis' Power object
 	//
-	// For Foxconn Paradise, only Chassis/Baseboard_0/Power will have PowerSupplies so nothing special
-	// to do here for Foxconn Paradise since other chassis that come through here won't do anything.
+	// Foxconn Paradise note: The chassis Baseboard_0, PSU0, and PSU1 will
+	// have PowerSupplies in their Power endpoint.  The two in Baseboard_0
+	// are redundant with the one in PS0 and the one in PS1.
+	//
+	// Foxconn Paradise TODO:  Figure out if redundant power supplies in
+	// three different chassis is an issue or if we should only detect the
+	// ones in Baseboard_0
 	//
 
 	if c.ChassisRF.Power.Oid == "" {
@@ -1159,7 +1164,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 	nodeChassis, ok := s.epRF.Chassis.OIDs[s.SystemRF.Id]
 	if !ok {
 		if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
-			// Foxconn uses /Chassis/ProcessorModule_0 instead of /Chassis/<sysid> to find PowerCtl.
+			// Foxconn uses Chassis/ProcessorModule_0/Power to find PowerControl
 			nodeChassis, ok = s.epRF.Chassis.OIDs["ProcessorModule_0"]
 			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: chose alternative ProcessorModule_0 nodeChassis for Power\n")
 		} else {
@@ -1248,9 +1253,8 @@ func (s *EpSystem) discoverRemotePhase1() {
 				}
 			}
 
-			// Convert PowerConsumedWatts to int if not already - Needed for Foxconn Paradise
+			// Convert PowerConsumedWatts to an int if not already - Needed for Foxconn Paradise
 			if len(s.PowerInfo.PowerControl) > 0 && s.PowerInfo.PowerControl[0].PowerConsumedWatts != nil {
-				s.PowerInfo.PowerControl[0].PowerConsumedWatts = 255.678
 				switch v := s.PowerInfo.PowerControl[0].PowerConsumedWatts.(type) {
 				case float64:
 					// Convert to int
@@ -1338,8 +1342,9 @@ func (s *EpSystem) discoverRemotePhase1() {
 		//
 		// Get Chassis assembly (NodeAccelRiser) info if it exists
 		//
-		if (nodeChassis.ChassisRF.Assembly.Oid == "") || (IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1) {
-			// Foxconn Paradise does not have GPU assemblies
+		// Foxconn Paradise TODO:  Which Chassis to pull Assembly data?
+		//
+		if nodeChassis.ChassisRF.Assembly.Oid == "" {
 			//errlog.Printf("%s: No assembly obj found.\n", topURL)
 			s.NodeAccelRisers.Num = 0
 			s.NodeAccelRisers.OIDs = make(map[string]*EpNodeAccelRiser)
@@ -1420,7 +1425,8 @@ func (s *EpSystem) discoverRemotePhase1() {
 			s.HpeDevices.OIDs = make(map[string]*EpHpeDevice)
 
 			if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
-				// Foxconn uses /Chassis/Baseboard_0 instead of /Chassis/<sysid> to find NetworkAdapters.
+				// Every Chassis seems to have an identical NetworkAdapters for Foxconn
+				// Let's just use Chassis/Baseboard_0 for the system
 				nodeChassis, ok = s.epRF.Chassis.OIDs["Baseboard_0"]
 				errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: chose alternative Baseboard_0 nodeChassis for NetworkAdapters\n")
 				if !ok {
