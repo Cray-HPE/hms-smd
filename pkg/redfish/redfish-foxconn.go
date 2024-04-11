@@ -28,10 +28,11 @@ import (
 	"strings"
 )
 
-const FOXCONN_ETH_INT_DESCRIPTION     = "Foxconn NCSI Interface"
-const FOXCONN_PRIMARY_ETH_INT_SUFFIX  = "-primary_eth"
-const FOXCONN_PRIMARY_ETH_INT_PCIDID  = "0x6315"
-const FOXCONN_PRIMARY_ETH_INT_FW_NAME = "X550 FW Ver"
+const FOXCONN_ETH_INT_DESCRIPTION       = "Foxconn NCSI Interface"
+const FOXCONN_PRIMARY_ETH_INT_SUFFIX    = "-primary_eth"
+const FOXCONN_PRIMARY_ETH_INT_PCIDID_1  = "0x6315"
+const FOXCONN_PRIMARY_ETH_INT_PCIDID_2  = "0x1563"
+const FOXCONN_PRIMARY_ETH_INT_FW_NAME   = "X550 FW Ver"
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -296,7 +297,7 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 					ei.EtherIfaceRF.Id = "ncsi" + nm.Id + "-p" + p.Id + "-c" + fmt.Sprint(j)
 
 					// According to Foxconn, this is the only unique identifier for the primary ethernet
-					if nm.VersionId.PCIDID == FOXCONN_PRIMARY_ETH_INT_PCIDID {
+					if nm.VersionId.PCIDID == FOXCONN_PRIMARY_ETH_INT_PCIDID_1 || nm.VersionId.PCIDID == FOXCONN_PRIMARY_ETH_INT_PCIDID_2 {
 						// We append a unique string to the end of the ID so that we can identify the
 						// primary ethernet interface later.
 						ei.EtherIfaceRF.Id += FOXCONN_PRIMARY_ETH_INT_SUFFIX
