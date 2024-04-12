@@ -1893,7 +1893,6 @@ func (s *EpSystem) discoverComponentEPEthInterfaces() {
 					ethIDAddr.MACAddress = mac
 					ethIDAddr.Description = "MAC computed from the BMC MAC via workaround"
 					s.EthNICInfo = append(s.EthNICInfo, ethIDAddr)
-					s.MACAddr = ethIDAddr.MACAddress
 					errlog.Printf("%s: workaround, mac %s derived from bmc mac %s by adding %d", s.ID, mac, bmcMac, ParadiseMacWarInc)
 					foundMac = true
 					break
