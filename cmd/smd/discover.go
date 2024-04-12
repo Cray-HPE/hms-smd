@@ -212,7 +212,6 @@ func (s *SmD) updateFromRfEndpoint(rfEP *rf.RedfishEP) error {
 	var savedPw string
 	var savedUn string
 
-	s.LogAlways("<========== JW_DEBUG ==========> updateFromRfEndpoint: ep.ID=%s ep.DiscInfo.LastStatus=%s\n", ep.ID, ep.DiscInfo.LastStatus)
 	// Check if children should be updated.
 	if ep.DiscInfo.LastStatus == rf.EndpointTypeNotSupported ||
 		ep.DiscInfo.LastStatus == rf.EndpointNotEnabled {
@@ -338,7 +337,6 @@ func (s *SmD) updateFromRfEndpoint(rfEP *rf.RedfishEP) error {
 	s.discoveryMapRemove(ep.ID)
 	// Data looks good - store it
 	discoveredComps, err := s.db.UpdateAllForRFEndpoint(ep, ceps, hwlocs, comps, seps, ceis)
-	s.LogAlways("<========== JW_DEBUG ==========> DiscoverCompEthInterfaceArray: called updateFromRfEndpoint\n")
 	if err != nil {
 		// Unexpected error storing endpoint's data.
 		s.LogAlways("UpdateAllForRFEndpoint(%s): Fatal error storing: %s",
@@ -587,7 +585,6 @@ func (s *SmD) DiscoverCompEthInterfaceArray(ep *sm.RedfishEndpoint, ceps *sm.Com
 		for _, ei := range ethInfo {
 			mac := rf.NormalizeMACIfValid(ei.MACAddress)
 			pmac := rf.NormalizeMACIfValid(ei.PermanentMACAddress)
-			s.LogAlways("<========== JW_DEBUG ==========> DiscoverCompEthInterfaceArray: mac=%s pmac=%s description=%s\n", mac, pmac, ei.Description)
 			if mac == "" && pmac == "" {
 				continue
 			} else if mac == "" {
@@ -603,7 +600,6 @@ func (s *SmD) DiscoverCompEthInterfaceArray(ep *sm.RedfishEndpoint, ceps *sm.Com
 			if cep.ID == ep.ID && cei.ID == epMAC {
 				cei.IPAddrs = []sm.IPAddressMapping{{IPAddr: ep.IPAddr}}
 			}
-			s.LogAlways("<========== JW_DEBUG ==========> DiscoverCompEthInterfaceArray: cei=%+v\n", cei)
 			ceis = append(ceis, cei)
 		}
 	}
