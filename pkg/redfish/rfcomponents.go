@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright [2019-2023] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2019-2024] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -1419,10 +1419,18 @@ func (s *EpSystem) discoverRemotePhase1() {
 	//
 
 	if s.SystemRF.EthernetInterfaces.Oid == "" {
-		// TODO: Just try default path?
-		errlog.Printf("%s: No EthernetInterfaces found.\n", url)
 		s.ENetInterfaces.Num = 0
 		s.ENetInterfaces.OIDs = make(map[string]*EpEthInterface)
+
+		if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 &&
+			s.SystemRF.OEM != nil && s.SystemRF.OEM.InsydeNcsi != nil {
+			// Foxconn uses an entirely different hierarchy
+			errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverRemotePhase1: calling discoverFoxconnENetInterfaces\n")
+			discoverFoxconnENetInterfaces(s)
+		} else {
+			// TODO: Just try default path?
+			errlog.Printf("%s: No EthernetInterfaces found.\n", url)
+		}
 	} else {
 		path = s.SystemRF.EthernetInterfaces.Oid
 		url = s.epRF.FQDN + path
@@ -1451,11 +1459,13 @@ func (s *EpSystem) discoverRemotePhase1() {
 		}
 		s.ENetInterfaces.Num = len(ethInfo.Members)
 		s.ENetInterfaces.OIDs = make(map[string]*EpEthInterface)
+		errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverRemotePhase1: s.ENetInterfaces.Num=%d\n", s.ENetInterfaces.Num)
 
 		sort.Sort(ResourceIDSlice(ethInfo.Members))
 		for i, eoid := range ethInfo.Members {
 			eid := eoid.Basename()
 			s.ENetInterfaces.OIDs[eid] = NewEpEthInterface(s.epRF, s.OdataID, s.RedfishType, eoid, i)
+			errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverRemotePhase1: added s.ENetInterfaces.OIDs[%s]\n", eid)
 		}
 		s.ENetInterfaces.discoverRemotePhase1()
 	}
@@ -1726,6 +1736,7 @@ func (s *EpSystem) discoverComponentEPEthInterfaces() {
 	// Select default interface to use as main MAC address
 	ethID := s.epRF.getNodeSvcNetEthIfaceId(s)
 
+	errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces START: s.MACAddr=%s ethID=%s\n", s.MACAddr, ethID)
 	// Provide a brief summary of all attached ethernet interfaces
 	// Also, try to chose the main node MAC address.
 	s.EthNICInfo = make([]*EthernetNICInfo, 0, 1)
@@ -1742,19 +1753,23 @@ func (s *EpSystem) discoverComponentEPEthInterfaces() {
 		ethIDAddr.PermanentMACAddress = NormalizeMAC(
 			e.EtherIfaceRF.PermanentMACAddress,
 		)
+		errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces: ethIDAddr.Oid=%s ethIDAddr.MACAddress=%s e.BaseOdataID=%s ethID=%s\n", ethIDAddr.Oid, ethIDAddr.MACAddress, e.BaseOdataID, ethID)
 		if len(s.ENetInterfaces.OIDs) == 1 || e.BaseOdataID == ethID {
 			// Assign this MAC as the main address, matches default interface
 			// or is the only one.
 			if ethIDAddr.PermanentMACAddress != "" {
 				s.MACAddr = ethIDAddr.PermanentMACAddress
+				errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces: first set main addr to s.MACAddr=%s\n", s.MACAddr)
 				if ethIDAddr.PermanentMACAddress != ethIDAddr.MACAddress {
 					errlog.Printf("%s: %s PermanentMAC and MAC don't match.",
 						s.ID, ethID)
 				}
 			} else {
 				s.MACAddr = ethIDAddr.MACAddress
+				errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces: second set main addr to s.MACAddr=%s\n", s.MACAddr)
 			}
 		}
+		errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces: ethIDAddr=%+v\n", ethIDAddr)
 		s.EthNICInfo = append(s.EthNICInfo, ethIDAddr)
 	}
 	// No EthernetInterface objects found.  Uh oh.
@@ -1779,6 +1794,7 @@ func (s *EpSystem) discoverComponentEPEthInterfaces() {
 				rfModel := strings.ToLower(s.SystemRF.Model)
 				for matchStr, _ := range FoxconnModelArchMap {
 					if strings.Contains(rfModel, matchStr) {
+						errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces DETECTED WORKAROUND\n")
 						foxconnMACWorkarround = true
 						break
 					}
@@ -1862,6 +1878,7 @@ func (s *EpSystem) discoverComponentEPEthInterfaces() {
 	if foxconnMACWorkarround {
 		var mgr *EpManager = nil
 		var ok bool = false
+		errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces EXECUTING WORKAROUND\n")
 		// Get the first manager linked to in the system object
 		for _, oid := range s.ManagedBy {
 			mgr, ok = s.epRF.Managers.OIDs[oid.Basename()]
@@ -1903,6 +1920,7 @@ func (s *EpSystem) discoverComponentEPEthInterfaces() {
 			}
 		}
 	}
+	errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces END: s.MACAddr=%s\n", s.MACAddr)
 }
 
 // Sets up HMS state fields using Status/State/Health info from Redfish
@@ -2023,6 +2041,7 @@ func (es *EpEthInterfaces) discoverRemotePhase1() {
 func (ei *EpEthInterface) discoverRemotePhase1() {
 	rpath := ei.OdataID
 	url := ei.epRF.FQDN + rpath
+	errlog.Printf("<========== JW_DEBUG ==========> EpEthInterface.discoverRemotePhase1: url=%s\n", url)
 	etherURLJSON, err := ei.epRF.GETRelative(rpath)
 	if err != nil || etherURLJSON == nil {
 		ei.LastStatus = HTTPsGetFailed
@@ -2044,6 +2063,7 @@ func (ei *EpEthInterface) discoverRemotePhase1() {
 			return
 		}
 	}
+	errlog.Printf("<========== JW_DEBUG ==========> EpEthInterface.discoverRemotePhase1: ei.EtherIfaceRF=%v\n", ei.EtherIfaceRF)
 	if rfVerbose > 0 {
 		jout, _ := json.MarshalIndent(ei, "", "   ")
 		errlog.Printf("%s: %s\n", url, jout)

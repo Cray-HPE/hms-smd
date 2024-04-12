@@ -129,6 +129,7 @@ func (cei *CompEthInterfaceV2) ToV1() *CompEthInterface {
 
 // Allocate and initialize new CompEthInterfaceV2 struct, validating it.
 func NewCompEthInterfaceV2(desc, macAddr, compID string, ipAddrs []IPAddressMapping) (*CompEthInterfaceV2, error) {
+	errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces START: compID=%s macaddr=%s desc=%s\n", compID, macAddr, desc)
 	if macAddr == "" {
 		return nil, ErrCompEthInterfaceBadMAC
 	}
@@ -156,6 +157,7 @@ func NewCompEthInterfaceV2(desc, macAddr, compID string, ipAddrs []IPAddressMapp
 		}
 		cei.Type = base.GetHMSTypeString(cei.CompID)
 	}
+	errlog.Printf("<========== JW_DEBUG ==========> EpSystem.discoverComponentEPEthInterfaces START: cei=%+v\n", cei)
 	return cei, nil
 }
 
