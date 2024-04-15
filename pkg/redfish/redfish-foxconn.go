@@ -219,6 +219,10 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 	jsonData, err := s.epRF.GETRelative(path)
 	if err != nil || jsonData == nil {
 		s.LastStatus = HTTPsGetFailed
+		errlog.Printf("GET %s failed: %s (jsonData=%s)\n", url, err, jsonData)
+		if jsonData == nil {
+			errlog.Printf("jsonData is nil\n")
+		}
 		return
 	}
 	s.LastStatus = HTTPsGetOk
@@ -244,6 +248,10 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 		jsonData, err = s.epRF.GETRelative(path)
 		if err != nil || jsonData == nil {
 			s.LastStatus = HTTPsGetFailed
+			errlog.Printf("GET %s failed: %s (jsonData=%s)\n", url, err, jsonData)
+			if jsonData == nil {
+				errlog.Printf("jsonData is nil\n")
+			}
 			return
 		}
 		s.LastStatus = HTTPsGetOk
@@ -269,6 +277,10 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 			jsonData, err = s.epRF.GETRelative(path)
 			if err != nil || jsonData == nil {
 				s.LastStatus = HTTPsGetFailed
+				errlog.Printf("GET %s failed: %s (jsonData=%s)\n", url, err, jsonData)
+				if jsonData == nil {
+					errlog.Printf("jsonData is nil\n")
+				}
 				return
 			}
 			s.LastStatus = HTTPsGetOk
