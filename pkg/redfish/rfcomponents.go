@@ -261,18 +261,6 @@ func (c *EpChassis) discoverRemotePhase1() {
 		c.LastStatus = EndpointInvalid
 		return
 	}
-	if c.OdataID == "/redfish/v1/Chassis/ERoT_CPU_0" || c.OdataID == "/redfish/v1/Chassis/ERoT_CPU_1" {
-		// Foxconn workaround to avoid long BMC responses from these chassis.
-		// We do not pull anything useful from them so we can simply skip them
-		// until Foxconn has fixed the issue.
-		// We also have not yet discovered SystemRF.Manufacturer yet so can't
-		// check for FoxconnMfr.  No other manufacturer would have these
-		// chassis names though
-		c.LastStatus = RedfishSubtypeNoSupport
-		c.RedfishSubtype = RFSubtypeUnknown
-		errlog.Printf("Skipping Foxconn chassis %s", c.OdataID)
-		return
-	}
 	// Workaround - DST1372
 	if c.OdataID == "/redfish/v1/Chassis/RackMount/HSBackplane" {
 		c.LastStatus = RedfishSubtypeNoSupport
