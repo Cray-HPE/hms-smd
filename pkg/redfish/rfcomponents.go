@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright [2019-2023] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2019-2024] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -259,6 +259,18 @@ func (c *EpChassis) discoverRemotePhase1() {
 		errlog.Printf("Error: RedfishEP == nil for Chassis odataID: %s\n",
 			c.OdataID)
 		c.LastStatus = EndpointInvalid
+		return
+	}
+	if c.OdataID == "/redfish/v1/Chassis/ERoT_CPU_0" || c.OdataID == "/redfish/v1/Chassis/ERoT_CPU_1" {
+		// Foxconn workaround to avoid long BMC responses from these chassis.
+		// We do not pull anything useful from them so we can simply skip them
+		// until Foxconn has fixed the issue.
+		// We also have not yet discovered SystemRF.Manufacturer yet so can't
+		// check for FoxconnMfr.  No other manufacturer would have these
+		// chassis names though
+		c.LastStatus = RedfishSubtypeNoSupport
+		c.RedfishSubtype = RFSubtypeUnknown
+		errlog.Printf("Skipping Foxconn chassis %s", c.OdataID)
 		return
 	}
 	// Workaround - DST1372
@@ -1405,10 +1417,17 @@ func (s *EpSystem) discoverRemotePhase1() {
 	//
 
 	if s.SystemRF.EthernetInterfaces.Oid == "" {
-		// TODO: Just try default path?
-		errlog.Printf("%s: No EthernetInterfaces found.\n", url)
 		s.ENetInterfaces.Num = 0
 		s.ENetInterfaces.OIDs = make(map[string]*EpEthInterface)
+
+		if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 &&
+			s.SystemRF.OEM != nil && s.SystemRF.OEM.InsydeNcsi != nil {
+			// Foxconn uses an entirely different hierarchy
+			discoverFoxconnENetInterfaces(s)
+		} else {
+			// TODO: Just try default path?
+			errlog.Printf("%s: No EthernetInterfaces found.\n", url)
+		}
 	} else {
 		path = s.SystemRF.EthernetInterfaces.Oid
 		url = s.epRF.FQDN + path
