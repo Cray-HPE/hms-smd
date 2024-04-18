@@ -97,6 +97,9 @@ ENV HMS_CONFIG_PATH="/hms_config/hms_config.json"
 
 ENV SMD_CA_URI=""
 
+ENV SMD_PARADISE_MAC="true"
+ENV SMD_PARADISE_MAC_INC="2"
+
 # Copy the final binary
 COPY --from=builder /go/smd /usr/local/bin
 COPY --from=builder /go/smd-loader /usr/local/bin
