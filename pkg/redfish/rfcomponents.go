@@ -25,6 +25,7 @@ package rf
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -1196,7 +1197,8 @@ func (s *EpSystem) discoverRemotePhase1() {
 		//
 		// Get PowerControl Info if it exists
 		//
-		// Foxconn Paradise boards have a Controls entry but it is used for something entirely different so check and skip Foxconn
+		// Note: Foxconn Paradise boards have a Controls entry but it is used for
+		// something entirely different skip it here if this is a Foxconn board
 		//
 		if (nodeChassis.ChassisRF.Controls.Oid != "") && (IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) != 1) {
 			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: Found a Controls endpoint\n")
@@ -1268,23 +1270,25 @@ func (s *EpSystem) discoverRemotePhase1() {
 				}
 			}
 
-			// Convert PowerConsumedWatts to an int if not already - Needed for Foxconn Paradise
-			if len(s.PowerInfo.PowerControl) > 0 && s.PowerInfo.PowerControl[0].PowerConsumedWatts != nil {
-				switch v := s.PowerInfo.PowerControl[0].PowerConsumedWatts.(type) {
-				case float64:
-					// Convert to int
-					errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: float=%f\n", v)
-					s.PowerInfo.PowerControl[0].PowerConsumedWatts = int(v)
-					errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: converted from float = %d\n", s.PowerInfo.PowerControl[0].PowerConsumedWatts)
-				case int:
-					// noop - no conversion needed
-					errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: not converted v=%d\n", v)
-				default:
-					// unexpected type, set to zero
-					s.PowerInfo.PowerControl[0].PowerConsumedWatts = int(0)
-					errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: unknown type\n")
+			// Convert PowerConsumedWatts to an int if not already (it's an interface{}
+			// type that can support ints and floats) - Needed for Foxconn Paradise,
+			// perhaps others in the future
+			for _, pwrCtl := range s.PowerInfo.PowerControl {
+				if pwrCtl.PowerConsumedWatts != nil {
+					switch v := pwrCtl.PowerConsumedWatts.(type) {
+					case float64:	// Convert to int
+						errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: float=%f\n", v)
+						pwrCtl.PowerConsumedWatts = math.Round(v)
+						errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: converted from float = %d\n", pwrCtl.PowerConsumedWatts)
+					case int:		// noop - no conversion needed
+						errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: not converted v=%d\n", v)
+					default:		// unexpected type, set to zero
+						pwrCtl.PowerConsumedWatts = int(0)
+						errlog.Printf("ERROR: unexpected type/value '%T'/'%v' detected for PowerConsumedWatts, setting to 0\n", pwrCtl.PowerConsumedWatts, pwrCtl.PowerConsumedWatts)
+						errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: unknown type\n")
+					}
+					errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: pwrCtl=%+v\n", pwrCtl)
 				}
-				errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: s.PowerInfo.PowerControl[0]=%+v\n", s.PowerInfo.PowerControl[0])
 			}
 
 			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: s.PowerInfo=%+v\n", s.PowerInfo)

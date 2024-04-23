@@ -25,6 +25,7 @@ package rf
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"sort"
 	"strconv"
 
@@ -696,6 +697,28 @@ func (p *EpPower) discoverRemotePhase1() {
 			return
 		}
 	}
+
+	// Convert PowerOutputWatts to an int if not already (it's an interface{}
+	// type that can support ints and floats) - Needed for Foxconn Paradise,
+	// perhaps others in the future
+	for _, pSupply := range p.PowerRF.PowerSupplies {
+		if pSupply.PowerOutputWatts != nil {
+			switch v := pSupply.PowerOutputWatts.(type) {
+			case float64:	// Convert to int
+				errlog.Printf("<========== JW_DEBUG ==========> EpPower:discoverRemotePhase1: float=%f\n", v)
+				pSupply.PowerOutputWatts = math.Round(v)
+				errlog.Printf("<========== JW_DEBUG ==========> EpPower:discoverRemotePhase1: converted from float = %d\n", pSupply.PowerOutputWatts)
+			case int:		// noop - no conversion needed
+				errlog.Printf("<========== JW_DEBUG ==========> EpPower:discoverRemotePhase1: not converted v=%d\n", v)
+			default:		// unexpected type, set to zero
+				pSupply.PowerOutputWatts = int(0)
+				errlog.Printf("ERROR: unexpected type/value '%T'/'%v' detected for PowerOutputWatts, setting to 0\n", pSupply.PowerOutputWatts, pSupply.PowerOutputWatts)
+				errlog.Printf("<========== JW_DEBUG ==========> EpPower:discoverRemotePhase1: unknown type\n")
+			}
+			errlog.Printf("<========== JW_DEBUG ==========> EpPower:discoverRemotePhase1: pSupply=%+v\n", pSupply)
+		}
+	}
+
 	if rfVerbose > 0 {
 		jout, _ := json.MarshalIndent(p, "", "   ")
 		errlog.Printf("%s: %s\n", url, jout)
