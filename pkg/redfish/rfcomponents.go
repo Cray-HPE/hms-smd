@@ -234,7 +234,7 @@ func NewEpChassis(epRF *RedfishEP, odataID ResourceID, rawOrdinal int) *EpChassi
 	c.Ordinal = -1
 	c.RawOrdinal = rawOrdinal
 	c.epRF = epRF
-	errlog.Printf("<========== JW_DEBUG ==========> NewEpChassis: c.OdataID=%s c.RfEndpointID=%s c.RawOrdinal=%d c.epRF=%s\n", c.OdataID, c.RfEndpointID, c.RawOrdinal, c.epRF)
+	errlog.Printf("<========== JW_DEBUG ==========> NewEpChassis: c.OdataID=%s c.RfEndpointID=%s c.RawOrdinal=%d c.epRF=%s c.Type=%v c.RedfishType=%v\n", c.OdataID, c.RfEndpointID, c.RawOrdinal, c.epRF, c.Type, c.RedfishType)
 	return c
 }
 
@@ -336,6 +336,7 @@ func (c *EpChassis) discoverRemotePhase1() {
 	if c.ChassisRF.Model == "" {
 		c.ChassisRF.Model = c.ChassisRF.Name
 	}
+	errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: c.RedfishSubtype=%v c.ChassisRF.Model=%v\n", c.RedfishSubtype, c.ChassisRF.Model)
 
 	//
 	// Get link to Chassis' Power object
@@ -343,10 +344,6 @@ func (c *EpChassis) discoverRemotePhase1() {
 	// Foxconn Paradise note: The chassis Baseboard_0, PSU0, and PSU1 will
 	// have PowerSupplies in their Power endpoint.  The two in Baseboard_0
 	// are redundant with the one in PS0 and the one in PS1.
-	//
-	// Foxconn Paradise TODO:  Figure out if redundant power supplies in
-	// three different chassis is an issue or if we should only detect the
-	// ones in Baseboard_0
 	//
 
 	if c.ChassisRF.Power.Oid == "" {
@@ -429,7 +426,9 @@ func (c *EpChassis) discoverLocalPhase2() {
 	}
 	// There may be chassis types that are not supported.
 	c.Type = c.epRF.getChassisHMSType(c)
+	errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverLocalPhase2: c.OdataID=%v c.Type=%v\n", c.OdataID, c.Type)
 	if c.Type == base.HMSTypeInvalid.String() {
+		errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverLocalPhase2: NOT SUPPORTED TYPE\n")
 		c.LastStatus = RedfishSubtypeNoSupport
 		return
 	}
@@ -450,6 +449,7 @@ func (c *EpChassis) discoverLocalPhase2() {
 
 	// Check if we have something valid to insert into the data store
 	hmsType := base.GetHMSType(c.ID)
+	errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverLocalPhase2: hmsType=%v\n", hmsType)
 	if (!base.IsHMSTypeContainer(hmsType) &&
 		hmsType != base.MgmtSwitch &&
 		hmsType != base.MgmtHLSwitch &&
@@ -476,6 +476,7 @@ func (c *EpChassis) discoverComponentState() {
 	// HSNBoard here is a workaround, should never be legitmately absent.
 	if c.ChassisRF.Status.State != "Absent" ||
 		c.Type == base.HSNBoard.String() {
+		errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverComponentState: c.OdataID=%v c.Type=%v\n", c.OdataID, c.Type)
 
 		// Chassis status is too unpredictable and no clear what Ready
 		// means anyways since it's not a node or a controller.  So just
@@ -515,6 +516,7 @@ func (c *EpChassis) discoverComponentState() {
 		c.FRUID = generatedFRUID
 	} else {
 		c.Status = "Empty"
+		errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverComponentState: c.OdataID=%v c.Status=%v\n", c.OdataID, c.Status)
 		c.State = base.StateEmpty.String()
 		//the state of the component is known (empty), it is not locked, does not have an alert or warning, so therefore Flag defaults to OK.
 		c.Flag = base.FlagOK.String()
