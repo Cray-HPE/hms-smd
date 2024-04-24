@@ -1361,9 +1361,17 @@ func (s *EpSystem) discoverRemotePhase1() {
 		//
 		// Get Chassis assembly (NodeAccelRiser) info if it exists
 		//
-		// Foxconn Paradise TODO:  Which Chassis to pull Assembly data?
-		//
-		if nodeChassis.ChassisRF.Assembly.Oid == "" {
+		if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
+			// Assemblies are in Baseboard_0 for Foxconn Paradise
+			nodeChassis, ok = s.epRF.Chassis.OIDs["Baseboard_0"]
+			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: chose alternative Baseboard_0 nodeChassis for Assemblies\n")
+			if !ok {
+				nodeChassis = nil
+				errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: couldn't set Baseboard_0 nodeChassis\n")
+			}
+		}
+
+		if nodeChassis == nil || nodeChassis.ChassisRF.Assembly.Oid == "" {
 			//errlog.Printf("%s: No assembly obj found.\n", topURL)
 			s.NodeAccelRisers.Num = 0
 			s.NodeAccelRisers.OIDs = make(map[string]*EpNodeAccelRiser)
@@ -1382,6 +1390,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 				for i, assembly := range s.Assembly.AssemblyRF.Assemblies {
 					//Need to ignore any assembly that is not a GPUSubsystem
 					if assembly.PhysicalContext == NodeAccelRiserType {
+						errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: found GPU assembly: %v\n", assembly.Oid)
 						rID := assembly.Oid
 						s.NodeAccelRisers.OIDs[rID] = NewEpNodeAccelRiser(s.Assembly, ResourceID{rID}, i)
 						indexNodeAccelRisersOIDs++
@@ -1444,8 +1453,9 @@ func (s *EpSystem) discoverRemotePhase1() {
 			s.HpeDevices.OIDs = make(map[string]*EpHpeDevice)
 
 			if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
-				// Every Chassis seems to have an identical NetworkAdapters for Foxconn
-				// Let's just use Chassis/Baseboard_0 for the system
+				// nodeChassis should still be Baseboard_0 after discovering assemblies
+				// but let's play it safe in case of future changes between these two
+				// sets of code
 				nodeChassis, ok = s.epRF.Chassis.OIDs["Baseboard_0"]
 				errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: chose alternative Baseboard_0 nodeChassis for NetworkAdapters\n")
 				if !ok {
