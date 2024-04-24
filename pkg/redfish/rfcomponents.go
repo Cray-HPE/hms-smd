@@ -1271,7 +1271,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 					// the node and then run discover to pull this in
 					// See CASMHMS-XXXX
 					errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: SKIPPING TIMEED POWER QUERY\n")
-					errlog.Printf("Foxconn Paradise WARNING: Timed out querying Power endpoint at %s, will need to discover again after node power is on\n", url.Oid, err)
+					errlog.Printf("Foxconn Paradise WARNING: Timed out querying Power endpoint at %s, will need to discover again after node power is on\n", path)
 					goto FoxconnPowerTimedOut
 				}
 				s.LastStatus = HTTPsGetFailed
