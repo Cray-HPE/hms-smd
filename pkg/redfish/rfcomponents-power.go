@@ -678,13 +678,11 @@ func (p *EpPower) discoverRemotePhase1() {
 	powerJSON, err := p.epRF.GETRelative(path)
 	if err != nil || powerJSON == nil {
 		p.LastStatus = HTTPsGetFailed
-		errlog.Printf("<========== JW_DEBUG ==========> EpPower:discoverRemotePhase1: HTTPSGetFailed\n")
 		return
 	}
 	if rfDebug > 0 {
 		errlog.Printf("%s: %s\n", url, powerJSON)
 	}
-	errlog.Printf("<========== JW_DEBUG ==========> EpPower:discoverRemotePhase1: url=%s powerJSON=%s\n", url, powerJSON)
 	p.PowerRaw = &powerJSON
 	p.LastStatus = HTTPsGetOk
 
@@ -705,17 +703,12 @@ func (p *EpPower) discoverRemotePhase1() {
 		if pSupply.PowerOutputWatts != nil {
 			switch v := pSupply.PowerOutputWatts.(type) {
 			case float64:	// Convert to int
-				errlog.Printf("<========== JW_DEBUG ==========> EpPower:discoverRemotePhase1: float=%f\n", v)
 				pSupply.PowerOutputWatts = math.Round(v)
-				errlog.Printf("<========== JW_DEBUG ==========> EpPower:discoverRemotePhase1: converted from float = %d\n", pSupply.PowerOutputWatts)
 			case int:		// noop - no conversion needed
-				errlog.Printf("<========== JW_DEBUG ==========> EpPower:discoverRemotePhase1: not converted v=%d\n", v)
 			default:		// unexpected type, set to zero
 				pSupply.PowerOutputWatts = int(0)
 				errlog.Printf("ERROR: unexpected type/value '%T'/'%v' detected for PowerOutputWatts, setting to 0\n", pSupply.PowerOutputWatts, pSupply.PowerOutputWatts)
-				errlog.Printf("<========== JW_DEBUG ==========> EpPower:discoverRemotePhase1: unknown type\n")
 			}
-			errlog.Printf("<========== JW_DEBUG ==========> EpPower:discoverRemotePhase1: pSupply=%+v\n", pSupply)
 		}
 	}
 

@@ -234,7 +234,6 @@ func NewEpChassis(epRF *RedfishEP, odataID ResourceID, rawOrdinal int) *EpChassi
 	c.Ordinal = -1
 	c.RawOrdinal = rawOrdinal
 	c.epRF = epRF
-	errlog.Printf("<========== JW_DEBUG ==========> NewEpChassis: c.OdataID=%s c.RfEndpointID=%s c.RawOrdinal=%d c.epRF=%s c.Type=%v c.RedfishType=%v\n", c.OdataID, c.RfEndpointID, c.RawOrdinal, c.epRF, c.Type, c.RedfishType)
 	return c
 }
 
@@ -246,7 +245,6 @@ func NewEpChassis(epRF *RedfishEP, odataID ResourceID, rawOrdinal int) *EpChassi
 // run only after ALL components (managers, chassis, systems, etc.) have
 // completed phase 1 under a particular endpoint.
 func (cs *EpChassisSet) discoverRemotePhase1() {
-	errlog.Printf("<========== JW_DEBUG ==========> EpChassisSet:discoverRemotePhase1\n")
 	for _, c := range cs.OIDs {
 		c.discoverRemotePhase1()
 	}
@@ -311,7 +309,6 @@ func (c *EpChassis) discoverRemotePhase1() {
 		} else {
 			c.LastStatus = HTTPsGetFailed
 		}
-		errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: RETURNING EARLY\n")
 		return
 	}
 	if rfDebug > 0 {
@@ -319,8 +316,6 @@ func (c *EpChassis) discoverRemotePhase1() {
 	}
 	c.chassisURLRaw = &chassisURLJSON
 	c.LastStatus = HTTPsGetOk
-
-	errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: c.OdataID=%s c.ChassisURL=%s chassisURLJSON=%s\n", c.OdataID, c.ChassisURL, chassisURLJSON)
 
 	// Decode JSON into Chassis structure
 	if err := json.Unmarshal(*c.chassisURLRaw, &c.ChassisRF); err != nil {
@@ -346,21 +341,18 @@ func (c *EpChassis) discoverRemotePhase1() {
 	if c.ChassisRF.Model == "" {
 		c.ChassisRF.Model = c.ChassisRF.Name
 	}
-	errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: c.RedfishSubtype=%v c.ChassisRF.Model=%v\n", c.RedfishSubtype, c.ChassisRF.Model)
 
 	//
 	// Get link to Chassis' Power object
 	//
-	// Foxconn Paradise note: The chassis Baseboard_0, PSU0, and PSU1 will
-	// have PowerSupplies in their Power endpoint.  The two in Baseboard_0
-	// are redundant with the one in PS0 and the one in PS1. CASMHMS-6200
-	// is tracking this issue
+	// Foxconn Paradise note: We skip querying the Power endpoint for the
+	// ProcessorModule_0 chassis because it will timeout when the node is
+	// powered off.  There are no power supplies to find in it anyways.
 
-	if c.ChassisRF.Power.Oid == "" {
-		//errlog.Printf("%s: No Power obj found.\n", topURL)
-		errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: no power obj found topURL=%s\n", topURL)
+	if c.ChassisRF.Power.Oid == "" || c.OdataID == "/redfish/v1/Chassis/ProcessorModule_0" {
 		c.PowerSupplies.Num = 0
 		c.PowerSupplies.OIDs = make(map[string]*EpPowerSupply)
+		errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: skipping PS discover for %s chassis\n", c.OdataID)
 	} else {
 		//create a new EpPower object using chassis and Power.OID
 		c.Power = NewEpPower(c, ResourceID{c.ChassisRF.Power.Oid})
@@ -436,9 +428,7 @@ func (c *EpChassis) discoverLocalPhase2() {
 	}
 	// There may be chassis types that are not supported.
 	c.Type = c.epRF.getChassisHMSType(c)
-	errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverLocalPhase2: c.OdataID=%v c.Type=%v\n", c.OdataID, c.Type)
 	if c.Type == base.HMSTypeInvalid.String() {
-		errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverLocalPhase2: NOT SUPPORTED TYPE\n")
 		c.LastStatus = RedfishSubtypeNoSupport
 		return
 	}
@@ -459,7 +449,6 @@ func (c *EpChassis) discoverLocalPhase2() {
 
 	// Check if we have something valid to insert into the data store
 	hmsType := base.GetHMSType(c.ID)
-	errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverLocalPhase2: hmsType=%v\n", hmsType)
 	if (!base.IsHMSTypeContainer(hmsType) &&
 		hmsType != base.MgmtSwitch &&
 		hmsType != base.MgmtHLSwitch &&
@@ -486,7 +475,6 @@ func (c *EpChassis) discoverComponentState() {
 	// HSNBoard here is a workaround, should never be legitmately absent.
 	if c.ChassisRF.Status.State != "Absent" ||
 		c.Type == base.HSNBoard.String() {
-		errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverComponentState: c.OdataID=%v c.Type=%v\n", c.OdataID, c.Type)
 
 		// Chassis status is too unpredictable and no clear what Ready
 		// means anyways since it's not a node or a controller.  So just
@@ -526,7 +514,6 @@ func (c *EpChassis) discoverComponentState() {
 		c.FRUID = generatedFRUID
 	} else {
 		c.Status = "Empty"
-		errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverComponentState: c.OdataID=%v c.Status=%v\n", c.OdataID, c.Status)
 		c.State = base.StateEmpty.String()
 		//the state of the component is known (empty), it is not locked, does not have an alert or warning, so therefore Flag defaults to OK.
 		c.Flag = base.FlagOK.String()
@@ -1188,32 +1175,27 @@ func (s *EpSystem) discoverRemotePhase1() {
 	// Some info (Power, NodeAccelRiser, HSN NIC, etc) is at the chassis level
 	// but we associate it with nodes (systems). There will be a chassis URL
 	// with our system's id if there is info to get.
-	errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: s.SystemRF.Id=%s\n", s.SystemRF.Id)
 	nodeChassis, ok := s.epRF.Chassis.OIDs[s.SystemRF.Id]
 	if !ok {
 		if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
-			// Foxconn uses Chassis/ProcessorModule_0/Power to find PowerControl
+			// Foxconn Paradise uses the ProcessorModule_0 chassis to find the
+			// Power endpoint for power capping.
 			nodeChassis, ok = s.epRF.Chassis.OIDs["ProcessorModule_0"]
-			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: chose alternative ProcessorModule_0 nodeChassis for Power\n")
 		} else {
 			// Intel uses /Chassis/Rackmount/Baseboard instead of /Chassis/<sysid>.
 			// See if "Baseboard" exists.
 			nodeChassis, ok = s.epRF.Chassis.OIDs["Baseboard"]
-			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: chose alternative Baseboard nodeChassis\n")
 		}
 	}
 
 	if ok {
-		errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: ok\n")
-
 		//
 		// Get PowerControl Info if it exists
 		//
 		// Note: Foxconn Paradise boards have a Controls entry but it is used for
-		// something entirely different skip it here if this is a Foxconn board
+		// something entirely different so skip it here for Foxconn board
 		//
 		if (nodeChassis.ChassisRF.Controls.Oid != "") && (IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) != 1) {
-			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: Found a Controls endpoint\n")
 			path = nodeChassis.ChassisRF.Controls.Oid
 			ctlURLJSON, err := s.epRF.GETRelative(path)
 			if err != nil || ctlURLJSON == nil {
@@ -1263,25 +1245,21 @@ func (s *EpSystem) discoverRemotePhase1() {
 			pwrCtlURLJSON, err := s.epRF.GETRelative(path)
 			if err != nil || pwrCtlURLJSON == nil {
 				if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
-					// Currently when the node power is off the Power endpoint is
-					// not available and this call will timeout. We still need to
-					// do our best despite this so that we can eventually power on
-					// the node and then run discover to pull this in
-					// See CASMHMS-XXXX
-					errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: SKIPPING TIMEED POWER QUERY\n")
-					errlog.Printf("Foxconn Paradise WARNING: Timed out querying Power endpoint at %s, will need to discover again after node power is on\n", path)
-					s.PowerURL = path
+					// When the node power is off, the Power endpoint for the ProcessorModule_0
+					// chassis is not available and the s.epRF.GetRelative() call will have
+					// thus timed out. We still need to discover the node though so can't let
+					// this prevent that.  We'll lack the ability to power cap this node until
+					// it is rediscovered after it is powered on but at least it will have
+					// been discovered.
+					errlog.Printf("Foxconn Paradise WARNING: Timed out querying Power endpoint at %s, likely because node power is off.  Will need to discover again after node power is on\n", path)
 					goto FoxconnPowerTimedOut
 				}
 				s.LastStatus = HTTPsGetFailed
-				errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: HTTPsGetFailed\n")
 				return
 			}
 			s.PowerURL = path
 			s.LastStatus = HTTPsGetOk
 
-			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: s.PowerURL=%s\n", s.PowerURL)
-			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: pwrCtlURLJSON=%s\n", pwrCtlURLJSON)
 			// Decode JSON into PowerControl structure
 			if err := json.Unmarshal(pwrCtlURLJSON, &s.PowerInfo); err != nil {
 				if IsUnmarshalTypeError(err) {
@@ -1300,21 +1278,15 @@ func (s *EpSystem) discoverRemotePhase1() {
 				if pwrCtl.PowerConsumedWatts != nil {
 					switch v := pwrCtl.PowerConsumedWatts.(type) {
 					case float64:	// Convert to int
-						errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: float=%f\n", v)
 						pwrCtl.PowerConsumedWatts = math.Round(v)
-						errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: converted from float = %d\n", pwrCtl.PowerConsumedWatts)
 					case int:		// noop - no conversion needed
-						errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: not converted v=%d\n", v)
 					default:		// unexpected type, set to zero
 						pwrCtl.PowerConsumedWatts = int(0)
 						errlog.Printf("ERROR: unexpected type/value '%T'/'%v' detected for PowerConsumedWatts, setting to 0\n", pwrCtl.PowerConsumedWatts, pwrCtl.PowerConsumedWatts)
-						errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: unknown type\n")
 					}
-					errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: pwrCtl=%+v\n", pwrCtl)
 				}
 			}
 
-			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: s.PowerInfo=%+v\n", s.PowerInfo)
 			if s.PowerInfo.OEM != nil && s.PowerInfo.OEM.HPE != nil && len(s.PowerInfo.PowerControl) > 0 {
 				oemPwr := PwrCtlOEM{HPE: &PwrCtlOEMHPE{
 					Status: "Empty",
@@ -1373,12 +1345,8 @@ func (s *EpSystem) discoverRemotePhase1() {
 					break
 				}
 				s.PowerInfo.PowerControl[0].OEM = &oemPwr
-				errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: HPE OEM found\n")
 			}
 			s.PowerCtl = s.PowerInfo.PowerControl
-			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: s.PowerCtl=%+v\n", s.PowerCtl)
-		} else {
-			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: nodeChassis.ChassisRF.Controls.Oid was NULL\n")
 		}
 
 		FoxconnPowerTimedOut:
@@ -1389,10 +1357,8 @@ func (s *EpSystem) discoverRemotePhase1() {
 		if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
 			// Assemblies are in Baseboard_0 for Foxconn Paradise
 			nodeChassis, ok = s.epRF.Chassis.OIDs["Baseboard_0"]
-			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: chose alternative Baseboard_0 nodeChassis for Assemblies\n")
 			if !ok {
 				nodeChassis = nil
-				errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: couldn't set Baseboard_0 nodeChassis\n")
 			}
 		}
 
@@ -1401,7 +1367,6 @@ func (s *EpSystem) discoverRemotePhase1() {
 			s.NodeAccelRisers.Num = 0
 			s.NodeAccelRisers.OIDs = make(map[string]*EpNodeAccelRiser)
 		} else {
-			errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: trying to discover assemblies\n")
 			//create a new EpAssembly object using chassis and Assembly.OID
 			s.Assembly = NewEpAssembly(s, nodeChassis.ChassisRF.Assembly, nodeChassis.OdataID, nodeChassis.RedfishType)
 
@@ -1415,7 +1380,6 @@ func (s *EpSystem) discoverRemotePhase1() {
 				for i, assembly := range s.Assembly.AssemblyRF.Assemblies {
 					//Need to ignore any assembly that is not a GPUSubsystem
 					if assembly.PhysicalContext == NodeAccelRiserType {
-						errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: found GPU assembly: %v\n", assembly.Oid)
 						rID := assembly.Oid
 						s.NodeAccelRisers.OIDs[rID] = NewEpNodeAccelRiser(s.Assembly, ResourceID{rID}, i)
 						indexNodeAccelRisersOIDs++
@@ -1478,14 +1442,12 @@ func (s *EpSystem) discoverRemotePhase1() {
 			s.HpeDevices.OIDs = make(map[string]*EpHpeDevice)
 
 			if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
-				// nodeChassis should still be Baseboard_0 after discovering assemblies
-				// but let's play it safe in case of future changes between these two
-				// sets of code
+				// NetworkAdapters are in Baseboard_0 for Foxconn Paradise. nodeChassis
+				// should still be Baseboard_0 after discovering assemblies but let's
+				// play it safe in case of future code changes and set it again here
 				nodeChassis, ok = s.epRF.Chassis.OIDs["Baseboard_0"]
-				errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: chose alternative Baseboard_0 nodeChassis for NetworkAdapters\n")
 				if !ok {
 					nodeChassis = nil
-					errlog.Printf("<========== JW_DEBUG ==========> EpSystem:discoverRemotePhase1: couldn't set Baseboard_0 nodeChassis\n")
 				}
 			}
 
