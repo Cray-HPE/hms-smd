@@ -267,14 +267,23 @@ func (c *EpChassis) discoverRemotePhase1() {
 		c.LastStatus = EndpointInvalid
 		return
 	}
-	if c.OdataID == "/redfish/v1/Chassis/ERoT_CPU_0" || c.OdataID == "/redfish/v1/Chassis/ERoT_CPU_1" {
+	if  c.OdataID == "/redfish/v1/Chassis/ERoT_CPU_0" || c.OdataID == "/redfish/v1/Chassis/ERoT_CPU_1"  ||
+		c.OdataID == "/redfish/v1/Chassis/CPU_0"      || c.OdataID == "/redfish/v1/Chassis/CPU_1" {
+		// We skip these Foxconn Paradise chassis for the reasons below.  These
+		// chassis names should be unique to the Foxconn Paradise chassis.  We
+		// cannot look at SystemRF.Manufacturer because it hasn't yet been
+		// discovered.
+		//
+		// ERoT_CPU_*: We skip these as a workaround for the problem described
+		// in PRDIS-189.  This avoids long BMC responses from these chassis at
+		// times when they have a very long response time.  
 		// Foxconn workaround to avoid long BMC responses from these chassis.
-		// We do not pull anything useful from them so we can simply skip them
-		// until Foxconn has fixed the issue.
-		// We also have not yet discovered SystemRF.Manufacturer yet so can't
-		// check for FoxconnMfr.  No other manufacturer would have these
-		// chassis names though
-		// See CASMHMS-6192
+		// They may bea added back in in the future by way of CASMHMS-6192
+		//
+		// CPU_*: When node power is off, the Power endpoint is not available
+		// which causes long timeouts.  We skip these chassis to avoid this.
+		// Real CPU discovery actually happens in /Systems/system/Processors
+		//
 		c.LastStatus = RedfishSubtypeNoSupport
 		c.RedfishSubtype = RFSubtypeUnknown
 		errlog.Printf("Skipping Foxconn chassis %s", c.OdataID)
@@ -344,21 +353,10 @@ func (c *EpChassis) discoverRemotePhase1() {
 	//
 	// Foxconn Paradise note: The chassis Baseboard_0, PSU0, and PSU1 will
 	// have PowerSupplies in their Power endpoint.  The two in Baseboard_0
-	// are redundant with the one in PS0 and the one in PS1.
-	//
+	// are redundant with the one in PS0 and the one in PS1. CASMHMS-6200
+	// is tracking this issue
 
-	if c.OdataID == "/redfish/v1/Chassis/CPU_0" || c.OdataID == "/redfish/v1/Chassis/CPU_1" {
-		// Foxconn Paradise workaround
-		// Currently when the node power is off the Power endpoint is
-		// not available for these chassis and this call will timeout.
-		// We will skip this for the time being so that discovery with
-		// node power off doesn't take too long.
-		// See CASMHMS-XXXX
-		// Also see CASMHMS-6200
-		errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: SKIPPING CHASSIS POWER DISCOVER FOR %s\n", c.OdataID)
-		c.PowerSupplies.Num = 0
-		c.PowerSupplies.OIDs = make(map[string]*EpPowerSupply)
-	} else if c.ChassisRF.Power.Oid == "" {
+	if c.ChassisRF.Power.Oid == "" {
 		//errlog.Printf("%s: No Power obj found.\n", topURL)
 		errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: no power obj found topURL=%s\n", topURL)
 		c.PowerSupplies.Num = 0
