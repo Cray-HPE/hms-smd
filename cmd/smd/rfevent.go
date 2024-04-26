@@ -626,7 +626,7 @@ func AlertSystemPowerOnParser(s *SmD, pe *processedRFEvent) (*CompUpdate, error)
 	}
 	u.ComponentIDs = append(u.ComponentIDs, xname)
 	u.UpdateType = StateDataUpdate.String()
-	s.LogAlways("==========> JW_DEBUG <========== AlertSystemPowerOnParser: Setting %s to OFF\n", xname)
+	s.LogAlways("==========> JW_DEBUG <========== AlertSystemPowerOnParser: Setting %s to ON\n", xname)
 	u.State = base.StateOn.String()
 	return u, nil
 }
