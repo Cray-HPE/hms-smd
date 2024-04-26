@@ -1255,7 +1255,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 					// this prevent that.  We'll lack the ability to power cap this node until
 					// it is rediscovered after it is powered on but at least it will have
 					// been discovered.
-					errlog.Printf("Foxconn Paradise WARNING: Timed out querying Power endpoint at %s, likely because node power is off.  Will need to discover again after node power is on\n", path)
+					errlog.Printf("Foxconn Paradise WARNING: Timed out querying Power endpoint at %s when node power is %s.  Will need to discover again after node power is on\n", path, nodeChassis.ChassisRF.PowerState)
 					goto FoxconnPowerTimedOut
 				}
 				s.LastStatus = HTTPsGetFailed
