@@ -1071,6 +1071,7 @@ func (ep *RedfishEP) GetRootInfo() {
 func (ep *RedfishEP) GetSystems() string {
 	var path string
 
+	errlog.Printf("==========> JW_DEBUG <========== GetSystems: ENTERED for %s\n", ep.ID)
 	// This is the CMC special name. Skip discovering this node
 	// that shouldn't exist.
 	if base.GetHMSType(ep.ID) == base.NodeBMC &&
@@ -1097,6 +1098,7 @@ func (ep *RedfishEP) GetSystems() string {
 		if rfDebug > 0 {
 			errlog.Printf("%s: %s\n", ep.FQDN+path, systemsJSON)
 		}
+		errlog.Printf("==========> JW_DEBUG <========== GetSystems: path=%s\n", ep.FQDN+path)
 		ep.systemsRaw = &systemsJSON
 		ep.DiscInfo.UpdateLastStatusWithTS(HTTPsGetOk)
 

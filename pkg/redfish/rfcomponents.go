@@ -352,11 +352,9 @@ func (c *EpChassis) discoverRemotePhase1() {
 	if c.ChassisRF.Power.Oid == "" || c.OdataID == "/redfish/v1/Chassis/ProcessorModule_0" {
 		c.PowerSupplies.Num = 0
 		c.PowerSupplies.OIDs = make(map[string]*EpPowerSupply)
-		errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: skipping PS discover for %s chassis\n", c.OdataID)
 	} else {
 		//create a new EpPower object using chassis and Power.OID
 		c.Power = NewEpPower(c, ResourceID{c.ChassisRF.Power.Oid})
-		errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: found power obj=%s topURL=%s\n", c.ChassisRF.Power.Oid, topURL)
 		//retrieve the Power RF
 		c.Power.discoverRemotePhase1()
 		//discover any PowerSupplies
@@ -365,7 +363,6 @@ func (c *EpChassis) discoverRemotePhase1() {
 			if c.Power.PowerRF.PowerSuppliesOCount > 0 && c.Power.PowerRF.PowerSuppliesOCount != len(c.Power.PowerRF.PowerSupplies) {
 				errlog.Printf("%s: PowerSupplies@odata.count != PowerSupplies array len\n", url)
 			} else {
-				errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: discovering power supplies\n")
 				c.PowerSupplies.Num = len(c.Power.PowerRF.PowerSupplies)
 				c.PowerSupplies.OIDs = make(map[string]*EpPowerSupply)
 				//FIX: this will not result in the PowerSupplies being sorted
@@ -377,8 +374,6 @@ func (c *EpChassis) discoverRemotePhase1() {
 				//invoke the series of discoverRemotePhase1 calls for each PowerSupply
 				c.PowerSupplies.discoverRemotePhase1()
 			}
-		} else {
-			errlog.Printf("<========== JW_DEBUG ==========> EpChassis:discoverRemotePhase1: no power supplies discovered!!!!\n")
 		}
 
 	}
@@ -1051,6 +1046,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 	path := s.OdataID
 	url := s.epRF.FQDN + path
 	topURL := url
+	errlog.Printf("==========> JW_DEBUG <========== EpSystem:discoverRemotePhase1: ENTERED for %s\n", path)
 
 	// If the RF health status is 'Starting' then the hwinv info might
 	// still be loading from BIOS. Keep checking. This could take ~45
@@ -1242,6 +1238,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 		}
 		if nodeChassis.ChassisRF.Power.Oid != "" {
 			path = nodeChassis.ChassisRF.Power.Oid
+			errlog.Printf("==========> JW_DEBUG <========== EpSystem:discoverRemotePhase1: discovering %s\n", path)
 			pwrCtlURLJSON, err := s.epRF.GETRelative(path)
 			if err != nil || pwrCtlURLJSON == nil {
 				if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
