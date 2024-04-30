@@ -842,7 +842,7 @@ func (s *SmD) doUpdateCompHWInv(cep *sm.ComponentEndpoint, ep *rf.RedfishEP) err
 				cep.ID, err)
 			return err
 		}
-		// Discover harware inventory from redfish data
+		// Discover hardware inventory from redfish data
 		hwlocs, err := s.DiscoverHWInvByLocArray(ep)
 		if err != nil {
 			if err == base.ErrHMSTypeInvalid || err == base.ErrHMSTypeUnsupported {
