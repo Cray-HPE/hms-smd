@@ -199,7 +199,9 @@ stages:
                                       min: 1
                                     pattern: "[0-9]+|\
 bond[0-9]+|\
-usb[0-9]+"
+usb[0-9]+|\
+eth[0-9]+|\
+ncsi[0-9]+|"
                                   "@odata.id":
                                     type: str
                                     required: False
@@ -273,7 +275,8 @@ usb[0-9]+"
 [0-9]+|\
 HPCNet[0-9]+|\
 ManagementEthernet|\
-DE[0-9A-Za-z]+"
+DE[0-9A-Za-z]+\
+ncsi[0-9]+-p[0-9]+-c[0-9]+(-primary_eth)?"
                                   "@odata.id":
                                     type: str
                                     required: False
