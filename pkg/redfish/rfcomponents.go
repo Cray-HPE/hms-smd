@@ -267,20 +267,20 @@ func (c *EpChassis) discoverRemotePhase1() {
 	}
 	if  c.OdataID == "/redfish/v1/Chassis/ERoT_CPU_0" || c.OdataID == "/redfish/v1/Chassis/ERoT_CPU_1"  ||
 		c.OdataID == "/redfish/v1/Chassis/CPU_0"      || c.OdataID == "/redfish/v1/Chassis/CPU_1" {
-		// We skip these Foxconn Paradise chassis for the reasons below.  These
-		// chassis names should be unique to the Foxconn Paradise chassis.  We
-		// cannot look at SystemRF.Manufacturer because it hasn't yet been
-		// discovered.
+		// We skip these Foxconn Paradise chassis for the reasons below.
+		// We cannot look at SystemRF.Manufacturer to skip them because it
+		// hasn't yet been discovered, so just skip if the names match. The
+		// names should be unique to Foxconn Paradise.
 		//
 		// ERoT_CPU_*: We skip these as a workaround for the problem described
 		// in PRDIS-189.  This avoids long BMC responses from these chassis at
-		// times when they have a very long response time.  
-		// Foxconn workaround to avoid long BMC responses from these chassis.
-		// They may bea added back in in the future by way of CASMHMS-6192
+		// times when they have a very long response time.  They may bea added
+		// back in the future by way of CASMHMS-6192
 		//
 		// CPU_*: When node power is off, the Power endpoint is not available
 		// which causes long timeouts.  We skip these chassis to avoid this.
 		// Real CPU discovery actually happens in /Systems/system/Processors
+		// and we get the powercapping Power endpoint via Processor_Module_0
 		//
 		c.LastStatus = RedfishSubtypeNoSupport
 		c.RedfishSubtype = RFSubtypeUnknown
@@ -347,7 +347,8 @@ func (c *EpChassis) discoverRemotePhase1() {
 	//
 	// Foxconn Paradise note: We skip querying the Power endpoint for the
 	// ProcessorModule_0 chassis because it will timeout when the node is
-	// powered off.  There are no power supplies to find in it anyways.
+	// powered off.  We will instead make this query as part of Systems
+	// discovery.  There are no power supplies to find in it either.
 
 	if c.ChassisRF.Power.Oid == "" || c.OdataID == "/redfish/v1/Chassis/ProcessorModule_0" {
 		c.PowerSupplies.Num = 0
@@ -1046,14 +1047,11 @@ func (s *EpSystem) discoverRemotePhase1() {
 	path := s.OdataID
 	url := s.epRF.FQDN + path
 	topURL := url
-	errlog.Printf("==========> JW_DEBUG <========== EpSystem:discoverRemotePhase1: ENTERED for %s path=%v\n", path, path)
 
 	// If the RF health status is 'Starting' then the hwinv info might
 	// still be loading from BIOS. Keep checking. This could take ~45
 	// seconds. We'll stop waiting after 60 seconds.
 	for retry := 0; retry <= 6; retry++ {
-		errlog.Printf("==========> JW_DEBUG <========== EpSystem:discoverRemotePhase1: retry=%d\n", retry)
-		// JW_TODO: Maybe insert sleep here for Paradise if Power not available quickly enough
 		if retry != 0 {
 			time.Sleep(10 * time.Second)
 		}
@@ -1173,10 +1171,8 @@ func (s *EpSystem) discoverRemotePhase1() {
 	// Some info (Power, NodeAccelRiser, HSN NIC, etc) is at the chassis level
 	// but we associate it with nodes (systems). There will be a chassis URL
 	// with our system's id if there is info to get.
-	errlog.Printf("==========> JW_DEBUG <========== EpSystem:discoverRemotePhase1: s.SystemRF.Id=%v\n", s.SystemRF.Id)
 	nodeChassis, ok := s.epRF.Chassis.OIDs[s.SystemRF.Id]
 	if !ok {
-		errlog.Printf("==========> JW_DEBUG <========== EpSystem:discoverRemotePhase1: was not ok\n")
 		if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
 			// Foxconn Paradise uses the ProcessorModule_0 chassis to find the
 			// Power endpoint for power capping.
@@ -1187,15 +1183,13 @@ func (s *EpSystem) discoverRemotePhase1() {
 			nodeChassis, ok = s.epRF.Chassis.OIDs["Baseboard"]
 		}
 	}
-	errlog.Printf("==========> JW_DEBUG <========== EpSystem:discoverRemotePhase1: ok=%v\n", ok)
 
 	if ok {
-		errlog.Printf("==========> JW_DEBUG <========== EpSystem:discoverRemotePhase1: was ok!\n")
 		//
 		// Get PowerControl Info if it exists
 		//
 		// Note: Foxconn Paradise boards have a Controls entry but it is used for
-		// something entirely different so skip it here for Foxconn board
+		// something entirely different so skip it here for Foxconn
 		//
 		if (nodeChassis.ChassisRF.Controls.Oid != "") && (IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) != 1) {
 			path = nodeChassis.ChassisRF.Controls.Oid
@@ -1242,19 +1236,21 @@ func (s *EpSystem) discoverRemotePhase1() {
 				s.Controls = append(s.Controls, &control)
 			}
 		}
-		errlog.Printf("==========> JW_DEBUG <========== EpSystem:discoverRemotePhase1: nodeChassis.ChassisRF.Power.Oid=%v\n", nodeChassis.ChassisRF.Power.Oid)
 		if nodeChassis.ChassisRF.Power.Oid != "" {
 			path = nodeChassis.ChassisRF.Power.Oid
-			errlog.Printf("==========> JW_DEBUG <========== EpSystem:discoverRemotePhase1: discovering %s\n", path)
 			pwrCtlURLJSON, err := s.epRF.GETRelative(path)
 			if err != nil || pwrCtlURLJSON == nil {
 				if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
 					// When the node power is off, the Power endpoint for the ProcessorModule_0
-					// chassis is not available and the s.epRF.GetRelative() call will have
-					// thus timed out. We still need to discover the node though so can't let
-					// this prevent that.  We'll lack the ability to power cap this node until
+					// chassis is not available and the s.epRF.GetRelative() call will time out.
+					// We cannot treat this as a fatal error because we still need to discover
+					// the rest of the node. We'll lack the ability to power cap this node until
 					// it is rediscovered after it is powered on but at least it will have
-					// been discovered.
+					// been discovered.  This rediscovery will occur when the node is eventually
+					// powered on.
+					//
+					// Yes, the goto is ugly but we went down this route so as to not have to
+					// completely reorganize the code to handle this special case.
 					errlog.Printf("Foxconn Paradise WARNING: Timed out querying Power endpoint at %s when node power is %s.  Will need to discover again after node power is on\n", path, nodeChassis.ChassisRF.PowerState)
 					goto FoxconnPowerTimedOut
 				}
@@ -1354,7 +1350,6 @@ func (s *EpSystem) discoverRemotePhase1() {
 		}
 
 		FoxconnPowerTimedOut:
-		errlog.Printf("==========> JW_DEBUG <========== EpSystem:discoverRemotePhase1: done discovering Power\n")
 
 		//
 		// Get Chassis assembly (NodeAccelRiser) info if it exists

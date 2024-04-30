@@ -1083,7 +1083,6 @@ func (ep *RedfishEP) GetSystems() string {
 	} else {
 		path = ep.OdataID + "/Systems"
 	}
-	errlog.Printf("==========> JW_DEBUG <========== GetSystems: ENTERED for %s path=%s\n", ep.ID, path)
 	systemsJSON, err := ep.GETRelative(path)
 	if err != nil && !base.ControllerHasSystemsStr(ep.Type) {
 		// Don't expect systems, so if the collection is missing, just
@@ -1098,7 +1097,6 @@ func (ep *RedfishEP) GetSystems() string {
 		if rfDebug > 0 {
 			errlog.Printf("%s: %s\n", ep.FQDN+path, systemsJSON)
 		}
-		errlog.Printf("==========> JW_DEBUG <========== GetSystems: path=%s\n", ep.FQDN+path)
 		ep.systemsRaw = &systemsJSON
 		ep.DiscInfo.UpdateLastStatusWithTS(HTTPsGetOk)
 
@@ -1124,9 +1122,7 @@ func (ep *RedfishEP) GetSystems() string {
 			sID := sysOID.Basename()
 			ep.Systems.OIDs[sID] = NewEpSystem(ep, sysOID, i)
 		}
-		errlog.Printf("==========> JW_DEBUG <========== GetSystems: calling ep.Systems.discoverRemotePhase1\n")
 		ep.Systems.discoverRemotePhase1()
-		errlog.Printf("==========> JW_DEBUG <========== GetSystems: returned from ep.Systems.discoverRemotePhase1\n")
 	}
 	return HTTPsGetOk
 }

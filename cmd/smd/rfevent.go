@@ -426,10 +426,8 @@ func powerStateCMM(s *SmD, pe *processedRFEvent,
 	u.UpdateType = StateDataUpdate.String()
 	switch op {
 	case ResourceOn:
-		s.LogAlways("==========> JW_DEBUG <========== powerStateCMM: Setting %s to ON\n", xname)
 		u.State = base.StateOn.String()
 	case ResourceOff:
-		s.LogAlways("==========> JW_DEBUG <========== powerStateCMM: Setting %s to OFF\n", xname)
 		u.State = base.StateOff.String()
 	default:
 		// Should never happen.
@@ -469,24 +467,20 @@ func powerStateNC(s *SmD, pe *processedRFEvent,
 	xname string,
 	op ResourceOp,
 ) (*CompUpdate, error) {
-	s.LogAlways("==========> JW_DEBUG <========== powerStateNC: ENTERED\n")
 	u := new(CompUpdate)
 	u.ComponentIDs = append(u.ComponentIDs, xname)
 	u.UpdateType = StateDataUpdate.String()
 	switch op {
 	case ResourceOn:
-		s.LogAlways("==========> JW_DEBUG <========== powerStateNC: Setting %s state to ON\n", xname)
 		u.State = base.StateOn.String()
 		// Update hwinv for nodes
 		if base.GetHMSType(xname) == base.Node {
 			cep, ep, err := s.getCompEPInfo(xname)
 			if err == nil {
-				s.LogAlways("==========> JW_DEBUG <========== powerStateNC: Calling GoRoutine s.doUpdateCompHWInv\n")
 				go s.doUpdateCompHWInv(cep, ep)
 			}
 		}
 	case ResourceOff:
-		s.LogAlways("==========> JW_DEBUG <========== powerStateNC: Setting %s state to OFF\n", xname)
 		u.State = base.StateOff.String()
 	}
 	return u, nil
@@ -502,10 +496,8 @@ func powerStateRC(s *SmD, pe *processedRFEvent,
 	u.UpdateType = StateDataUpdate.String()
 	switch op {
 	case ResourceOn:
-		s.LogAlways("==========> JW_DEBUG <========== powerStateRC: Setting %s state to ON\n", xname)
 		u.State = base.StateOn.String()
 	case ResourceOff:
-		s.LogAlways("==========> JW_DEBUG <========== powerStateRC: Setting %s state to OFF\n", xname)
 		u.State = base.StateOff.String()
 	}
 	return u, nil
@@ -521,10 +513,8 @@ func powerStateCabPDUController(s *SmD, pe *processedRFEvent,
 	u.UpdateType = StateDataUpdate.String()
 	switch op {
 	case ResourceOn:
-		s.LogAlways("==========> JW_DEBUG <========== powerStateCabPDUController: Setting %s state to ON\n", xname)
 		u.State = base.StateOn.String()
 	case ResourceOff:
-		s.LogAlways("==========> JW_DEBUG <========== powerStateCabPDUController: Setting %s state to OFF\n", xname)
 		u.State = base.StateOff.String()
 	}
 	return u, nil
@@ -607,7 +597,6 @@ func generateRcChildIDs(s *SmD, xname string, op ResourceOp) []string {
 //                     System (i.e. node) powered ON.
 //                     Id in OriginOfCondition (though likely single node).
 func AlertSystemPowerOnParser(s *SmD, pe *processedRFEvent) (*CompUpdate, error) {
-	s.LogAlways("==========> JW_DEBUG <========== AlertSystemPowerOnParser: ENTERED\n")
 	u := new(CompUpdate)
 	xname, err := s.getIDForURI(pe.RfEndppointID, pe.Origin)
 	if err != nil {
@@ -615,18 +604,15 @@ func AlertSystemPowerOnParser(s *SmD, pe *processedRFEvent) (*CompUpdate, error)
 	} else if xname == "" {
 		return nil, ErrSmMsgNoID
 	}
-	s.LogAlways("==========> JW_DEBUG <========== AlertSystemPowerOnParser: xname=%s\n", xname)
 	// Update hwinv for nodes
 	if base.GetHMSType(xname) == base.Node {
 		cep, ep, err := s.getCompEPInfo(xname)
 		if err == nil {
-			s.LogAlways("==========> JW_DEBUG <========== AlertSystemPowerOnParser: Calling GoRoutine s.doUpdateCompHWInv\n")
 			go s.doUpdateCompHWInv(cep, ep)
 		}
 	}
 	u.ComponentIDs = append(u.ComponentIDs, xname)
 	u.UpdateType = StateDataUpdate.String()
-	s.LogAlways("==========> JW_DEBUG <========== AlertSystemPowerOnParser: Setting %s to ON\n", xname)
 	u.State = base.StateOn.String()
 	return u, nil
 }
@@ -660,7 +646,6 @@ func AlertSystemPowerParser(s *SmD, pe *processedRFEvent) (*CompUpdate, error) {
 		cep *sm.ComponentEndpoint
 		ep  *rf.RedfishEP
 	)
-	s.LogAlways("==========> JW_DEBUG <========== AlertSystemPowerParser: ENTERED\n")
 
 	// Parse the arguments. Arg1 should be the URI for the component,
 	// and Arg2 the state. But take them in either order. And if there
@@ -728,14 +713,11 @@ func AlertSystemPowerParser(s *SmD, pe *processedRFEvent) (*CompUpdate, error) {
 	u.UpdateType = StateDataUpdate.String()
 	switch op {
 	case ResourceOn:
-		s.LogAlways("==========> JW_DEBUG <========== AlertSystemPowerParser: Setting %s to ON\n", xname)
 		u.State = base.StateOn.String()
 		if base.GetHMSType(xname) == base.Node {
-			s.LogAlways("==========> JW_DEBUG <========== AlertSystemPowerParser: Calling GoRoutine s.doUpdateCompHWInv for ON\n")
 			go s.doUpdateCompHWInv(cep, ep)
 		}
 	case ResourceOff:
-		s.LogAlways("==========> JW_DEBUG <========== AlertSystemPowerParser: Setting %s to OFF\n", xname)
 		u.State = base.StateOff.String()
 	}
 	return u, nil
@@ -841,14 +823,12 @@ func (s *SmD) getCompEPState(cep *sm.ComponentEndpoint, ep *rf.RedfishEP) (strin
 //                     the HW Inventory data for the Component with info
 //                     gathered.
 func (s *SmD) doUpdateCompHWInv(cep *sm.ComponentEndpoint, ep *rf.RedfishEP) error {
-	s.LogAlways("==========> JW_DEBUG <========== doUpdateCompHWInv: ENTERED\n")
 	if cep == nil || ep == nil {
 		return ErrSmMsgNoEP
 	}
 	// Update the node info under the redfish endpoint
 	if base.GetHMSType(cep.ID) == base.Node {
 		// Read from redfish
-		s.LogAlways("==========> JW_DEBUG <========== doUpdateCompHWInv: calling ep.GetSystems\n")
 		status := ep.GetSystems()
 		if status != rf.HTTPsGetOk {
 			s.Log(LOG_INFO, "doUpdateCompHWInv(%s): Failed to get system info: %s",
