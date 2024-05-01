@@ -263,6 +263,28 @@ func (c *EpChassis) discoverRemotePhase1() {
 		c.LastStatus = EndpointInvalid
 		return
 	}
+	if  c.OdataID == "/redfish/v1/Chassis/ERoT_CPU_0" || c.OdataID == "/redfish/v1/Chassis/ERoT_CPU_1"  ||
+		c.OdataID == "/redfish/v1/Chassis/CPU_0"      || c.OdataID == "/redfish/v1/Chassis/CPU_1" {
+		// We skip these Foxconn Paradise chassis for the reasons below.
+		// We cannot look at SystemRF.Manufacturer to skip them because it
+		// hasn't yet been discovered, so just skip if the names match. The
+		// names should be unique to Foxconn Paradise.
+		//
+		// ERoT_CPU_*: We skip these as a workaround for the problem described
+		// in PRDIS-189.  This avoids long BMC responses from these chassis at
+		// times when they have a very long response time.  They may bea added
+		// back in the future by way of CASMHMS-6192
+		//
+		// CPU_*: When node power is off, the Power endpoint is not available
+		// which causes long timeouts.  We skip these chassis to avoid this.
+		// Real CPU discovery actually happens in /Systems/system/Processors
+		// and we get the powercapping Power endpoint via Processor_Module_0
+		//
+		c.LastStatus = RedfishSubtypeNoSupport
+		c.RedfishSubtype = RFSubtypeUnknown
+		errlog.Printf("Skipping Foxconn chassis %s", c.OdataID)
+		return
+	}
 	// Workaround - DST1372
 	if c.OdataID == "/redfish/v1/Chassis/RackMount/HSBackplane" {
 		c.LastStatus = RedfishSubtypeNoSupport
