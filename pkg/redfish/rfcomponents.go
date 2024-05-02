@@ -265,8 +265,7 @@ func (c *EpChassis) discoverRemotePhase1() {
 		c.LastStatus = EndpointInvalid
 		return
 	}
-	if  c.OdataID == "/redfish/v1/Chassis/ERoT_CPU_0" || c.OdataID == "/redfish/v1/Chassis/ERoT_CPU_1"  ||
-		c.OdataID == "/redfish/v1/Chassis/CPU_0"      || c.OdataID == "/redfish/v1/Chassis/CPU_1" {
+	if  c.OdataID == "/redfish/v1/Chassis/ERoT_CPU_0" || c.OdataID == "/redfish/v1/Chassis/ERoT_CPU_1" {
 		// We skip these Foxconn Paradise chassis for the reasons below.
 		// We cannot look at SystemRF.Manufacturer to skip them because it
 		// hasn't yet been discovered, so just skip if the names match. The
@@ -276,11 +275,6 @@ func (c *EpChassis) discoverRemotePhase1() {
 		// in PRDIS-189.  This avoids long BMC responses from these chassis at
 		// times when they have a very long response time.  They may bea added
 		// back in the future by way of CASMHMS-6192
-		//
-		// CPU_*: When node power is off, the Power endpoint is not available
-		// which causes long timeouts.  We skip these chassis to avoid this.
-		// Real CPU discovery actually happens in /Systems/system/Processors
-		// and we get the powercapping Power endpoint via Processor_Module_0
 		//
 		c.LastStatus = RedfishSubtypeNoSupport
 		c.RedfishSubtype = RFSubtypeUnknown
@@ -345,12 +339,14 @@ func (c *EpChassis) discoverRemotePhase1() {
 	//
 	// Get link to Chassis' Power object
 	//
-	// Foxconn Paradise note: We skip querying the Power endpoint for the
-	// ProcessorModule_0 chassis because it will timeout when the node is
-	// powered off.  We will instead make this query as part of Systems
-	// discovery.  There are no power supplies to find in it either.
+	// Foxconn Paradise note: This block of code is only useful discovering
+	// power supplies.  On this platform, the Baseboard_0 chassis is the only
+	// chassis we need to look at to discover them.  The PSU0 and PSU1 chassis
+	// contain redundant data.  For power capping, we query the Power endpoint
+	// in the Processor_Module_0 chassis during the Systems discovery phase.
+	//
 
-	if c.ChassisRF.Power.Oid == "" || c.OdataID == "/redfish/v1/Chassis/ProcessorModule_0" {
+	if c.ChassisRF.Power.Oid == "" || (isFoxconnChassis(c.OdataID) && c.OdataID != "/redfish/v1/Chassis/Baseboard_0") {
 		c.PowerSupplies.Num = 0
 		c.PowerSupplies.OIDs = make(map[string]*EpPowerSupply)
 	} else {
