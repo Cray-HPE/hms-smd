@@ -349,6 +349,7 @@ func (c *EpChassis) discoverRemotePhase1() {
 	if c.ChassisRF.Power.Oid == "" || (isFoxconnChassis(c.OdataID) && c.OdataID != "/redfish/v1/Chassis/Baseboard_0") {
 		c.PowerSupplies.Num = 0
 		c.PowerSupplies.OIDs = make(map[string]*EpPowerSupply)
+		errlog.Printf("Skipping power supply discovery for chassis %s", c.OdataID)
 	} else {
 		//create a new EpPower object using chassis and Power.OID
 		c.Power = NewEpPower(c, ResourceID{c.ChassisRF.Power.Oid})
