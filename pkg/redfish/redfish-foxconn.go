@@ -334,3 +334,27 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 		}
 	}
 }
+
+// Determines if chassis name is a Foxconn chassis
+func isFoxconnChassis(chassis string) bool {
+	chassisStrings := map[string]bool {
+		"/redfish/v1/Chassis/Baseboard_0":			true,
+		"/redfish/v1/Chassis/BMC_0":				true,
+		"/redfish/v1/Chassis/Cpld0":				true,
+		"/redfish/v1/Chassis/CPU_0":				true,
+		"/redfish/v1/Chassis/CPU_1":				true,
+		"/redfish/v1/Chassis/ERoT_CPU_0":			true,
+		"/redfish/v1/Chassis/ERoT_CPU_1":			true,
+		"/redfish/v1/Chassis/FPGA_0":				true,
+		"/redfish/v1/Chassis/Midplane":				true,
+		"/redfish/v1/Chassis/NCSI":					true,
+		"/redfish/v1/Chassis/PDB":					true,
+		"/redfish/v1/Chassis/ProcessorModule_0":	true,
+		"/redfish/v1/Chassis/PSU0":					true,
+		"/redfish/v1/Chassis/PSU1":					true,
+	}
+
+	_, ok := chassisStrings[chassis]
+
+	return ok
+}
