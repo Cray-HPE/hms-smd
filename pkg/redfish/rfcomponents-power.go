@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright [2019-2021] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2019-2021,2024] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -25,6 +25,7 @@ package rf
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"sort"
 	"strconv"
 
@@ -694,6 +695,23 @@ func (p *EpPower) discoverRemotePhase1() {
 			return
 		}
 	}
+
+	// Convert PowerOutputWatts to an int if not already (it's an interface{}
+	// type that can support ints and floats) - Needed for Foxconn Paradise,
+	// perhaps others in the future
+	for _, pSupply := range p.PowerRF.PowerSupplies {
+		if pSupply.PowerOutputWatts != nil {
+			switch v := pSupply.PowerOutputWatts.(type) {
+			case float64:	// Convert to int
+				pSupply.PowerOutputWatts = math.Round(v)
+			case int:		// noop - no conversion needed
+			default:		// unexpected type, set to zero
+				pSupply.PowerOutputWatts = int(0)
+				errlog.Printf("ERROR: unexpected type/value '%T'/'%v' detected for PowerOutputWatts, setting to 0\n", pSupply.PowerOutputWatts, pSupply.PowerOutputWatts)
+			}
+		}
+	}
+
 	if rfVerbose > 0 {
 		jout, _ := json.MarshalIndent(p, "", "   ")
 		errlog.Printf("%s: %s\n", url, jout)

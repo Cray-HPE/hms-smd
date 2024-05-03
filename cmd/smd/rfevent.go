@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright [2019-2023] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2019-2024] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -841,7 +841,7 @@ func (s *SmD) doUpdateCompHWInv(cep *sm.ComponentEndpoint, ep *rf.RedfishEP) err
 				cep.ID, err)
 			return err
 		}
-		// Discover harware inventory from redfish data
+		// Discover hardware inventory from redfish data
 		hwlocs, err := s.DiscoverHWInvByLocArray(ep)
 		if err != nil {
 			if err == base.ErrHMSTypeInvalid || err == base.ErrHMSTypeUnsupported {
