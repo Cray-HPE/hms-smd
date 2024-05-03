@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add patterns for Paradise ethernet interfaces in tavern test
 
+## [2.11.7] - 2024-05-01
+
+### Fixed
+
+- CASMHMS-6148: Paradise discovery enhancements (including fixed power capping)
+
 ## [2.11.6] - 2024-04-15
 
 ### Added
