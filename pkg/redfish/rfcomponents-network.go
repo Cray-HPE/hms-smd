@@ -185,6 +185,7 @@ func (na *EpNetworkAdapter) discoverLocalPhase2() {
 		errlog.Printf("Using untrackable FRUID: %s\n", generatedFRUID)
 	}
 	na.FRUID = generatedFRUID
+	errlog.Printf("==========> JW_DEBUG <========== EpNetworkAdapter:discoverLocalPhase2: generated FRUID %v for %s\n", na.FRUID, na.OdataID)
 
 	// Check if we have something valid to insert into the data store
 	if (base.GetHMSType(na.ID) == base.NodeHsnNic) && (na.Type == base.NodeHsnNic.String()) {

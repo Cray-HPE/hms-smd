@@ -865,6 +865,7 @@ func (p *EpPowerSupply) discoverLocalPhase2() {
 		return
 	}
 	if p.LastStatus != VerifyingData {
+		errlog.Printf("==========> JW_DEBUG <========== EpPowerSupply:discoverLocalPhase2: returning due to VerifyingData\n")
 		return
 	}
 
@@ -881,7 +882,9 @@ func (p *EpPowerSupply) discoverLocalPhase2() {
 			errlog.Printf("Using untrackable FRUID: %s\n", generatedFRUID)
 		}
 		p.FRUID = generatedFRUID
+		errlog.Printf("==========> JW_DEBUG <========== EpPowerSupply:discoverLocalPhase2: generated FRUID %v for %s\n", p.FRUID, p.OdataID)
 	} else {
+		errlog.Printf("==========> JW_DEBUG <========== EpPowerSupply:discoverLocalPhase2: absent power supply\n")
 		p.Status = "Empty"
 		p.State = base.StateEmpty.String()
 		//the state of the component is known (empty), it is not locked, does not have an alert or warning, so therefore Flag defaults to OK.
@@ -893,6 +896,8 @@ func (p *EpPowerSupply) discoverLocalPhase2() {
 			errlog.Printf("PowerSupply discoverLocalPhase2: VALID xname ID ('%s') and Type ('%s') for: %s\n",
 				p.ID, p.Type, p.PowerSupplyURL)
 		}
+		errlog.Printf("==========> JW_DEBUG <========== PowerSupply discoverLocalPhase2: VALID xname ID ('%s') and Type ('%s') for: %s\n",
+				p.ID, p.Type, p.PowerSupplyURL)
 	} else {
 		errlog.Printf("Error: Bad xname ID ('%s') or Type ('%s') for: %s\n",
 			p.ID, p.Type, p.PowerSupplyURL)

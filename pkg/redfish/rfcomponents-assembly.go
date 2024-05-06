@@ -269,6 +269,7 @@ func (r *EpNodeAccelRiser) discoverLocalPhase2() {
 			errlog.Printf("Using untrackable FRUID: %s\n", generatedFRUID)
 		}
 		r.FRUID = generatedFRUID
+		errlog.Printf("==========> JW_DEBUG <========== EpChassis:discoverLocalPhase2: generated FRUID %v for %s\n", r.FRUID, r.OdataID)
 	} else {
 		r.Status = "Empty"
 		r.State = base.StateEmpty.String()
