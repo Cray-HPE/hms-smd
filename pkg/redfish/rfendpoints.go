@@ -1279,7 +1279,7 @@ func (ep *RedfishEP) getChassisHMSType(c *EpChassis) string {
 		if IsManufacturer(c.ChassisRF.Manufacturer, FoxconnMfr) != 0 {
 			errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: RackMount Foxconn returning Invalid\n")
 			// Foxconn Paradise has a bunch of RackMount chassis we can ignore
-			return base.HSMTypeInvalid.String()
+			return base.HMSTypeInvalid.String()
 		}
 		if ep.NumSystems > 0 {
 			// Does the endpoint contain nodes?
