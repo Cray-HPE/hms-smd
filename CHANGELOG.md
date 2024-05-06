@@ -11,11 +11,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Pick appropriate chassis to act as node enclosure for Paradise
 
+## [2.11.9] - 2024-05-06
+
+### Fixed
+
+- Updated tavern tests to handle Foxconn Paradise ethernet interface names
+
+## [2.11.8] - 2024-05-03
+
+### Fixed
+
+- Fixed tests to handle componentEndpoints of the type CDUMgmtSwitch
+
 ## [2.11.7] - 2024-05-01
 
 ### Fixed
 
-- CASMHMS-6148: Paradise discovery enhancements (including fixed power capping)
+- Paradise discovery enhancements (including fixed power capping)
 
 ## [2.11.6] - 2024-04-15
 
