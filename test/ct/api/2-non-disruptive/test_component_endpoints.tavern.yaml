@@ -73,7 +73,7 @@ stages:
                       ID:
                         type: str
                         required: True
-                        pattern: "x[0-9]+[cm][0-9]+.*"
+                        pattern: "(x[0-9]+[cm][0-9]+.*)|(d[0-9]+w[0-9]+)"
                       Type:
                         type: str
                         required: True
@@ -139,14 +139,14 @@ stages:
                       RedfishEndpointID:
                         type: str
                         required: True
-                        pattern: "x[0-9]+[cm][0-9]+.*"
+                        pattern: "(x[0-9]+[cm][0-9]+.*)|(d[0-9]+w[0-9]+)"
                       Enabled:
                         type: bool
                         required: True
                       RedfishURL:
                         type: str
                         required: True
-                        pattern: "x[0-9]+[cm][0-9]+.*/redfish/v1/.*"
+                        pattern: "((x[0-9]+[cm][0-9]+)|(d[0-9]+w[0-9]+(-rts[:]?[0-9]*)?)).*/redfish/v1/.*"
                       ComponentEndpointType:
                         type: str
                         required: True
@@ -170,7 +170,7 @@ stages:
                       RedfishEndpointFQDN:
                         type: str
                         required: True
-                        pattern: "x[0-9]+[cm][0-9]+.*"
+                        pattern: "(x[0-9]+[cm][0-9]+.*)|(d[0-9]+w[0-9]+.*)"
                       RedfishManagerInfo:
                         type: map
                         required: False
