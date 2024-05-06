@@ -1331,7 +1331,7 @@ func (ep *RedfishEP) getChassisHMSType(c *EpChassis) string {
 		}
 		errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Returning INVALID\n")
 		return base.HMSTypeInvalid.String()
-	case RFSubtypeZone
+	case RFSubtypeZone:
 		errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Zone\n")
 		if IsManufacturer(c.ChassisRF.Manufacturer, FoxconnMfr) != 0 {
 			// Foxconn Paradise has the Baseboard_0 chassis as the primary node enclosure
