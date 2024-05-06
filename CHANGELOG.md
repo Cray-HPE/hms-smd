@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated tavern tests to handle Foxconn Paradise ethernet interface names
 
+## [2.19.0] - 2024-05-03
+
+### Fixed
+
+- Fixed tests to handle componentEndpoints of the type CDUMgmtSwitch
+
 ## [2.18.0] - 2024-05-01
 
 ### Fixed
