@@ -1276,6 +1276,11 @@ func (ep *RedfishEP) getChassisHMSType(c *EpChassis) string {
 		fallthrough
 	case RFSubtypeRackMount:
 		errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: RackMount\n")
+		if IsManufacturer(c.ChassisRF.Manufacturer, FoxconnMfr) != 0 {
+			errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: RackMount Foxconn returning Invalid\n")
+			// Foxconn Paradise has a bunch of RackMount chassis we can ignore
+			return base.HSMTypeInvalid.String()
+		}
 		if ep.NumSystems > 0 {
 			// Does the endpoint contain nodes?
 			// For now assume NodeEnclosure.
@@ -1326,16 +1331,15 @@ func (ep *RedfishEP) getChassisHMSType(c *EpChassis) string {
 		}
 		errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Returning INVALID\n")
 		return base.HMSTypeInvalid.String()
-	// JW_TODO - add following block and return INVALID for RackMount above
-	// case RFSubtypeZone
-	// 	errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Zone\n")
-	// 	if IsManufacturer(c.ChassisRF.Manufacturer, FoxconnMfr) != 0 &&
+	case RFSubtypeZone
+		errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Zone\n")
+		if IsManufacturer(c.ChassisRF.Manufacturer, FoxconnMfr) != 0 {
 			// Foxconn Paradise has the Baseboard_0 chassis as the primary node enclosure
-	//		return base.NodeEnclosure.String()
-	//	} else {
-	//		errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Returning INVALID\n")
-	//		return base.HMSTypeInvalid.String()
-	//	}
+			errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Zone Foxconn returning NodeEnclosure\n")
+			return base.NodeEnclosure.String()
+		}
+		errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Zone returning INVALID\n")
+		return base.HMSTypeInvalid.String()
 	default:
 		// Other types are usually subcomponents we don't track and are
 		// often not represented very consistently by different manufacturers.
