@@ -335,8 +335,41 @@ func discoverFoxconnENetInterfaces(s *EpSystem) {
 	}
 }
 
-// Determines if chassis name is a Foxconn chassis
-func isFoxconnChassis(chassis string) bool {
+// Determines if this chassis is a Foxconn Paradise chassis.  This is needed
+// because Foxconn Paradise chassis can have different manufacturer strings
+// and there are times when we haven't yet discovered the manufacturer string
+// in the Managers and/or Systems RF endpoints.
+func isFoxconnChassis(c *EpChassis) bool {
+	// Let's first check the manufacturer string in the Manager for this
+	// chassis, if it exists yet.
+	var mgr *EpManager = nil
+	var ok bool = false
+
+	errlog.Printf("==========> JW_DEBUG <========== isFoxconnChassis: c.ManagedBy=%v\n", c.ManagedBy)
+	// Get the first manager linked to
+	for _, oid := range c.ManagedBy {
+		errlog.Printf("==========> JW_DEBUG <========== isFoxconnChassis: oid=%v\n", oid)
+		mgr, ok = c.epRF.Managers.OIDs[oid.Basename()]
+		if ok {
+			errlog.Printf("==========> JW_DEBUG <========== isFoxconnChassis: returning %v\n", IsManufacturer(mgr.ManagerRF.Manufacturer, FoxconnMfr) == 1)
+			return IsManufacturer(mgr.ManagerRF.Manufacturer, FoxconnMfr) == 1
+		}
+	}
+	// If no link to ManagedBy Manager in the chassis object, just pick
+	// the first manager (there is likely only one)
+	if !ok {
+		errlog.Printf("==========> JW_DEBUG <========== isFoxconnChassis: !ok\n"))
+		for _, m := range s.epRF.Managers.OIDs {
+			mgr = m
+			errlog.Printf("==========> JW_DEBUG <========== isFoxconnChassis: returning %v\n", IsManufacturer(mgr.ManagerRF.Manufacturer, FoxconnMfr) == 1)
+			return IsManufacturer(mgr.ManagerRF.Manufacturer, FoxconnMfr) == 1
+		}
+	}
+	errlog.Printf("==========> JW_DEBUG <========== isFoxconnChassis: checking chassis strings\n")
+
+	// The manufacturer string does not yet exist in the Manager for this
+	// chassis s0 the fallback is to check if the OdataID of the chassis
+	// matches known unique chassis strings for Foxconn Paradise.
 	chassisStrings := map[string]struct{} {
 		"/redfish/v1/Chassis/Baseboard_0":			{},
 		"/redfish/v1/Chassis/BMC_0":				{},
@@ -354,7 +387,8 @@ func isFoxconnChassis(chassis string) bool {
 		"/redfish/v1/Chassis/PSU1":					{},
 	}
 
-	_, found := chassisStrings[chassis]
+	_, found := chassisStrings[c.OdataID]
 
+	errlog.Printf("==========> JW_DEBUG <========== isFoxconnChassis: returning found=%v\n", found)
 	return found
 }
