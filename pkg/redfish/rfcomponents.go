@@ -409,7 +409,7 @@ func (cs *EpChassisSet) discoverLocalPhase2() error {
 // activities may require that information is gathered for all components
 // under the endpoint first, so that it is available during later steps.
 func (c *EpChassis) discoverLocalPhase2() {
-	errlog.Printf("==========> JW_DEBUG <========== EpChassis:discoverLocalPhase2: c.OdataID=%s\n", c.OdataID)
+	errlog.Printf("==========> JW_DEBUG <========== EpChassis:discoverLocalPhase2: c.OdataID=%s =======================\n", c.OdataID)
 	// Should never happen
 	if c.epRF == nil {
 		errlog.Printf("Error: RedfishEP == nil for system odataID: %s\n",
@@ -431,7 +431,7 @@ func (c *EpChassis) discoverLocalPhase2() {
 	c.Ordinal = c.epRF.getChassisOrdinal(c)
 	c.ID = c.epRF.getChassisHMSID(c, c.Type, c.Ordinal)
 	if c.ID == "" {
-		errlog.Printf("==========> JW_DEBUG <========== EpChassis:discoverLocalPhase2: INVALID type so returning\n")
+		errlog.Printf("==========> JW_DEBUG <========== EpChassis:discoverLocalPhase2: INVALID ID so returning\n")
 		c.LastStatus = RedfishSubtypeNoSupport
 		return
 	}
@@ -513,7 +513,7 @@ func (c *EpChassis) discoverComponentState() {
 			errlog.Printf("Using untrackable FRUID: %s\n", generatedFRUID)
 		}
 		c.FRUID = generatedFRUID
-		errlog.Printf("==========> JW_DEBUG <========== EpChassis:discoverLocalPhase2: generated FRUID %v for %s\n", c.FRUID, c.OdataID)
+		errlog.Printf("==========> JW_DEBUG <========== EpChassis:discoverComponentState: generated FRUID %v for %s\n", c.FRUID, c.OdataID)
 	} else {
 		c.Status = "Empty"
 		c.State = base.StateEmpty.String()

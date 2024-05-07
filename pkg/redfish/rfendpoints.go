@@ -1253,7 +1253,7 @@ func (ep *RedfishEP) getChassisHMSID(c *EpChassis, hmsType string, ordinal int) 
 // what we actually track.
 // Post phase 1 discovery.
 func (ep *RedfishEP) getChassisHMSType(c *EpChassis) string {
-	errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: c.RedfishSubType=%v\n", c.RedfishSubtype)
+	errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: c.OdataID=%v c.RedfishSubType=%v\n", c.OdataID, c.RedfishSubtype)
 	switch c.RedfishSubtype {
 	case RFSubtypeEnclosure:
 		errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Enclosure\n")
@@ -1363,6 +1363,7 @@ func (ep *RedfishEP) getChassisOrdinal(c *EpChassis) int {
 	ordinal := 0
 	prefix := ""
 
+	errlog.Printf("==========> JW_DEBUG <========== getChassisOrdinal: c.OdataID=%v\n", c.OdataID)
 	// Get the prefix of the Redfish Id of C up to the first number.
 	f := func(c rune) bool { return !unicode.IsLetter(c) && !unicode.IsPunct(c) }
 	split := strings.FieldsFunc(c.BaseOdataID, f)
@@ -1751,9 +1752,10 @@ func getStandardFRUID(hmstype, id, manufacturer, partnumber, serialnumber string
 	partnumberClean := reg.ReplaceAllString(partnumber, "")
 	serialnumberClean := reg.ReplaceAllString(serialnumber, "")
 
+	errlog.Printf("==========> JW_DEBUG <========== EpChassis:getStandardFRUID: hmstype=%v id=%v mfg=%v (clean=%v) part=%v (clean=%v)\n", manufacturer, manufacturerClean, partnumber, partnumberClean, serialnumber, serialnumberClean)	
 	//Need either Manufacturer or PartNumber and SerialNumber in order to build a unique FRUID
 	if manufacturerClean != "" || partnumberClean != "" {
-		errlog.Printf("==========> JW_DEBUG <========== EpChassis:discoverComponentState: mfg or part not clean\n")
+		errlog.Printf("==========> JW_DEBUG <========== EpChassis:getStandardFRUID: building FRUID\n")
 		periodDelimiter := ""
 		if hmstype != "" {
 			fruidBuilder.WriteString(hmstype)
@@ -1776,7 +1778,7 @@ func getStandardFRUID(hmstype, id, manufacturer, partnumber, serialnumber string
 	} else {
 		isFRUTrackable = false
 		errorBuilder.WriteString("Missing required fields: Manufacturer and/or PartNumber")
-		errlog.Printf("==========> JW_DEBUG <========== EpChassis:discoverComponentState: missing mfg or part\n")
+		errlog.Printf("==========> JW_DEBUG <========== EpChassis:getStandardFRUID: missing mfg or part\n")
 	}
 
 	// The length limit here is to prevent FRUID generation from
@@ -1784,7 +1786,7 @@ func getStandardFRUID(hmstype, id, manufacturer, partnumber, serialnumber string
 	if isFRUTrackable && fruidBuilder.Len() > 255 {
 		isFRUTrackable = false
 		errorBuilder.WriteString("FRUID is too long, '" + fruidBuilder.String() + "'")
-		errlog.Printf("==========> JW_DEBUG <========== EpChassis:discoverComponentState: too long\n")
+		errlog.Printf("==========> JW_DEBUG <========== EpChassis:getStandardFRUID: too long\n")
 	}
 
 	if isFRUTrackable {
@@ -1793,7 +1795,7 @@ func getStandardFRUID(hmstype, id, manufacturer, partnumber, serialnumber string
 		fruid = "FRUIDfor" + id
 		err = errors.New(errorBuilder.String())
 	}
-	errlog.Printf("==========> JW_DEBUG <========== EpChassis:discoverComponentState: fruid=%v\n", fruid)
+	errlog.Printf("==========> JW_DEBUG <========== EpChassis:getStandardFRUID: returning fruid %v\n", fruid)
 
 	return fruid, err
 }
