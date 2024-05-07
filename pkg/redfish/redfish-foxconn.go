@@ -358,7 +358,7 @@ func isFoxconnChassis(c *EpChassis) bool {
 	// If no link to ManagedBy Manager in the chassis object, just pick
 	// the first manager (there is likely only one)
 	if !ok {
-		errlog.Printf("==========> JW_DEBUG <========== isFoxconnChassis: !ok\n"))
+		errlog.Printf("==========> JW_DEBUG <========== isFoxconnChassis: !ok\n")
 		for _, m := range s.epRF.Managers.OIDs {
 			mgr = m
 			errlog.Printf("==========> JW_DEBUG <========== isFoxconnChassis: returning %v\n", IsManufacturer(mgr.ManagerRF.Manufacturer, FoxconnMfr) == 1)
