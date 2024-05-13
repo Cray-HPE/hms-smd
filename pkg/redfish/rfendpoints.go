@@ -1752,7 +1752,7 @@ func getStandardFRUID(hmstype, id, manufacturer, partnumber, serialnumber string
 	partnumberClean := reg.ReplaceAllString(partnumber, "")
 	serialnumberClean := reg.ReplaceAllString(serialnumber, "")
 
-	errlog.Printf("==========> JW_DEBUG <========== EpChassis:getStandardFRUID: hmstype=%v id=%v mfg=%v (clean=%v) part=%v (clean=%v)\n", manufacturer, manufacturerClean, partnumber, partnumberClean, serialnumber, serialnumberClean)	
+	errlog.Printf("==========> JW_DEBUG <========== EpChassis:getStandardFRUID: hmstype=%v id=%v mfg=%v (clean=%v) part=%v (clean=%v) serial=%v (clean=%v)\n", hmstype, id, manufacturer, manufacturerClean, partnumber, partnumberClean, serialnumber, serialnumberClean)	
 	//Need either Manufacturer or PartNumber and SerialNumber in order to build a unique FRUID
 	if manufacturerClean != "" || partnumberClean != "" {
 		errlog.Printf("==========> JW_DEBUG <========== EpChassis:getStandardFRUID: building FRUID\n")

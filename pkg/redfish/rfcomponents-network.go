@@ -172,6 +172,7 @@ func (na *EpNetworkAdapter) discoverLocalPhase2() {
 	if na.LastStatus != VerifyingData {
 		return
 	}
+	errlog.Printf("==========> JW_DEBUG <========== ******************** EpNetworkAdapter:discoverLocalPhase2: ********************\n")
 
 	na.Ordinal = na.epRF.getNetworkAdapterOrdinal(na)
 	na.Type = na.epRF.getNetworkAdapterHMSType(na)

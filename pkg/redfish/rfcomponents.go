@@ -471,6 +471,7 @@ func (c *EpChassis) discoverLocalPhase2() {
 // Sets up HMS state fields using Status/State/Health info from Redfish
 func (c *EpChassis) discoverComponentState() {
 	// HSNBoard here is a workaround, should never be legitmately absent.
+	errlog.Printf("==========> JW_DEBUG <========== ******************** EpChassis:discoverComponentState: ********************\n")
 	errlog.Printf("==========> JW_DEBUG <========== EpChassis:discoverComponentState: c.ChassisRF.Status.State=%v\n", c.ChassisRF.Status.State)
 	if c.ChassisRF.Status.State != "Absent" ||
 		c.Type == base.HSNBoard.String() {
@@ -745,6 +746,7 @@ func (m *EpManager) discoverLocalPhase2() {
 	if m.LastStatus != VerifyingData {
 		return
 	}
+	errlog.Printf("==========> JW_DEBUG <========== ******************** EpManager:discoverLocalPhase2: ********************\n")
 	m.Ordinal = m.epRF.getManagerOrdinal(m)
 	m.Type = m.epRF.getManagerHMSType(m)
 	if m.Type == base.HMSTypeInvalid.String() {
@@ -855,6 +857,7 @@ func (m *EpManager) discoverComponentEPEthInterfaces() {
 // Sets up HMS state fields using Status/State/Health info from Redfish
 func (m *EpManager) discoverComponentState() {
 	if m.ManagerRF.Status.State != "Absent" {
+		errlog.Printf("==========> JW_DEBUG <========== ******************** EpManager:discoverComponentState: ********************\n")
 		m.Status = "Populated"
 		m.State = base.StatePopulated.String()
 		m.Flag = base.FlagOK.String()
@@ -1998,6 +2001,7 @@ func (s *EpSystem) discoverComponentEPEthInterfaces() {
 // Sets up HMS state fields using Status/State/Health info from Redfish
 func (s *EpSystem) discoverComponentState() {
 	if s.SystemRF.Status.State != "Absent" {
+		errlog.Printf("==========> JW_DEBUG <========== ******************** EpSystem:discoverComponentState: ********************\n")
 		s.Status = "Populated"
 		s.State = base.StatePopulated.String()
 		s.Flag = base.FlagOK.String()
@@ -2304,6 +2308,7 @@ func (p *EpProcessor) discoverLocalPhase2() {
 		p.ID = p.sysRF.ID + "p" + strconv.Itoa(p.Ordinal)
 	}
 	if p.ProcessorRF.Status.State != "Absent" {
+		errlog.Printf("==========> JW_DEBUG <========== ******************** EpProcessor:discoverLocalPhase2: ********************\n")
 		p.Status = "Populated"
 		p.State = base.StatePopulated.String()
 		p.Flag = base.FlagOK.String()
@@ -2512,6 +2517,7 @@ func (m *EpMemory) discoverLocalPhase2() {
 	}
 
 	if m.MemoryRF.Status.State != "Absent" {
+		errlog.Printf("==========> JW_DEBUG <========== ******************** EpMemory:discoverLocalPhase2: ********************\n")
 		m.Status = "Populated"
 		m.State = base.StatePopulated.String()
 		m.Flag = base.FlagOK.String()

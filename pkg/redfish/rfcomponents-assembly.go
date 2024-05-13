@@ -260,6 +260,7 @@ func (r *EpNodeAccelRiser) discoverLocalPhase2() {
 	r.Type = r.epRF.getNodeAccelRiserHMSType(r)
 	r.ID = r.epRF.getNodeAccelRiserHMSID(r, r.Type, r.Ordinal)
 	if r.NodeAccelRiserRF.Status.State != "Absent" {
+		errlog.Printf("==========> JW_DEBUG <========== ******************** EpNodeAccelRiser:discoverLocalPhase2: ********************\n")
 		r.Status = "Populated"
 		r.State = base.StatePopulated.String()
 		r.Flag = base.FlagOK.String()

@@ -270,6 +270,7 @@ func (pdu *EpPDU) discoverLocalPhase2() {
 // from Redfish
 func (pdu *EpPDU) discoverComponentState() {
 	if pdu.PowerDistributionRF.Status.State != "Absent" {
+		errlog.Printf("==========> JW_DEBUG <========== ******************** EpPDU:discoverComponentState: ********************\n")
 		pdu.Status = "Populated"
 		pdu.State = base.StatePopulated.String()
 		pdu.Flag = base.FlagOK.String()
@@ -294,6 +295,7 @@ func (pdu *EpPDU) discoverComponentState() {
 			pdu.Flag = base.FlagAlert.String()
 		}
 		generatedFRUID, err := GetPDUFRUID(pdu)
+		errlog.Printf("==========> JW_DEBUG <========== EpPDU:discoverComponentState: generated FRUID %v for %s\n", pdu.FRUID, pdu.OdataID)
 		if err != nil {
 			errlog.Printf("FRUID Error: %s\n", err.Error())
 			errlog.Printf("Using untrackable FRUID: %s\n", generatedFRUID)
@@ -858,6 +860,7 @@ func (ps *EpPowerSupplies) discoverLocalPhase2() error {
 // HMS with information about where the PowerSupply is located
 func (p *EpPowerSupply) discoverLocalPhase2() {
 	// Should never happen
+	errlog.Printf("==========> JW_DEBUG <========== ******************** EpPowerSupply:discoverLocalPhase2: ********************\n")
 	if p.epRF == nil {
 		errlog.Printf("Error: RedfishEP == nil for odataID: %s\n",
 			p.OdataID)
