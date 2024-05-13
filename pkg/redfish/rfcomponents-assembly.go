@@ -204,6 +204,7 @@ func (r *EpNodeAccelRiser) discoverRemotePhase1() {
 	//and assign it to r.NodeAccelRiserRF
 	if (len(r.assemblyRF.AssemblyRF.Assemblies) > r.RawOrdinal) && (r.assemblyRF.AssemblyRF.Assemblies[r.RawOrdinal] != nil) {
 		r.NodeAccelRiserRF = r.assemblyRF.AssemblyRF.Assemblies[r.RawOrdinal]
+		errlog.Printf("==========> JW_DEBUG <========== -------------------- EpNodeAccelRiser:discoverLocalPhase1: --------------------\n")
 	} else {
 		//this is a lookup error
 		errlog.Printf("%s: failure retrieving NodeAccelRiser from Assembly.Assemblies[%d].\n", r.OdataID, r.RawOrdinal)
