@@ -345,28 +345,21 @@ func isFoxconnChassis(c *EpChassis) bool {
 	var mgr *EpManager = nil
 	var ok bool = false
 
-	errlog.Printf("==========> JW_DEBUG <========== isFoxconnChassis: c.ManagedBy=%v\n", c.ManagedBy)
 	// Get the first manager linked to
 	for _, oid := range c.ManagedBy {
-		errlog.Printf("==========> JW_DEBUG <========== isFoxconnChassis: c.epRF.Managers.OIDs=%v\n", c.epRF.Managers.OIDs)
-		errlog.Printf("==========> JW_DEBUG <========== isFoxconnChassis: oid=%v basename=%v\n", oid, oid.Basename())
 		mgr, ok = c.epRF.Managers.OIDs[oid.Basename()]
 		if ok {
-			errlog.Printf("==========> JW_DEBUG <========== isFoxconnChassis: (1) returning %v\n", IsManufacturer(mgr.ManagerRF.Manufacturer, FoxconnMfr) == 1)
 			return IsManufacturer(mgr.ManagerRF.Manufacturer, FoxconnMfr) == 1
 		}
 	}
 	// If no link to ManagedBy Manager in the chassis object, just pick
 	// the first manager (there is likely only one)
 	if !ok {
-		errlog.Printf("==========> JW_DEBUG <========== isFoxconnChassis: !ok: c.epRF.Managers.OIDs=%v\n", c.epRF.Managers.OIDs)
 		for _, m := range c.epRF.Managers.OIDs {
 			mgr = m
-			errlog.Printf("==========> JW_DEBUG <========== isFoxconnChassis: (2) returning %v\n", IsManufacturer(mgr.ManagerRF.Manufacturer, FoxconnMfr) == 1)
 			return IsManufacturer(mgr.ManagerRF.Manufacturer, FoxconnMfr) == 1
 		}
 	}
-	errlog.Printf("==========> JW_DEBUG <========== isFoxconnChassis: checking chassis strings\n")
 
 	// The manufacturer string does not yet exist in the Manager for this
 	// chassis s0 the fallback is to check if the OdataID of the chassis
@@ -390,6 +383,5 @@ func isFoxconnChassis(c *EpChassis) bool {
 
 	_, found := chassisStrings[c.OdataID]
 
-	errlog.Printf("==========> JW_DEBUG <========== isFoxconnChassis: returning found=%v\n", found)
 	return found
 }

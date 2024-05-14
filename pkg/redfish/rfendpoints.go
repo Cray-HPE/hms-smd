@@ -1253,56 +1253,43 @@ func (ep *RedfishEP) getChassisHMSID(c *EpChassis, hmsType string, ordinal int) 
 // what we actually track.
 // Post phase 1 discovery.
 func (ep *RedfishEP) getChassisHMSType(c *EpChassis) string {
-	errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: c.OdataID=%v c.RedfishSubType=%v\n", c.OdataID, c.RedfishSubtype)
 	switch c.RedfishSubtype {
 	case RFSubtypeEnclosure:
-		errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Enclosure\n")
 		if ep.Type == base.ChassisBMC.String() &&
 			IsManufacturer(c.ChassisRF.Manufacturer, CrayMfr) != 0 {
 			// ChassisBMC and is not non-Cray, must be the Chassis itself
 			// by convention.
-			errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Returning Chassis\n")
 			return base.Chassis.String()
 		}
 		if ep.Type == base.RouterBMC.String() {
 			// RouterBMC, must be the Chassis itself (Router card or TOR
 			// enclosure) by convention.  We only have slingshot at the
 			// moment so no need to guess.
-			errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Returning HSNBoard\n")
 			return base.HSNBoard.String()
 		}
 		// NodeEnclosures may be RackMount, Enclosure.
-		errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: falling through\n")
 		fallthrough
 	case RFSubtypeRackMount:
-		errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: RackMount\n")
 		if isFoxconnChassis(c) {
-			errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: RackMount Foxconn returning Invalid\n")
 			// Foxconn Paradise has a bunch of RackMount chassis we can ignore
 			return base.HMSTypeInvalid.String()
 		}
 		if ep.NumSystems > 0 {
 			// Does the endpoint contain nodes?
 			// For now assume NodeEnclosure.
-			errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Returning NodeEnclosure\n")
 			return base.NodeEnclosure.String()
 		} else {
-			errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Returning INVALID\n")
 			return base.HMSTypeInvalid.String()
 		}
 	case RFSubtypeStandAlone:
-		errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: StandAlone\n")
 		if IsManufacturer(c.ChassisRF.Manufacturer, GigabyteMfr) != 0 &&
 			ep.NumSystems > 0 {
 			// Is gigabyte ChassisBMC and has nodes, it is the node enclosure.
-			errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Returning NodeEnclosure\n")
 			return base.NodeEnclosure.String()
 		} else {
-			errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Returning INVALID\n")
 			return base.HMSTypeInvalid.String()
 		}
 	case RFSubtypeBlade:
-		errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Blade\n")
 		if ep.Type == base.ChassisBMC.String() {
 			// If is not non-Cray and Chassis BMC, but be compute or router
 			// blade.
@@ -1310,41 +1297,31 @@ func (ep *RedfishEP) getChassisHMSType(c *EpChassis) string {
 			// the blade to use, use that instead.
 			if IsManufacturer(c.ChassisRF.Manufacturer, CrayMfr) != 0 {
 				if strings.HasPrefix(strings.ToLower(c.ChassisRF.Id), "blade") {
-					errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Returning ComputeModule\n")
 					return base.ComputeModule.String()
 				}
 				if strings.HasPrefix(strings.ToLower(c.ChassisRF.Id), "perif") {
-					errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Returning RouterModule\n")
 					return base.RouterModule.String()
 				}
 			}
 		}
-		errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Returning INVALID\n")
 		return base.HMSTypeInvalid.String()
 	case RFSubtypeDrawer:
-		errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Drawer\n")
 		if ep.Type == base.MgmtSwitch.String() ||
 			ep.Type == base.MgmtHLSwitch.String() ||
 			ep.Type == base.CDUMgmtSwitch.String() {
-			errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: %s\n", ep.Type)
 			return ep.Type
 		}
-		errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Returning INVALID\n")
 		return base.HMSTypeInvalid.String()
 	case RFSubtypeZone:
-		errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Zone\n")
 		if isFoxconnChassis(c) {
-			// Foxconn Paradise has the Baseboard_0 chassis as the primary node enclosure
-			errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Zone Foxconn returning NodeEnclosure\n")
+			// Foxconn Paradise uses the Baseboard_0 chassis as the primary node enclosure
 			return base.NodeEnclosure.String()
 		}
-		errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Zone returning INVALID\n")
 		return base.HMSTypeInvalid.String()
 	default:
 		// Other types are usually subcomponents we don't track and are
 		// often not represented very consistently by different manufacturers.
 		errlog.Printf("getChassisHMSType default case: c.RedfishSubtype: %s", c.RedfishSubtype)
-		errlog.Printf("==========> JW_DEBUG <========== getChassisHMSType: Returning INVALID\n")
 		return base.HMSTypeInvalid.String()
 	}
 }
@@ -1363,7 +1340,6 @@ func (ep *RedfishEP) getChassisOrdinal(c *EpChassis) int {
 	ordinal := 0
 	prefix := ""
 
-	errlog.Printf("==========> JW_DEBUG <========== getChassisOrdinal: c.OdataID=%v\n", c.OdataID)
 	// Get the prefix of the Redfish Id of C up to the first number.
 	f := func(c rune) bool { return !unicode.IsLetter(c) && !unicode.IsPunct(c) }
 	split := strings.FieldsFunc(c.BaseOdataID, f)
@@ -1388,7 +1364,6 @@ func (ep *RedfishEP) getChassisOrdinal(c *EpChassis) int {
 		errlog.Printf("BUG: Bad ordinal.")
 		return -1
 	}
-	errlog.Printf("==========> JW_DEBUG <========== getChassisOrdinal: returning chassis ordinal %d\n", ordinal)
 	return ordinal
 }
 
@@ -1752,10 +1727,8 @@ func getStandardFRUID(hmstype, id, manufacturer, partnumber, serialnumber string
 	partnumberClean := reg.ReplaceAllString(partnumber, "")
 	serialnumberClean := reg.ReplaceAllString(serialnumber, "")
 
-	errlog.Printf("==========> JW_DEBUG <========== EpChassis:getStandardFRUID: hmstype=%v id=%v mfg=%v (clean=%v) part=%v (clean=%v) serial=%v (clean=%v)\n", hmstype, id, manufacturer, manufacturerClean, partnumber, partnumberClean, serialnumber, serialnumberClean)	
 	//Need either Manufacturer or PartNumber and SerialNumber in order to build a unique FRUID
 	if manufacturerClean != "" || partnumberClean != "" {
-		errlog.Printf("==========> JW_DEBUG <========== EpChassis:getStandardFRUID: building FRUID\n")
 		periodDelimiter := ""
 		if hmstype != "" {
 			fruidBuilder.WriteString(hmstype)
@@ -1778,7 +1751,6 @@ func getStandardFRUID(hmstype, id, manufacturer, partnumber, serialnumber string
 	} else {
 		isFRUTrackable = false
 		errorBuilder.WriteString("Missing required fields: Manufacturer and/or PartNumber")
-		errlog.Printf("==========> JW_DEBUG <========== EpChassis:getStandardFRUID: missing mfg or part\n")
 	}
 
 	// The length limit here is to prevent FRUID generation from
@@ -1786,7 +1758,6 @@ func getStandardFRUID(hmstype, id, manufacturer, partnumber, serialnumber string
 	if isFRUTrackable && fruidBuilder.Len() > 255 {
 		isFRUTrackable = false
 		errorBuilder.WriteString("FRUID is too long, '" + fruidBuilder.String() + "'")
-		errlog.Printf("==========> JW_DEBUG <========== EpChassis:getStandardFRUID: too long\n")
 	}
 
 	if isFRUTrackable {
@@ -1795,7 +1766,6 @@ func getStandardFRUID(hmstype, id, manufacturer, partnumber, serialnumber string
 		fruid = "FRUIDfor" + id
 		err = errors.New(errorBuilder.String())
 	}
-	errlog.Printf("==========> JW_DEBUG <========== EpChassis:getStandardFRUID: returning fruid %v\n", fruid)
 
 	return fruid, err
 }

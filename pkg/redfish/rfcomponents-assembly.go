@@ -204,7 +204,6 @@ func (r *EpNodeAccelRiser) discoverRemotePhase1() {
 	//and assign it to r.NodeAccelRiserRF
 	if (len(r.assemblyRF.AssemblyRF.Assemblies) > r.RawOrdinal) && (r.assemblyRF.AssemblyRF.Assemblies[r.RawOrdinal] != nil) {
 		r.NodeAccelRiserRF = r.assemblyRF.AssemblyRF.Assemblies[r.RawOrdinal]
-		errlog.Printf("==========> JW_DEBUG <========== -------------------- EpNodeAccelRiser:discoverLocalPhase1: r.AssemblyRF[%v]=%v\n", r.RawOrdinal, r.NodeAccelRiserRF)
 	} else {
 		//this is a lookup error
 		errlog.Printf("%s: failure retrieving NodeAccelRiser from Assembly.Assemblies[%d].\n", r.OdataID, r.RawOrdinal)
@@ -261,7 +260,6 @@ func (r *EpNodeAccelRiser) discoverLocalPhase2() {
 	r.Type = r.epRF.getNodeAccelRiserHMSType(r)
 	r.ID = r.epRF.getNodeAccelRiserHMSID(r, r.Type, r.Ordinal)
 	if r.NodeAccelRiserRF.Status.State != "Absent" {
-		errlog.Printf("==========> JW_DEBUG <========== ******************** EpNodeAccelRiser:discoverLocalPhase2: ********************\n")
 		r.Status = "Populated"
 		r.State = base.StatePopulated.String()
 		r.Flag = base.FlagOK.String()
@@ -271,7 +269,6 @@ func (r *EpNodeAccelRiser) discoverLocalPhase2() {
 			errlog.Printf("Using untrackable FRUID: %s\n", generatedFRUID)
 		}
 		r.FRUID = generatedFRUID
-		errlog.Printf("==========> JW_DEBUG <========== EpChassis:discoverLocalPhase2: generated FRUID %v for %s\n", r.FRUID, r.OdataID)
 	} else {
 		r.Status = "Empty"
 		r.State = base.StateEmpty.String()

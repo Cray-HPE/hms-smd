@@ -409,7 +409,6 @@ func (cs *EpChassisSet) discoverLocalPhase2() error {
 // activities may require that information is gathered for all components
 // under the endpoint first, so that it is available during later steps.
 func (c *EpChassis) discoverLocalPhase2() {
-	errlog.Printf("==========> JW_DEBUG <========== EpChassis:discoverLocalPhase2: c.OdataID=%s =======================\n", c.OdataID)
 	// Should never happen
 	if c.epRF == nil {
 		errlog.Printf("Error: RedfishEP == nil for system odataID: %s\n",
@@ -418,20 +417,17 @@ func (c *EpChassis) discoverLocalPhase2() {
 		return
 	}
 	if c.LastStatus != VerifyingData {
-		errlog.Printf("==========> JW_DEBUG <========== EpChassis:discoverLocalPhase2: VerifyingData so returning\n")
 		return
 	}
 	// There may be chassis types that are not supported.
 	c.Type = c.epRF.getChassisHMSType(c)
 	if c.Type == base.HMSTypeInvalid.String() {
-		errlog.Printf("==========> JW_DEBUG <========== EpChassis:discoverLocalPhase2: INVALID type so returning\n")
 		c.LastStatus = RedfishSubtypeNoSupport
 		return
 	}
 	c.Ordinal = c.epRF.getChassisOrdinal(c)
 	c.ID = c.epRF.getChassisHMSID(c, c.Type, c.Ordinal)
 	if c.ID == "" {
-		errlog.Printf("==========> JW_DEBUG <========== EpChassis:discoverLocalPhase2: INVALID ID so returning\n")
 		c.LastStatus = RedfishSubtypeNoSupport
 		return
 	}
@@ -446,7 +442,6 @@ func (c *EpChassis) discoverLocalPhase2() {
 
 	// Check if we have something valid to insert into the data store
 	hmsType := base.GetHMSType(c.ID)
-	errlog.Printf("==========> JW_DEBUG <========== EpChassis:discoverLocalPhase2: base.IsHMSTypeContainer(%s)=%v\n", hmsType, base.IsHMSTypeContainer(hmsType))
 	if (!base.IsHMSTypeContainer(hmsType) &&
 		hmsType != base.MgmtSwitch &&
 		hmsType != base.MgmtHLSwitch &&
@@ -471,11 +466,8 @@ func (c *EpChassis) discoverLocalPhase2() {
 // Sets up HMS state fields using Status/State/Health info from Redfish
 func (c *EpChassis) discoverComponentState() {
 	// HSNBoard here is a workaround, should never be legitmately absent.
-	errlog.Printf("==========> JW_DEBUG <========== ******************** EpChassis:discoverComponentState: ********************\n")
-	errlog.Printf("==========> JW_DEBUG <========== EpChassis:discoverComponentState: c.ChassisRF.Status.State=%v\n", c.ChassisRF.Status.State)
 	if c.ChassisRF.Status.State != "Absent" ||
 		c.Type == base.HSNBoard.String() {
-		errlog.Printf("==========> JW_DEBUG <========== EpChassis:discoverComponentState: cType=%s\n", c.Type)
 
 		// Chassis status is too unpredictable and no clear what Ready
 		// means anyways since it's not a node or a controller.  So just
@@ -507,20 +499,17 @@ func (c *EpChassis) discoverComponentState() {
 				c.Flag = base.FlagAlert.String()
 			}
 		}
-		errlog.Printf("==========> JW_DEBUG <========== EpChassis:discoverComponentState: c.Type=%v c.State=%v c.Flag=%v\n", c.Type, c.State, c.Flag)
 		generatedFRUID, err := GetChassisFRUID(c)
 		if err != nil {
 			errlog.Printf("FRUID Error: %s\n", err.Error())
 			errlog.Printf("Using untrackable FRUID: %s\n", generatedFRUID)
 		}
 		c.FRUID = generatedFRUID
-		errlog.Printf("==========> JW_DEBUG <========== EpChassis:discoverComponentState: generated FRUID %v for %s\n", c.FRUID, c.OdataID)
 	} else {
 		c.Status = "Empty"
 		c.State = base.StateEmpty.String()
 		//the state of the component is known (empty), it is not locked, does not have an alert or warning, so therefore Flag defaults to OK.
 		c.Flag = base.FlagOK.String()
-		errlog.Printf("==========> JW_DEBUG <========== EpChassis:discoverComponentState: SKIPPED\n")
 	}
 }
 
@@ -746,7 +735,6 @@ func (m *EpManager) discoverLocalPhase2() {
 	if m.LastStatus != VerifyingData {
 		return
 	}
-	errlog.Printf("==========> JW_DEBUG <========== ******************** EpManager:discoverLocalPhase2: ********************\n")
 	m.Ordinal = m.epRF.getManagerOrdinal(m)
 	m.Type = m.epRF.getManagerHMSType(m)
 	if m.Type == base.HMSTypeInvalid.String() {
@@ -764,7 +752,6 @@ func (m *EpManager) discoverLocalPhase2() {
 		errlog.Printf("Using untrackable FRUID: %s\n", generatedFRUID)
 	}
 	m.FRUID = generatedFRUID
-	errlog.Printf("==========> JW_DEBUG <========== EpManager:discoverLocalPhase2: generated FRUID %v for %s\n", m.FRUID, m.OdataID)
 	m.Name = m.ManagerRF.Name
 
 	// Sets Manager ComponentEndpoint MACAddress and EthernetNICInfo entries.
@@ -857,7 +844,6 @@ func (m *EpManager) discoverComponentEPEthInterfaces() {
 // Sets up HMS state fields using Status/State/Health info from Redfish
 func (m *EpManager) discoverComponentState() {
 	if m.ManagerRF.Status.State != "Absent" {
-		errlog.Printf("==========> JW_DEBUG <========== ******************** EpManager:discoverComponentState: ********************\n")
 		m.Status = "Populated"
 		m.State = base.StatePopulated.String()
 		m.Flag = base.FlagOK.String()
@@ -908,7 +894,6 @@ func (m *EpManager) discoverComponentState() {
 			errlog.Printf("Using untrackable FRUID: %s\n", generatedFRUID)
 		}
 		m.FRUID = generatedFRUID
-		errlog.Printf("==========> JW_DEBUG <========== EpManager:discoverComponentState: generated FRUID %v for %s\n", m.FRUID, m.OdataID)
 	} else {
 		// Empty - No FRU ID
 		m.Status = "Empty"
@@ -2001,7 +1986,6 @@ func (s *EpSystem) discoverComponentEPEthInterfaces() {
 // Sets up HMS state fields using Status/State/Health info from Redfish
 func (s *EpSystem) discoverComponentState() {
 	if s.SystemRF.Status.State != "Absent" {
-		errlog.Printf("==========> JW_DEBUG <========== ******************** EpSystem:discoverComponentState: ********************\n")
 		s.Status = "Populated"
 		s.State = base.StatePopulated.String()
 		s.Flag = base.FlagOK.String()
@@ -2031,7 +2015,6 @@ func (s *EpSystem) discoverComponentState() {
 			errlog.Printf("Using untrackable FRUID: %s\n", generatedFRUID)
 		}
 		s.FRUID = generatedFRUID
-		errlog.Printf("==========> JW_DEBUG <========== EpSystem:discoverComponentState: generated FRUID %v for %s\n", s.FRUID, s.OdataID)
 	} else {
 		s.Status = "Empty"
 		s.State = base.StateEmpty.String()
@@ -2308,7 +2291,6 @@ func (p *EpProcessor) discoverLocalPhase2() {
 		p.ID = p.sysRF.ID + "p" + strconv.Itoa(p.Ordinal)
 	}
 	if p.ProcessorRF.Status.State != "Absent" {
-		errlog.Printf("==========> JW_DEBUG <========== ******************** EpProcessor:discoverLocalPhase2: ********************\n")
 		p.Status = "Populated"
 		p.State = base.StatePopulated.String()
 		p.Flag = base.FlagOK.String()
@@ -2328,7 +2310,6 @@ func (p *EpProcessor) discoverLocalPhase2() {
 			errlog.Printf("Using untrackable FRUID: %s\n", generatedFRUID)
 		}
 		p.FRUID = generatedFRUID
-		errlog.Printf("==========> JW_DEBUG <========== EpProcessor:discoverLocalPhase2: generated FRUID %v for %v\n", p.FRUID, p.OdataID)
 
 		// Discover processor arch
 		if p.Type == base.Processor.String() {
@@ -2517,7 +2498,6 @@ func (m *EpMemory) discoverLocalPhase2() {
 	}
 
 	if m.MemoryRF.Status.State != "Absent" {
-		errlog.Printf("==========> JW_DEBUG <========== ******************** EpMemory:discoverLocalPhase2: ********************\n")
 		m.Status = "Populated"
 		m.State = base.StatePopulated.String()
 		m.Flag = base.FlagOK.String()
@@ -2527,7 +2507,6 @@ func (m *EpMemory) discoverLocalPhase2() {
 			errlog.Printf("Using untrackable FRUID: %s\n", generatedFRUID)
 		}
 		m.FRUID = generatedFRUID
-		errlog.Printf("==========> JW_DEBUG <========== EpMemory:discoverLocalPhase2: generated FRUID %v for %v\n", m.FRUID, m.OdataID)
 	} else {
 		m.Status = "Empty"
 		m.State = base.StateEmpty.String()

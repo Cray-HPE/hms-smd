@@ -356,12 +356,10 @@ func (d *EpDrive) discoverLocalPhase2() {
 	//TODO: get StorageGroup ordinal from ParentOID
 	d.ID = d.sysRF.ID + "g" + strconv.Itoa(d.epRF.getStorageCollectionOrdinal(d.storageCollectionRF)) + "k" + strconv.Itoa(d.Ordinal)
 	if d.DriveRF.Status.State != "Absent" {
-		errlog.Printf("==========> JW_DEBUG <========== ******************** EpDrive:discoverLocalPhase2: ********************\n")
 		d.Status = "Populated"
 		d.State = base.StatePopulated.String()
 		d.Flag = base.FlagOK.String()
 		generatedFRUID, err := GetDriveFRUID(d)
-		errlog.Printf("==========> JW_DEBUG <========== ******************** EpDrive:discoverLocalPhase2: ********************\n")
 		if err != nil {
 			errlog.Printf("FRUID Error: %s\n", err.Error())
 			errlog.Printf("Using untrackable FRUID: %s\n", generatedFRUID)

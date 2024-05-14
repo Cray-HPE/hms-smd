@@ -270,7 +270,6 @@ func (pdu *EpPDU) discoverLocalPhase2() {
 // from Redfish
 func (pdu *EpPDU) discoverComponentState() {
 	if pdu.PowerDistributionRF.Status.State != "Absent" {
-		errlog.Printf("==========> JW_DEBUG <========== ******************** EpPDU:discoverComponentState: ********************\n")
 		pdu.Status = "Populated"
 		pdu.State = base.StatePopulated.String()
 		pdu.Flag = base.FlagOK.String()
@@ -295,7 +294,6 @@ func (pdu *EpPDU) discoverComponentState() {
 			pdu.Flag = base.FlagAlert.String()
 		}
 		generatedFRUID, err := GetPDUFRUID(pdu)
-		errlog.Printf("==========> JW_DEBUG <========== EpPDU:discoverComponentState: generated FRUID %v for %s\n", pdu.FRUID, pdu.OdataID)
 		if err != nil {
 			errlog.Printf("FRUID Error: %s\n", err.Error())
 			errlog.Printf("Using untrackable FRUID: %s\n", generatedFRUID)
@@ -860,7 +858,6 @@ func (ps *EpPowerSupplies) discoverLocalPhase2() error {
 // HMS with information about where the PowerSupply is located
 func (p *EpPowerSupply) discoverLocalPhase2() {
 	// Should never happen
-	errlog.Printf("==========> JW_DEBUG <========== ******************** EpPowerSupply:discoverLocalPhase2: ********************\n")
 	if p.epRF == nil {
 		errlog.Printf("Error: RedfishEP == nil for odataID: %s\n",
 			p.OdataID)
@@ -868,7 +865,6 @@ func (p *EpPowerSupply) discoverLocalPhase2() {
 		return
 	}
 	if p.LastStatus != VerifyingData {
-		errlog.Printf("==========> JW_DEBUG <========== EpPowerSupply:discoverLocalPhase2: returning due to VerifyingData\n")
 		return
 	}
 
@@ -885,9 +881,7 @@ func (p *EpPowerSupply) discoverLocalPhase2() {
 			errlog.Printf("Using untrackable FRUID: %s\n", generatedFRUID)
 		}
 		p.FRUID = generatedFRUID
-		errlog.Printf("==========> JW_DEBUG <========== EpPowerSupply:discoverLocalPhase2: generated FRUID %v for %s\n", p.FRUID, p.OdataID)
 	} else {
-		errlog.Printf("==========> JW_DEBUG <========== EpPowerSupply:discoverLocalPhase2: absent power supply\n")
 		p.Status = "Empty"
 		p.State = base.StateEmpty.String()
 		//the state of the component is known (empty), it is not locked, does not have an alert or warning, so therefore Flag defaults to OK.
@@ -899,8 +893,6 @@ func (p *EpPowerSupply) discoverLocalPhase2() {
 			errlog.Printf("PowerSupply discoverLocalPhase2: VALID xname ID ('%s') and Type ('%s') for: %s\n",
 				p.ID, p.Type, p.PowerSupplyURL)
 		}
-		errlog.Printf("==========> JW_DEBUG <========== PowerSupply discoverLocalPhase2: VALID xname ID ('%s') and Type ('%s') for: %s\n",
-				p.ID, p.Type, p.PowerSupplyURL)
 	} else {
 		errlog.Printf("Error: Bad xname ID ('%s') or Type ('%s') for: %s\n",
 			p.ID, p.Type, p.PowerSupplyURL)
