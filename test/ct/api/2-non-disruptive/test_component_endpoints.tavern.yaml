@@ -123,6 +123,7 @@ stages:
                           - "RackMount"
                           - "RackPDU"
                           - "StandAlone"
+                          - "Zone"
                       MACAddr:
                         type: str
                         required: False
