@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright [2019-2023] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2019-2024] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -770,10 +770,21 @@ func (q *preparedQuery) setCompWhereQuery(f *ComponentFilter, cont bool) error {
 	if err != nil {
 		return ErrHMSDSArgNoMatch
 	}
+	// Allow role OR subRole as a subclause without ORing the whole query
+	err = q.doQueryArgsWithOR(
+		"role", "subrole",
+		f.orRole, f.orSubRole,
+		base.VerifyNormalizeRole,
+		base.VerifyNormalizeSubRole)
+	if err != nil {
+		return ErrHMSDSArgBadRole
+	}
+	// Addtional roles to be added as normal AND options
 	err = q.doQueryArg("role", f.Role, base.VerifyNormalizeRole)
 	if err != nil {
 		return ErrHMSDSArgBadRole
 	}
+	// Ditto subrole
 	err = q.doQueryArg("subrole", f.SubRole, base.VerifyNormalizeSubRole)
 	if err != nil {
 		return ErrHMSDSArgBadSubRole

@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright [2018-2023] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2018-2024] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -932,7 +932,7 @@ func (d *hmsdbPg) BulkUpdateCompRole(ids []string, role, subRole string) ([]stri
 	}
 	// Allow SubRole to be empty
 	if subRole != "" {
-		subRole = base.VerifyNormalizeRole(subRole)
+		subRole = base.VerifyNormalizeSubRole(subRole)
 		if subRole == "" {
 			return []string{}, ErrHMSDSArgNoMatch
 		}
@@ -948,8 +948,8 @@ func (d *hmsdbPg) BulkUpdateCompRole(ids []string, role, subRole string) ([]stri
 		affectedIDs, err = t.GetComponentIDsTx(IDs(ids), Role("!"+role),
 			From("BulkUpdateCompRole"))
 	} else {
-		affectedIDs, err = t.GetComponentIDsTx(IDs(ids), Role("!"+role),
-			SubRole("!"+subRole), From("BulkUpdateCompRole"))
+		affectedIDs, err = t.GetComponentIDsTx(IDs(ids), NotRoleOrSubRole(role, subRole),
+			From("BulkUpdateCompRole"))
 	}
 	if err != nil {
 		t.Rollback()
