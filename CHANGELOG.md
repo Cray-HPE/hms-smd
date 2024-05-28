@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.6] - 2024-05-28
+
+### Fixed
+
+- Fixed incorrect call of `VerifyNormalizeRole` on a subrole that broke component subrole bulk updates.
+- Fix filtering bug that prevents bulk component role/subrole updates from updating components that already have
+  the correct role (but incorrect subrole), or vice versa.
+
+### Added
+
+- Restored API tests that were disabled due to above bugs.
+
 ## [2.2.5] - 2024-05-03
 
 ### Fixed

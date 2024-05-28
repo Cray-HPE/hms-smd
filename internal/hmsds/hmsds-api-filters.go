@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright [2019-2022] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2019-2022, 2024] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -83,6 +83,11 @@ type ComponentFilter struct {
 	// graph.  If we don't mix the types we can use both in the same query.
 	orState []string
 	orFlag  []string
+
+	// Same thing is needed to find components whose role or subrole differ
+	// from the desired values
+	orRole []string
+	orSubRole []string
 
 	flagCondition *PCondition
 
@@ -265,6 +270,25 @@ func StateOrFlag(state, flag string) CompFiltFunc {
 // Like the above, but with the negation done for you.  Example, really.
 func NotStateOrFlag(state, flag string) CompFiltFunc {
 	return StateOrFlag("!"+state, "!"+flag)
+}
+
+// Select xnames with either role OR with subrole. Replaces any earlier
+// call.  Role/subrole can be negated with "!", and any lines already set to
+// role AND subrole are excluded from the query result and possible update.
+//
+// Use this to see if a Role/SubRole change would be redundant for both values.
+func RoleOrSubRole(role, subRole string) CompFiltFunc {
+	return func(f *ComponentFilter) {
+		if f != nil {
+			f.orRole = []string{"!" + role}
+			f.orSubRole = []string{"!" + subRole}
+		}
+	}
+}
+
+// Like the above, but with the negation done for you.  Example, really.
+func NotRoleOrSubRole(role, subRole string) CompFiltFunc {
+	return RoleOrSubRole("!"+role, "!"+subRole)
 }
 
 // Filter selects rows with just these states.  Overwrites any previous State,
@@ -467,6 +491,14 @@ func (f *ComponentFilter) VerifyNormalize() error {
 	err = checkFilterField(f.orFlag, base.VerifyNormalizeFlag, false)
 	if err != nil {
 		return ErrHMSDSArgBadFlag
+	}
+	err = checkFilterField(f.orRole,  base.VerifyNormalizeRole, true)
+	if err != nil {
+		return ErrHMSDSArgBadRole
+	}
+	err = checkFilterField(f.orSubRole, base.VerifyNormalizeSubRole, true)
+	if err != nil {
+		return ErrHMSDSArgBadSubRole
 	}
 	// Skip SwStatus
 	//
