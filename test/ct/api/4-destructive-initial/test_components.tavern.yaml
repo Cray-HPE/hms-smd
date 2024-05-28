@@ -1,6 +1,6 @@
 # MIT License
 #
-# (C) Copyright [2022] Hewlett Packard Enterprise Development LP
+# (C) Copyright [2022, 2024] Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -307,14 +307,14 @@
 # PATCH /State/Components/{xname}/SoftwareStatus Node API response body
 # GET /State/Components/{xname} Updated SoftwareStatus Node API response code
 # GET /State/Components/{xname} Updated SoftwareStatus Node API response body
-# TODO: Disabled (CASMHMS-5838) PATCH /State/Components/BulkRole Nodes API response code
-# TODO: Disabled (CASMHMS-5838) PATCH /State/Components/BulkRole Nodes API response body
-# TODO: Disabled (CASMHMS-5838) GET /State/Components/{xname} Updated BulkRole NodeA API response code
-# TODO: Disabled (CASMHMS-5838) GET /State/Components/{xname} Updated BulkRole NodeA API response body
-# TODO: Disabled (CASMHMS-5838) GET /State/Components/{xname} Updated BulkRole NodeB API response code
-# TODO: Disabled (CASMHMS-5838) GET /State/Components/{xname} Updated BulkRole NodeB API response body
-# TODO: Disabled (CASMHMS-5838) GET /State/Components/{xname} Non-Updated BulkRole Node API response code
-# TODO: Disabled (CASMHMS-5838) GET /State/Components/{xname} Non-Updated BulkRole Node API response body
+# PATCH /State/Components/BulkRole Nodes API response code
+# PATCH /State/Components/BulkRole Nodes API response body
+# GET /State/Components/{xname} Updated BulkRole NodeA API response code
+# GET /State/Components/{xname} Updated BulkRole NodeA API response body
+# GET /State/Components/{xname} Updated BulkRole NodeB API response code
+# GET /State/Components/{xname} Updated BulkRole NodeB API response body
+# GET /State/Components/{xname} Non-Updated BulkRole Node API response code
+# GET /State/Components/{xname} Non-Updated BulkRole Node API response body
 # PATCH /State/Components/{xname}/Role Node API response code
 # PATCH /State/Components/{xname}/Role Node API response body
 # GET /State/Components/{xname} Updated Role Node API response code
@@ -8460,254 +8460,248 @@ stages:
                 enum:
                   - "River"
 
-#  #TODO: Disabled (CASMHMS-5838) PATCH /State/Components/BulkRole Nodes API response code
-#  #TODO: Disabled (CASMHMS-5838) PATCH /State/Components/BulkRole Nodes API response body
-#  - name: hsmAPIstateComponentsBulkRolePATCHnodes - Bulk update Node Component role values using PATCH.
-#    request:
-#      url: "{hsm_base_url}/hsm/v2/State/Components/BulkRole"
-#      method: PATCH
-#      verify: !bool "{verify}"
-#      #TODO: Swagger shows Role and SubRole supplied here, but the PATCH fails when including a SubRole of "Master" or "Worker".
-#      #json: {"ComponentIDs":["x9999c7s9b8n7","x9999c7s9b8n6"],"Role":"Compute","SubRole":"Master"}
-#      #json: {"ComponentIDs":["x9999c7s9b8n7","x9999c7s9b8n6"],"Role":"Compute","SubRole":"Worker"}
-#      #TODO: Oddly, "Storage" is accepted but the role changes don't show up in subsequent GETs on the component.
-#      #json: {"ComponentIDs":["x9999c7s9b8n7","x9999c7s9b8n6"],"Role":"Compute","SubRole":"Storage"}
-#      #TODO: Swagger says list of IDs and Role are required, when SubRole is not included it seems to clear the previously existing SubRole
-#      #json: {"ComponentIDs":["x9999c7s9b8n7","x9999c7s9b8n6"],"Role":"Compute"}
-#    response:
-#      status_code: 204
-#
-#  #TODO: Disabled (CASMHMS-5838) GET /State/Components/{xname} Updated BulkRole NodeA API response code
-#  #TODO: Disabled (CASMHMS-5838) GET /State/Components/{xname} Updated BulkRole NodeA API response body
-#  - name: hsmAPIstateComponentsGETxnameUpdatedBulkRoleNodeA - Retrieve Node Component using GET that was bulk updated.
-#    request:
-#      url: "{hsm_base_url}/hsm/v2/State/Components/x9999c7s9b8n7"
-#      method: GET
-#      verify: !bool "{verify}"
-#    response:
-#      status_code: 200
-#      verify_response_with:
-#        function: tavern.testutils.helpers:validate_pykwalify
-#        extra_kwargs:
-#          schema:
-#            type: map
-#            required: True
-#            mapping:
-#              ID:
-#                type: str
-#                required: True
-#                enum:
-#                  - "x9999c7s9b8n7"
-#              Type:
-#                type: str
-#                required: True
-#                enum:
-#                  - "Node"
-#              State:
-#                type: str
-#                required: True
-#                enum:
-#                  - "Standby"
-#              Flag:
-#                type: str
-#                required: True
-#                enum:
-#                  - "Warning"
-#              Enabled:
-#                type: bool
-#                required: True
-#                enum:
-#                  - false
-#              SoftwareStatus:
-#                type: str
-#                required: True
-#                enum:
-#                  - "UpdatedBulkSoftwareStatus"
-#              Role:
-#                type: str
-#                required: True
-#                enum:
-#                  - "Compute"
-#              SubRole:
-#                type: str
-#                required: True
-#                enum:
-#                  - "Storage"
-#              NID:
-#                type: int
-#                required: True
-#                enum:
-#                  - 9999999987
-#              NetType:
-#                type: str
-#                required: True
-#                enum:
-#                  - "Infiniband"
-#              Arch:
-#                type: str
-#                required: True
-#                enum:
-#                  - "Other"
-#              Class:
-#                type: str
-#                required: True
-#                enum:
-#                  - "Mountain"
-#
-#  #TODO: Disabled (CASMHMS-5838) GET /State/Components/{xname} Updated BulkRole NodeB API response code
-#  #TODO: Disabled (CASMHMS-5838) GET /State/Components/{xname} Updated BulkRole NodeB API response body
-#  - name: hsmAPIstateComponentsGETxnameUpdatedBulkRoleNodeB - Retrieve Node Component using GET that was bulk updated.
-#    request:
-#      url: "{hsm_base_url}/hsm/v2/State/Components/x9999c7s9b8n6"
-#      method: GET
-#      verify: !bool "{verify}"
-#    response:
-#      status_code: 200
-#      verify_response_with:
-#        function: tavern.testutils.helpers:validate_pykwalify
-#        extra_kwargs:
-#          schema:
-#            type: map
-#            required: True
-#            mapping:
-#              ID:
-#                type: str
-#                required: True
-#                enum:
-#                  - "x9999c7s9b8n6"
-#              Type:
-#                type: str
-#                required: True
-#                enum:
-#                  - "Node"
-#              State:
-#                type: str
-#                required: True
-#                enum:
-#                  - "Ready"
-#              Flag:
-#                type: str
-#                required: True
-#                enum:
-#                  - "Warning"
-#              Enabled:
-#                type: bool
-#                required: True
-#                enum:
-#                  - false
-#              SoftwareStatus:
-#                type: str
-#                required: True
-#                enum:
-#                  - "UpdatedBulkSoftwareStatus"
-#              Role:
-#                type: str
-#                required: True
-#                enum:
-#                  - "Compute"
-#              SubRole:
-#                type: str
-#                required: True
-#                enum:
-#                  - "Storage"
-#              NID:
-#                type: int
-#                required: True
-#                enum:
-#                  - 9999999986
-#              NetType:
-#                type: str
-#                required: True
-#                enum:
-#                  - "Ethernet"
-#              Arch:
-#                type: str
-#                required: True
-#                enum:
-#                  - "ARM"
-#              Class:
-#                type: str
-#                required: True
-#                enum:
-#                  - "Hill"
-#
-#  #TODO: Disabled (CASMHMS-5838) GET /State/Components/{xname} Non-Updated BulkRole Node API response code
-#  #TODO: Disabled (CASMHMS-5838) GET /State/Components/{xname} Non-Updated BulkRole Node API response body
-#  - name: hsmAPIstateComponentsGETxnameNonUpdatedBulkRoleNode - Retrieve Node Component using GET that was not bulk updated.
-#    request:
-#      url: "{hsm_base_url}/hsm/v2/State/Components/x9999c7s9b8n8"
-#      method: GET
-#      verify: !bool "{verify}"
-#    response:
-#      status_code: 200
-#      verify_response_with:
-#        function: tavern.testutils.helpers:validate_pykwalify
-#        extra_kwargs:
-#          schema:
-#            type: map
-#            required: True
-#            mapping:
-#              ID:
-#                type: str
-#                required: True
-#                enum:
-#                  - "x9999c7s9b8n8"
-#              Type:
-#                type: str
-#                required: True
-#                enum:
-#                  - "Node"
-#              State:
-#                type: str
-#                required: True
-#                enum:
-#                  - "Standby"
-#              Flag:
-#                type: str
-#                required: True
-#                enum:
-#                  - "OK"
-#              Enabled:
-#                type: bool
-#                required: True
-#                enum:
-#                  - false
-#              SoftwareStatus:
-#                type: str
-#                required: True
-#                enum:
-#                  - "UpdatedXnameSoftwareStatus"
-#              Role:
-#                type: str
-#                required: True
-#                enum:
-#                  - "Compute"
-#              SubRole:
-#                type: str
-#                required: True
-#                enum:
-#                  - "Master"
-#              NID:
-#                type: int
-#                required: True
-#                enum:
-#                  - 9999999988
-#              NetType:
-#                type: str
-#                required: True
-#                enum:
-#                  - "Sling"
-#              Arch:
-#                type: str
-#                required: True
-#                enum:
-#                  - "X86"
-#              Class:
-#                type: str
-#                required: True
-#                enum:
-#                  - "River"
-
+  #PATCH /State/Components/BulkRole Nodes API response code
+  #PATCH /State/Components/BulkRole Nodes API response body
+  - name: hsmAPIstateComponentsBulkRolePATCHnodes - Bulk update Node Component role values using PATCH.
+    request:
+      url: "{hsm_base_url}/hsm/v2/State/Components/BulkRole"
+      method: PATCH
+      verify: !bool "{verify}"
+      json: {"ComponentIDs":["x9999c7s9b8n7","x9999c7s9b8n6"],"Role":"Compute","SubRole":"Worker"}
+    response:
+      status_code: 204
+ 
+  #GET /State/Components/{xname} Updated BulkRole NodeA API response code
+  #GET /State/Components/{xname} Updated BulkRole NodeA API response body
+  - name: hsmAPIstateComponentsGETxnameUpdatedBulkRoleNodeA - Retrieve Node Component using GET that was bulk updated.
+    request:
+      url: "{hsm_base_url}/hsm/v2/State/Components/x9999c7s9b8n7"
+      method: GET
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              ID:
+                type: str
+                required: True
+                enum:
+                  - "x9999c7s9b8n7"
+              Type:
+                type: str
+                required: True
+                enum:
+                  - "Node"
+              State:
+                type: str
+                required: True
+                enum:
+                  - "Standby"
+              Flag:
+                type: str
+                required: True
+                enum:
+                  - "Warning"
+              Enabled:
+                type: bool
+                required: True
+                enum:
+                  - false
+              SoftwareStatus:
+                type: str
+                required: True
+                enum:
+                  - "UpdatedBulkSoftwareStatus"
+              Role:
+                type: str
+                required: True
+                enum:
+                  - "Compute"
+              SubRole:
+                type: str
+                required: True
+                enum:
+                  - "Worker"
+              NID:
+                type: int
+                required: True
+                enum:
+                  - 9999999987
+              NetType:
+                type: str
+                required: True
+                enum:
+                  - "Infiniband"
+              Arch:
+                type: str
+                required: True
+                enum:
+                  - "Other"
+              Class:
+                type: str
+                required: True
+                enum:
+                  - "Mountain"
+ 
+  #GET /State/Components/{xname} Updated BulkRole NodeB API response code
+  #GET /State/Components/{xname} Updated BulkRole NodeB API response body
+  - name: hsmAPIstateComponentsGETxnameUpdatedBulkRoleNodeB - Retrieve Node Component using GET that was bulk updated.
+    request:
+      url: "{hsm_base_url}/hsm/v2/State/Components/x9999c7s9b8n6"
+      method: GET
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              ID:
+                type: str
+                required: True
+                enum:
+                  - "x9999c7s9b8n6"
+              Type:
+                type: str
+                required: True
+                enum:
+                  - "Node"
+              State:
+                type: str
+                required: True
+                enum:
+                  - "Ready"
+              Flag:
+                type: str
+                required: True
+                enum:
+                  - "Warning"
+              Enabled:
+                type: bool
+                required: True
+                enum:
+                  - false
+              SoftwareStatus:
+                type: str
+                required: True
+                enum:
+                  - "UpdatedBulkSoftwareStatus"
+              Role:
+                type: str
+                required: True
+                enum:
+                  - "Compute"
+              SubRole:
+                type: str
+                required: True
+                enum:
+                  - "Worker"
+              NID:
+                type: int
+                required: True
+                enum:
+                  - 9999999986
+              NetType:
+                type: str
+                required: True
+                enum:
+                  - "Ethernet"
+              Arch:
+                type: str
+                required: True
+                enum:
+                  - "ARM"
+              Class:
+                type: str
+                required: True
+                enum:
+                  - "Hill"
+ 
+  #GET /State/Components/{xname} Non-Updated BulkRole Node API response code
+  #GET /State/Components/{xname} Non-Updated BulkRole Node API response body
+  - name: hsmAPIstateComponentsGETxnameNonUpdatedBulkRoleNode - Retrieve Node Component using GET that was not bulk updated.
+    request:
+      url: "{hsm_base_url}/hsm/v2/State/Components/x9999c7s9b8n8"
+      method: GET
+      verify: !bool "{verify}"
+    response:
+      status_code: 200
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            required: True
+            mapping:
+              ID:
+                type: str
+                required: True
+                enum:
+                  - "x9999c7s9b8n8"
+              Type:
+                type: str
+                required: True
+                enum:
+                  - "Node"
+              State:
+                type: str
+                required: True
+                enum:
+                  - "Standby"
+              Flag:
+                type: str
+                required: True
+                enum:
+                  - "OK"
+              Enabled:
+                type: bool
+                required: True
+                enum:
+                  - false
+              SoftwareStatus:
+                type: str
+                required: True
+                enum:
+                  - "UpdatedXnameSoftwareStatus"
+              Role:
+                type: str
+                required: True
+                enum:
+                  - "Compute"
+              SubRole:
+                type: str
+                required: True
+                enum:
+                  - "Master"
+              NID:
+                type: int
+                required: True
+                enum:
+                  - 9999999988
+              NetType:
+                type: str
+                required: True
+                enum:
+                  - "Sling"
+              Arch:
+                type: str
+                required: True
+                enum:
+                  - "X86"
+              Class:
+                type: str
+                required: True
+                enum:
+                  - "River"
+ 
   # PATCH /State/Components/{xname}/Role Node API response code
   # PATCH /State/Components/{xname}/Role Node API response body
   - name: hsmAPIstateComponentsXnameRolePATCHnode - Update role data for specific Node Component using PATCH.
@@ -8857,7 +8851,7 @@ stages:
                 type: str
                 required: True
                 enum:
-                  - "Service"
+                  - "Compute"
               SubRole:
                 type: str
                 required: True
@@ -8934,12 +8928,12 @@ stages:
                 type: str
                 required: True
                 enum:
-                  - "System"
+                  - "Compute"
               SubRole:
                 type: str
                 required: True
                 enum:
-                  - "Storage"
+                  - "Worker"
               NID:
                 type: int
                 required: True
