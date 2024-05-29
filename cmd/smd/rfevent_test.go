@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright [2019-2023] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2019-2024] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -27,13 +27,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"testing"
+
 	compcreds "github.com/Cray-HPE/hms-compcredentials"
 	sstorage "github.com/Cray-HPE/hms-securestorage"
 	"github.com/Cray-HPE/hms-smd/v2/internal/hmsds"
 	rf "github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
 	st "github.com/Cray-HPE/hms-smd/v2/pkg/sharedtest"
 	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
-	"testing"
 )
 
 var testFQDN = "[fd40:aaaa:bbbb:1000:240:a6ff:ee82:d7c2]"
@@ -605,6 +606,26 @@ func TestDoHandleRFEvent(t *testing.T) {
 			st.EventHPEiLOServerPoweredOff,
 			st.EpID("x3000c0s2b0"),
 			st.RfId("1")),
+		nil,
+		[]string{"x3000c0s2b0n0"},
+		"Off",
+		"OK",
+		false,
+		nil,
+	}, {
+		st.GenEvent(
+			st.EventFoxconnServerPoweredOn,
+			st.EpID("x3000c0s2b0")),
+		nil,
+		[]string{"x3000c0s2b0n0"},
+		"On",
+		"OK",
+		false,
+		nil,
+	}, {
+		st.GenEvent(
+			st.EventFoxconnServerPoweredOff,
+			st.EpID("x3000c0s2b0")),
 		nil,
 		[]string{"x3000c0s2b0n0"},
 		"Off",
@@ -1200,7 +1221,6 @@ const testPayloadGigabyteSystems_SelfOff = `
 }
 `
 
-
 //////////////////////////////////////////////////////////////////////////////
 //                         HPE iLO - Payloads
 //////////////////////////////////////////////////////////////////////////////
@@ -1235,12 +1255,12 @@ var HPEiLOCompEPs = []*sm.ComponentEndpoint{
 			},
 			EthNICInfo: []*rf.EthernetNICInfo{
 				&rf.EthernetNICInfo{RedfishId: "1",
-					Oid:         "/redfish/v1/Systems/1/EthernetInterfaces/1",
-					MACAddress:  "68:05:ca:bb:c1:82",
+					Oid:        "/redfish/v1/Systems/1/EthernetInterfaces/1",
+					MACAddress: "68:05:ca:bb:c1:82",
 				},
 				&rf.EthernetNICInfo{RedfishId: "2",
-					Oid:         "/redfish/v1/Systems/1/EthernetInterfaces/2",
-					MACAddress:  "68:05:ca:bb:c1:83",
+					Oid:        "/redfish/v1/Systems/1/EthernetInterfaces/2",
+					MACAddress: "68:05:ca:bb:c1:83",
 				},
 			},
 		},
@@ -1273,12 +1293,12 @@ var HPEiLOCompEPs = []*sm.ComponentEndpoint{
 			},
 			EthNICInfo: []*rf.EthernetNICInfo{
 				&rf.EthernetNICInfo{RedfishId: "1",
-					Oid:         "/redfish/v1/Systems/1/EthernetInterfaces/1",
-					MACAddress:  "68:05:ca:bb:c1:82",
+					Oid:        "/redfish/v1/Systems/1/EthernetInterfaces/1",
+					MACAddress: "68:05:ca:bb:c1:82",
 				},
 				&rf.EthernetNICInfo{RedfishId: "2",
-					Oid:         "/redfish/v1/Systems/1/EthernetInterfaces/2",
-					MACAddress:  "68:05:ca:bb:c1:83",
+					Oid:        "/redfish/v1/Systems/1/EthernetInterfaces/2",
+					MACAddress: "68:05:ca:bb:c1:83",
 				},
 			},
 		},
