@@ -307,6 +307,8 @@ var eventActionParserLookup = map[string]EventActionParser{
 	"powerstatuschange":                       AlertSystemPowerParser,
 	"serverpoweredon":                         AlertSystemPowerOnParser,
 	"serverpoweredoff":                        AlertSystemPowerOffParser,
+	"dcpoweron":                               FoxconnAlertSystemPowerOnParser,
+	"dcpoweroff":                              FoxconnAlertSystemPowerOffParser,
 }
 
 // Gets the EventActionParser function for the processed event or returns
@@ -884,6 +886,57 @@ func (s *SmD) doUpdateCompHWInv(cep *sm.ComponentEndpoint, ep *rf.RedfishEP) err
 		}
 	}
 	return nil
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// Foxconn Paradise OpenBmc firmware
+/////////////////////////////////////////////////////////////////////////////
+
+// EventActionParser - Alert, presumably from Foxconn Paradise BMC
+//
+//	The OriginOfXondition (pe.Origin) will likely not be set. Assume n0 in that case
+func FoxconnAlertSystemPowerOnParser(s *SmD, pe *processedRFEvent) (*CompUpdate, error) {
+	u := new(CompUpdate)
+	xname := fmt.Sprintf("%sn0", pe.RfEndppointID)
+	if pe.Origin != "" {
+		xname, err := s.getIDForURI(pe.RfEndppointID, pe.Origin)
+		if err != nil {
+			return nil, err
+		} else if xname == "" {
+			return nil, ErrSmMsgNoID
+		}
+	}
+	// Update hwinv for nodes
+	if xnametypes.GetHMSType(xname) == xnametypes.Node {
+		cep, ep, err := s.getCompEPInfo(xname)
+		if err == nil {
+			go s.doUpdateCompHWInv(cep, ep)
+		}
+	}
+	u.ComponentIDs = append(u.ComponentIDs, xname)
+	u.UpdateType = StateDataUpdate.String()
+	u.State = base.StateOn.String()
+	return u, nil
+}
+
+// EventActionParser - Alert, presumably from Foxconn Paradise BMC
+//
+//	The OriginOfXondition (pe.Origin) will likely not be set. Assume n0 in that case
+func FoxconnAlertSystemPowerOffParser(s *SmD, pe *processedRFEvent) (*CompUpdate, error) {
+	u := new(CompUpdate)
+	xname := fmt.Sprintf("%sn0", pe.RfEndppointID)
+	if pe.Origin != "" {
+		xname, err := s.getIDForURI(pe.RfEndppointID, pe.Origin)
+		if err != nil {
+			return nil, err
+		} else if xname == "" {
+			return nil, ErrSmMsgNoID
+		}
+	}
+	u.ComponentIDs = append(u.ComponentIDs, xname)
+	u.UpdateType = StateDataUpdate.String()
+	u.State = base.StateOff.String()
+	return u, nil
 }
 
 /////////////////////////////////////////////////////////////////////////////
