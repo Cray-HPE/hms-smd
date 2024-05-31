@@ -543,8 +543,8 @@ var EventFoxconnServerPoweredOn = `{
 	"Events": [
 	  {
 		"EventTimeStamp": "2024-05-20T17:57:23+00:00",
-		"Message": "Host system DC power is on.",
-		"MessageId": "Alert.1.0.0.DCPowerOn",
+		"Message": "Host system DC power is on",
+		"MessageId": "OpenBMC.1.0.DCPowerOn",
 		"MessageSeverity": "Critical"
 	  }
 	]
@@ -559,8 +559,8 @@ var EventFoxconnServerPoweredOff = `{
 	"Events": [
 	  {
 		"EventTimeStamp": "2024-05-20T17:57:23+00:00",
-		"Message": "Host system DC power is off.",
-		"MessageId": "Alert.1.0.0.DCPowerOff",
+		"Message": "Host system DC power is off",
+		"MessageId": "OpenBMC.1.0.DCPowerOff",
 		"MessageSeverity": "Critical"
 	  }
 	]
