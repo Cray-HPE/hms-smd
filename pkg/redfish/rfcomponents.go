@@ -1181,6 +1181,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 		}
 	}
 
+	errlog.Printf("-----> JW_DEBUG: discoverRemotePhase1: Power: ok=%v nodeChassis=%v\n", ok, nodeChassis)
 	if ok {
 		//
 		// Get PowerControl Info if it exists
@@ -1233,7 +1234,9 @@ func (s *EpSystem) discoverRemotePhase1() {
 				s.Controls = append(s.Controls, &control)
 			}
 		}
+		errlog.Printf("-----> JW_DEBUG: nodeChassis.ChassisRF.Power.Oid=%s\n", nodeChassis.ChassisRF.Power.Oid)
 		if nodeChassis.ChassisRF.Power.Oid != "" {
+			errlog.Printf("-----> JW_DEBUG: discovering power\n")
 			path = nodeChassis.ChassisRF.Power.Oid
 			pwrCtlURLJSON, err := s.epRF.GETRelative(path)
 			if err != nil || pwrCtlURLJSON == nil {
@@ -1348,6 +1351,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 
 		FoxconnPowerTimedOut:
 
+		errlog.Printf("-----> JW_DEBUG: SHOULD HAVE DISCOVERED POWER ENDPOINT BY NOW\n")
 		//
 		// Get Chassis assembly (NodeAccelRiser) info if it exists
 		//
@@ -1359,11 +1363,13 @@ func (s *EpSystem) discoverRemotePhase1() {
 			}
 		}
 
+		errlog.Printf("-----> JW_DEBUG: Assemblies: ok=%v nodeChassis=%v\n", ok, nodeChassis)
 		if nodeChassis == nil || nodeChassis.ChassisRF.Assembly.Oid == "" {
 			//errlog.Printf("%s: No assembly obj found.\n", topURL)
 			s.NodeAccelRisers.Num = 0
 			s.NodeAccelRisers.OIDs = make(map[string]*EpNodeAccelRiser)
 		} else {
+			errlog.Printf("-----> JW_DEBUG: discovering assemblies\n")
 			//create a new EpAssembly object using chassis and Assembly.OID
 			s.Assembly = NewEpAssembly(s, nodeChassis.ChassisRF.Assembly, nodeChassis.OdataID, nodeChassis.RedfishType)
 
@@ -1448,12 +1454,14 @@ func (s *EpSystem) discoverRemotePhase1() {
 				}
 			}
 
+			errlog.Printf("-----> JW_DEBUG: NetworkAdapters: ok=%v nodeChassis=%v\n", ok, nodeChassis)
 			// Non-proliant iLO. Just get Chassis NetworkAdapter (HSN NIC) info if it exists
 			if nodeChassis == nil || nodeChassis.ChassisRF.NetworkAdapters.Oid == "" {
 				//errlog.Printf("%s: No assembly obj found.\n", topURL)
 				s.NetworkAdapters.Num = 0
 				s.NetworkAdapters.OIDs = make(map[string]*EpNetworkAdapter)
 			} else {
+				errlog.Printf("-----> JW_DEBUG: Discovering NetworkAdapters\n")
 				path = nodeChassis.ChassisRF.NetworkAdapters.Oid
 				url = nodeChassis.epRF.FQDN + path
 				naJSON, err := s.epRF.GETRelative(path)
@@ -1484,6 +1492,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 			}
 		}
 	}
+	errlog.Printf("-----> JW_DEBUG: DONE\n")
 
 	//
 	// Get link to systems's ethernet interfaces

@@ -106,8 +106,8 @@ func (s *SmD) doHandleRFEvent(eventRaw string) error {
 		} else if update == nil {
 			continue
 		}
-		s.Log(LOG_INFO, "CHANGING STATE: %s->%s: calling doCompUpdate(%s)",
-			pe.RfEndppointID, pe.MessageId, update.ComponentIDs)
+		s.Log(LOG_INFO, "CHANGING STATE: %s->%s: calling doCompUpdate(%s) CompUpdateType=%s",
+			pe.RfEndppointID, pe.MessageId, update.ComponentIDs, update.UpdateType)
 		err = s.doCompUpdate(update, "handleRFEvent")
 		if err != nil {
 			s.LogAlways("ERROR: %s->%s: calling doCompUpdate(%s): %s",
