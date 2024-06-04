@@ -1188,7 +1188,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 					ok = true
 				} else {
 					ok = false
-					errlog.Printf("Foxconn Paradise ERROR: Could not recreate ProcessorModule_0 chassis\n")
+					errlog.Printf("Foxconn Paradise ERROR: Could not rediscover ProcessorModule_0 chassis\n")
 				}
 			}
 		} else {
@@ -1267,7 +1267,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 					//
 					// Yes, the goto is ugly but we went down this route so as to not have to
 					// completely reorganize the code to handle this special case.
-					errlog.Printf("Foxconn Paradise WARNING: Timed out querying Power endpoint at %s when node power is %s.  Will need to discover again after node power is on\n", path, nodeChassis.ChassisRF.PowerState)
+					errlog.Printf("Foxconn Paradise WARNING: Timed out querying Power endpoint at %s when node power is %s.  Will attempt to discover again after node power is on\n", path, nodeChassis.ChassisRF.PowerState)
 					goto FoxconnPowerTimedOut
 				}
 				s.LastStatus = HTTPsGetFailed
@@ -1275,6 +1275,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 			}
 			s.PowerURL = path
 			s.LastStatus = HTTPsGetOk
+			errlog.Printf("-----> JW_DEBUG: We successfully read power and set s.PowerURL=%v\n", s.PowerURL)
 
 			// Decode JSON into PowerControl structure
 			if err := json.Unmarshal(pwrCtlURLJSON, &s.PowerInfo); err != nil {
@@ -1303,6 +1304,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 				}
 			}
 
+			errlog.Printf("-----> JW_DEBUG: Done unmarshalling\n")
 			if s.PowerInfo.OEM != nil && s.PowerInfo.OEM.HPE != nil && len(s.PowerInfo.PowerControl) > 0 {
 				oemPwr := PwrCtlOEM{HPE: &PwrCtlOEMHPE{
 					Status: "Empty",
@@ -1363,6 +1365,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 				s.PowerInfo.PowerControl[0].OEM = &oemPwr
 			}
 			s.PowerCtl = s.PowerInfo.PowerControl
+			errlog.Printf("-----> JW_DEBUG: Set s.PowerCtl=%v\n", s.PowerCtl)
 		}
 
 		FoxconnPowerTimedOut:
