@@ -1169,7 +1169,11 @@ func (s *EpSystem) discoverRemotePhase1() {
 	// but we associate it with nodes (systems). There will be a chassis URL
 	// with our system's id if there is info to get.
 	nodeChassis, ok := s.epRF.Chassis.OIDs[s.SystemRF.Id]
+	errlog.Printf("-----> JW_DEBUG: s.epRF.Chassis.OIDs=%v\n", s.epRF.Chassis.OIDs)
+	errlog.Printf("-----> JW_DEBUG: Power: s.SystemRF.Id=%v ok=%v nodeChassis=%v\n", s.SystemRF.Id, ok, nodeChassis)
 	if !ok {
+	    errlog.Printf("-----> JW_DEBUG: s.SystemRF.Manufacturer=%v FoxconnMfr=%v IsManufacturer=%v\n",
+		      s.SystemRF.Manufacturer, FoxconnMfr, IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr))
 		if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
 			// Foxconn Paradise uses the ProcessorModule_0 chassis to find the
 			// Power endpoint for power capping.
@@ -1181,7 +1185,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 		}
 	}
 
-	errlog.Printf("-----> JW_DEBUG: discoverRemotePhase1: Power: ok=%v nodeChassis=%v\n", ok, nodeChassis)
+	errlog.Printf("-----> JW_DEBUG: ok=%v nodeChassis=%v\n", ok, nodeChassis)
 	if ok {
 		//
 		// Get PowerControl Info if it exists
