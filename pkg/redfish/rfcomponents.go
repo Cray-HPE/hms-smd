@@ -1169,8 +1169,6 @@ func (s *EpSystem) discoverRemotePhase1() {
 	// but we associate it with nodes (systems). There will be a chassis URL
 	// with our system's id if there is info to get.
 	nodeChassis, ok := s.epRF.Chassis.OIDs[s.SystemRF.Id]
-	errlog.Printf("-----> JW_DEBUG: s.epRF.Chassis.OIDs=%v\n", s.epRF.Chassis.OIDs)
-	errlog.Printf("-----> JW_DEBUG: Power: s.SystemRF.Id=%v ok=%v nodeChassis=%v\n", s.SystemRF.Id, ok, nodeChassis)
 	if !ok {
 	    errlog.Printf("-----> JW_DEBUG: s.SystemRF.Manufacturer=%v FoxconnMfr=%v IsManufacturer=%v\n",
 		      s.SystemRF.Manufacturer, FoxconnMfr, IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr))
@@ -1178,6 +1176,21 @@ func (s *EpSystem) discoverRemotePhase1() {
 			// Foxconn Paradise uses the ProcessorModule_0 chassis to find the
 			// Power endpoint for power capping.
 			nodeChassis, ok = s.epRF.Chassis.OIDs["ProcessorModule_0"]
+			if !ok {
+				// If the ProcessorModule_0 chassis is not found, we're likely coming through
+				// here after receiving a node power on event.  The ProcessorModule_0 chassis
+				// has long been discarded so we need to reread it here.  It should be garbage
+				// collected when we return later.
+				errlog.Printf("Foxconn Paradise WARNING: Could not find ProcessorModule_0 chassis - rediscovering\n")
+				nodeChassis = NewEpChassis(s.epRF, ResourceID{Oid: "/redfish/v1/Chassis/ProcessorModule_0"}, 0)
+				nodeChassis.discoverRemotePhase1()
+				if nodeChassis.LastStatus == VerifyingData {
+					ok = true
+				} else {
+					ok = false
+					errlog.Printf("Foxconn Paradise ERROR: Could not recreate ProcessorModule_0 chassis\n")
+				}
+			}
 		} else {
 			// Intel uses /Chassis/Rackmount/Baseboard instead of /Chassis/<sysid>.
 			// See if "Baseboard" exists.
@@ -1185,7 +1198,6 @@ func (s *EpSystem) discoverRemotePhase1() {
 		}
 	}
 
-	errlog.Printf("-----> JW_DEBUG: ok=%v nodeChassis=%v\n", ok, nodeChassis)
 	if ok {
 		//
 		// Get PowerControl Info if it exists
