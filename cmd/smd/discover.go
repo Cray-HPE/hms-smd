@@ -416,28 +416,37 @@ func (s *SmD) updateFromRfEndpoint(rfEP *rf.RedfishEP) error {
 // Create a new array of ComponentEndpoints based on a post-discover
 // redfish endpoint discovery struct.
 func (s *SmD) DiscoverComponentEndpointArray(rfEP *rf.RedfishEP) (*sm.ComponentEndpointArray, error) {
+	s.LogAlways("-----> JW_DEBUG: DiscoverComponentEndpointArray: %s", rfEP.ID)
 	ceps := new(sm.ComponentEndpointArray)
 	for _, chEP := range rfEP.Chassis.OIDs {
+		s.LogAlways("-----> JW_DEBUG: DiscoverComponentEndpointArray: Chassis: %s", chEP.RfEndpointID)
 		cep := s.DiscoverCompEndpointChassis(chEP)
 		if cep != nil {
+			s.LogAlways("-----> JW_DEBUG: DiscoverComponentEndpointArray: added %s", cep.ID)
 			ceps.ComponentEndpoints = append(ceps.ComponentEndpoints, cep)
 		}
 	}
 	for _, sysEP := range rfEP.Systems.OIDs {
+		s.LogAlways("-----> JW_DEBUG: DiscoverComponentEndpointArray: System: %s", sysEP.RfEndpointID)
 		cep := s.DiscoverCompEndpointSystem(sysEP)
 		if cep != nil {
+			s.LogAlways("-----> JW_DEBUG: DiscoverComponentEndpointArray: added %s", cep.ID)
 			ceps.ComponentEndpoints = append(ceps.ComponentEndpoints, cep)
 		}
 	}
 	for _, mEP := range rfEP.Managers.OIDs {
+		s.LogAlways("-----> JW_DEBUG: DiscoverComponentEndpointArray: Manager: %s", mEP.RfEndpointID)
 		cep := s.DiscoverCompEndpointManager(mEP)
 		if cep != nil {
+			s.LogAlways("-----> JW_DEBUG: DiscoverComponentEndpointArray: added %s", cep.ID)
 			ceps.ComponentEndpoints = append(ceps.ComponentEndpoints, cep)
 		}
 	}
 	for _, pduEP := range rfEP.RackPDUs.OIDs {
+		s.LogAlways("-----> JW_DEBUG: DiscoverComponentEndpointArray: RackPDU: %s", pduEP.RfEndpointID)
 		cep := s.DiscoverCompEndpointRackPDU(pduEP)
 		if cep != nil {
+			s.LogAlways("-----> JW_DEBUG: DiscoverComponentEndpointArray: added %s", cep.ID)
 			ceps.ComponentEndpoints = append(ceps.ComponentEndpoints, cep)
 			for _, outEP := range pduEP.Outlets.OIDs {
 				cout := s.DiscoverCompEndpointOutlet(outEP)
@@ -448,6 +457,7 @@ func (s *SmD) DiscoverComponentEndpointArray(rfEP *rf.RedfishEP) (*sm.ComponentE
 			}
 		}
 	}
+	s.LogAlways("-----> JW_DEBUG: DiscoverComponentEndpointArray: done")
 	return ceps, nil
 }
 

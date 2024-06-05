@@ -891,6 +891,48 @@ func (s *SmD) doUpdateCompHWInv(cep *sm.ComponentEndpoint, ep *rf.RedfishEP) err
 // Foxconn Paradise OpenBmc firmware
 /////////////////////////////////////////////////////////////////////////////
 
+// doUpdateCompFoxconn - Update both the hwinv and endpoints for a component.
+//
+//      For Foxconn Paradise hardware we can't just call doUpdateCompHWInv() alone.
+//      If the last discover was run with the node powered off, the PowerURL and
+//      PowerControl system information may not have been updated due to a BMC fw
+//      bug (see PRDIS-198).  doUpdateCompHWInv() will update this information
+//      correctly since the node is now powered on, but will not push it into the
+//      database.  This function will update the hardware inventory and then push
+//      the new endpoint data into the database.
+//
+func (s *SmD) doUpdateCompFoxconn(cep *sm.ComponentEndpoint, ep *rf.RedfishEP) error {
+	s.Log(LOG_INFO, "-----> JW_DEBUG: doUpdateCompFoxconn(%s): calling doUpdateCompHWInv", cep.ID)
+	// First update the hardware inventory.  This also updates system info in the
+	// component endpoint from the ProcesorModule_0 chassis
+	err := s.doUpdateCompHWInv(cep, ep)
+	if err != nil {
+		return err
+	}
+
+	s.Log(LOG_INFO, "-----> JW_DEBUG: doUpdateCompFoxconn: Calling DiscoverComponentEndpointArray")
+	// Now push the new endpoint data into the database
+	ceps, err := s.DiscoverComponentEndpointArray(ep)
+	if err != nil {
+		if err == base.ErrHMSTypeInvalid || err == base.ErrHMSTypeUnsupported {
+			// Non-fatal, one or more components wasn't supported.  Likely to
+			// recur if discovery re-run.
+			s.Log(LOG_INFO, "doUpdateCompFoxconn(%s): One or more: %s", cep.ID, err)
+		} else {
+			s.Log(LOG_INFO, "doUpdateCompFoxconn(%s): Fatal error storing: %s", cep.ID, err)
+			return err
+		}
+	}
+	s.Log(LOG_INFO, "-----> JW_DEBUG: doUpdateCompFoxconn: Calling UpsertCompEndpoints")
+	err = s.db.UpsertCompEndpoints(ceps)
+	if err != nil {
+		s.Log(LOG_INFO, "doUpdateCompFoxconn(%s): Failed to update component endpoints: %s",
+			cep.ID, err)
+	}
+	s.Log(LOG_INFO, "-----> JW_DEBUG: doUpdateCompFoxconn: done")
+	return nil
+}
+
 // EventActionParser - Alert, presumably from Foxconn Paradise BMC
 //
 //	The OriginOfXondition (pe.Origin) will likely not be set. Assume n0 in that case
@@ -909,7 +951,7 @@ func FoxconnAlertSystemPowerOnParser(s *SmD, pe *processedRFEvent) (*CompUpdate,
 	if base.GetHMSType(xname) == base.Node {
 		cep, ep, err := s.getCompEPInfo(xname)
 		if err == nil {
-			go s.doUpdateCompHWInv(cep, ep)
+			go s.doUpdateCompFoxconn(cep, ep)
 		}
 	}
 	u.ComponentIDs = append(u.ComponentIDs, xname)

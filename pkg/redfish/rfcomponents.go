@@ -1170,8 +1170,6 @@ func (s *EpSystem) discoverRemotePhase1() {
 	// with our system's id if there is info to get.
 	nodeChassis, ok := s.epRF.Chassis.OIDs[s.SystemRF.Id]
 	if !ok {
-	    errlog.Printf("-----> JW_DEBUG: s.SystemRF.Manufacturer=%v FoxconnMfr=%v IsManufacturer=%v\n",
-		      s.SystemRF.Manufacturer, FoxconnMfr, IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr))
 		if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
 			// Foxconn Paradise uses the ProcessorModule_0 chassis to find the
 			// Power endpoint for power capping.
@@ -1181,11 +1179,17 @@ func (s *EpSystem) discoverRemotePhase1() {
 				// here after receiving a node power on event.  The ProcessorModule_0 chassis
 				// has long been discarded so we need to reread it here.  It should be garbage
 				// collected when we return later.
+
 				errlog.Printf("Foxconn Paradise WARNING: Could not find ProcessorModule_0 chassis - rediscovering\n")
+
 				nodeChassis = NewEpChassis(s.epRF, ResourceID{Oid: "/redfish/v1/Chassis/ProcessorModule_0"}, 0)
 				nodeChassis.discoverRemotePhase1()
+
 				if nodeChassis.LastStatus == VerifyingData {
 					ok = true
+					// Since we only went through discoverRemotePhase1() and never went
+					// through discoverLocalPhase2() we fudge the status to DiscoverOK
+					nodeChassis.LastStatus = DiscoverOK
 				} else {
 					ok = false
 					errlog.Printf("Foxconn Paradise ERROR: Could not rediscover ProcessorModule_0 chassis\n")
