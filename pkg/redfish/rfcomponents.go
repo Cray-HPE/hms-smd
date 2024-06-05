@@ -1177,35 +1177,40 @@ func (s *EpSystem) discoverRemotePhase1() {
 			nodeChassis, ok = s.epRF.Chassis.OIDs["ProcessorModule_0"]
 			if !ok {
 				// If the ProcessorModule_0 chassis is not found, we're likely coming through
-				// here after receiving a node power on event.  If that is the case, the
-				// ProcessorModule_0 chassis info needs to be reread as we do not rediscover
-				// chassis after node on events.  This is necessary because if this node was
-				// discovered with node power off, the Power endpoint for the ProcessorModule_0
-				// was not discovered due to PRDIS-198.  We need to rediscover it with the
-				// node power on.
+				// here after receiving a node power on event.  If that is the case,  we may
+				// have to rediscover the /Power endpoint in the ProcessorModule_0 chassis.
+				// This is necessary because if this node was discovered with node power off,
+				// the /Power endpoint in the ProcessorModule_0 chassis was not discovered due
+				// to PRDIS-198.  We need to rediscover it here, with the node power on.
 
-				errlog.Printf("Foxconn Paradise WARNING: Could not find ProcessorModule_0 chassis - rediscovering\n")
+				if s.PowerURL == "" {	
+					// The ProcessorModule_0 chassis info first needs to be reread as we do not
+					// rediscover any chassis after node on events.  
 
-				nodeChassis = NewEpChassis(s.epRF, ResourceID{Oid: "/redfish/v1/Chassis/ProcessorModule_0"}, 0)
-				nodeChassis.discoverRemotePhase1()
+					errlog.Printf("Foxconn Paradise WARNING: Could not find ProcessorModule_0 chassis - rediscovering\n")
 
-				if nodeChassis.LastStatus == VerifyingData {
-					ok = true
-					// Since we only went through EpChassis:discoverRemotePhase1() and never
-					// went through EPChassis:discoverLocalPhase2() we fudge the status to
-					// DiscoverOK
-					nodeChassis.LastStatus = DiscoverOK
+					nodeChassis = NewEpChassis(s.epRF, ResourceID{Oid: "/redfish/v1/Chassis/ProcessorModule_0"}, 0)
+					nodeChassis.discoverRemotePhase1()
 
-					// Additionally, we will need to supply a higher retry count to
-					// GetRelative() when reading the /Power endpoint because a delay in its
-					// availability in the processorModule_0 chassis has previously been
-					// observed and the default retry count of 3 was not sufficient.  We
-					// specify a retry count of 4 here which should be sufficient due to the
-					// exponential backoff delay in the GetRelative() function.
-					powerRetryCount = 4
-				} else {
-					ok = false
-					errlog.Printf("Foxconn Paradise ERROR: Could not rediscover ProcessorModule_0 chassis\n")
+					if nodeChassis.LastStatus == VerifyingData {
+						ok = true
+						// Since we only went through EpChassis:discoverRemotePhase1() and never
+						// went through EPChassis:discoverLocalPhase2() we fudge the status to
+						// DiscoverOK
+						nodeChassis.LastStatus = DiscoverOK
+
+						// Additionally, we will need to supply a higher retry count to
+						// GetRelative() when reading the /Power endpoint because a delay in its
+						// availability in the processorModule_0 chassis has previously been
+						// observed after a power on event and the default retry count of 3 was
+						// not sufficient.  We specify a retry count of 4 here which should be
+						// sufficient due to the exponential backoff delay in the GetRelative()
+						// function.
+						powerRetryCount = 4
+					} else {
+						ok = false
+						errlog.Printf("Foxconn Paradise ERROR: Could not rediscover ProcessorModule_0 chassis\n")
+					}
 				}
 			}
 		} else {
