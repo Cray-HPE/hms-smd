@@ -1183,7 +1183,8 @@ func (s *EpSystem) discoverRemotePhase1() {
 				// the /Power endpoint in the ProcessorModule_0 chassis was not discovered due
 				// to PRDIS-198.  We need to rediscover it here, with the node power on.
 
-				if s.PowerURL == "" {	
+				errlog.Printf("-----> JW_DEBUG: s.PowerURL=%s s.PowerCtl=%v\n", s.PowerURL, s.PowerCtl)
+				if s.PowerURL == "" || s.PowerURL == "null" {	
 					// The ProcessorModule_0 chassis info first needs to be reread as we do not
 					// rediscover any chassis after node on events.  
 
