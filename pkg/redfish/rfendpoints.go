@@ -642,15 +642,24 @@ func NewRedfishEps(epds *RedfishEPDescriptions) (*RedfishEPs, error) {
 // "/redfish/v1" part should presumably always be present in the rpath (as the
 // odata.id always includes this).
 //
+// There is an optional argument to provide the retry count.  If not given,
+// the default is 3.  This is the number of times to retry the GET if it fails.
+//
 // If no error results, result should be the raw body (i.e. Redfish JSON).
 // returned.
 // This is the starting point for decoding the JSON into a particular
 // structure (i.e. given the resource's schema, or into a generic
 // interface{} map.
-func (ep *RedfishEP) GETRelative(rpath string) (json.RawMessage, error) {
+func (ep *RedfishEP) GETRelative(rpath string, optionalArgs ...int) (json.RawMessage, error) {
 	var rsp *http.Response
 	var path string = "https://" + ep.FQDN + strings.Replace(rpath, "#", "%23", -1)
 	var body []byte
+
+	// Process optional timeout argument
+	retryCount := 3
+	if len(optionalArgs) > 0 {
+		retryCount = optionalArgs[0]
+	}
 
 	// In case we don't catch this...
 	if ep.FQDN == "" {
@@ -676,7 +685,6 @@ func (ep *RedfishEP) GETRelative(rpath string) (json.RawMessage, error) {
 	//       ep.client.SecureClient = InsecureClient
 
 	// Do retries on errors. They could be temporary interuptions in service.
-	retryCount := 3
 	sleepTime := 1
 	for retry := 0; retry <= retryCount; retry++ {
 		rsp, err = ep.client.Do(req)

@@ -1168,6 +1168,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 	// Some info (Power, NodeAccelRiser, HSN NIC, etc) is at the chassis level
 	// but we associate it with nodes (systems). There will be a chassis URL
 	// with our system's id if there is info to get.
+	powerRetryCount := 3
 	nodeChassis, ok := s.epRF.Chassis.OIDs[s.SystemRF.Id]
 	if !ok {
 		if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
@@ -1194,6 +1195,14 @@ func (s *EpSystem) discoverRemotePhase1() {
 					// went through EPChassis:discoverLocalPhase2() we fudge the status to
 					// DiscoverOK
 					nodeChassis.LastStatus = DiscoverOK
+
+					// Additionally, we will need to supply a higher retry count to
+					// GetRelative() when reading the /Power endpoint because a delay in its
+					// availability in the processorModule_0 chassis has previously been
+					// observed and the default retry count of 3 was not sufficient.  We
+					// specify a retry count of 4 here which should be sufficient due to the
+					// exponential backoff delay in the GetRelative() function.
+					powerRetryCount = 4
 				} else {
 					ok = false
 					errlog.Printf("Foxconn Paradise ERROR: Could not rediscover ProcessorModule_0 chassis\n")
@@ -1260,7 +1269,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 		}
 		if nodeChassis.ChassisRF.Power.Oid != "" {
 			path = nodeChassis.ChassisRF.Power.Oid
-			pwrCtlURLJSON, err := s.epRF.GETRelative(path)
+			pwrCtlURLJSON, err := s.epRF.GETRelative(path, powerRetryCount)
 			if err != nil || pwrCtlURLJSON == nil {
 				if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
 					// When the node power is off, the Power endpoint for the ProcessorModule_0
@@ -1273,7 +1282,13 @@ func (s *EpSystem) discoverRemotePhase1() {
 					//
 					// Yes, the goto is ugly but we went down this route so as to not have to
 					// completely reorganize the code to handle this special case.
-					errlog.Printf("Foxconn Paradise WARNING: Timed out querying Power endpoint at %s when node power is %s.  Will attempt to discover again after node power is on\n", path, nodeChassis.ChassisRF.PowerState)
+					if powerRetryCount == 4 {
+						// Node power is on, so this is a real error
+						errlog.Printf("Foxconn Paradise ERROR: Timed out querying Power endpoint at %s when node power is %s\n", path, nodeChassis.ChassisRF.PowerState)
+					} else {
+						// Node power is off, so this is expected
+						errlog.Printf("Foxconn Paradise WARNING: Timed out querying Power endpoint at %s when node power is %s.  Will attempt to discover again after node power is on\n", path, nodeChassis.ChassisRF.PowerState)
+					}
 					goto FoxconnPowerTimedOut
 				}
 				s.LastStatus = HTTPsGetFailed
