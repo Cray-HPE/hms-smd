@@ -690,11 +690,12 @@ func (ep *RedfishEP) GETRelative(rpath string, optionalArgs ...int) (json.RawMes
 		rsp, err = ep.client.Do(req)
 		if err != nil {
 			if retry == retryCount {
-				errlog.Printf("GETRelative (%s) ERROR: %s", path, err)
+				errlog.Printf("GETRelative (%s) ERROR: %s, Failing after %d retries", path, err, retry)
 				return nil, err
 			} else {
-				errlog.Printf("GETRelative (%s) ERROR: %s, Retrying...", path, err)
-				time.Sleep(time.Duration(sleepTime) * time.Second)
+				timeToSleep := time.Duration(sleepTime) * time.Second
+				errlog.Printf("GETRelative (%s) ERROR: %s, Retry %d after %d seconds...", path, err, retry, timeToSleep)
+				time.Sleep(timeToSleep)
 				sleepTime += (retry + 1) * 10
 				continue
 			}
