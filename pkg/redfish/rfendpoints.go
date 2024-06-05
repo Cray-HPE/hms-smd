@@ -693,9 +693,8 @@ func (ep *RedfishEP) GETRelative(rpath string, optionalArgs ...int) (json.RawMes
 				errlog.Printf("GETRelative (%s) ERROR: %s, Failing after %d retries", path, err, retry)
 				return nil, err
 			} else {
-				timeToSleep := time.Duration(sleepTime) * time.Second
-				errlog.Printf("GETRelative (%s) ERROR: %s, Retry %d after %d seconds...", path, err, retry, timeToSleep)
-				time.Sleep(timeToSleep)
+				errlog.Printf("GETRelative (%s) ERROR: %s, Retry %d after %d seconds...", path, err, retry + 1, sleepTime)
+				time.Sleep(time.Duration(sleepTime) * time.Second)
 				sleepTime += (retry + 1) * 10
 				continue
 			}
