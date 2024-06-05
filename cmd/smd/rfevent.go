@@ -891,18 +891,18 @@ func (s *SmD) doUpdateCompHWInv(cep *sm.ComponentEndpoint, ep *rf.RedfishEP) err
 // Foxconn Paradise OpenBmc firmware
 /////////////////////////////////////////////////////////////////////////////
 
-// doUpdateCompFoxconn - Update both the hwinv and endpoints for a component.
+// doUpdateCompFoxconn - Update both the hwinv and the redfish system endpoint data.
 //
 //      For Foxconn Paradise hardware we can't just call doUpdateCompHWInv() alone.
 //      If the last discover was run with the node powered off, the PowerURL and
 //      PowerControl system information may not have been updated due to a BMC fw
-//      bug (see PRDIS-198).  doUpdateCompHWInv() will update this information
-//      correctly since the node is now powered on, but will not push it into the
-//      database.  This function will update the hardware inventory and then push
-//      the new endpoint data into the database.
+//      bug (see PRDIS-198).  doUpdateCompHWInv() would indeed update this system
+//      information correctly since the node is now powered on, but it will not push
+//      it into the database.  The function here function will call doUpdateCompHWInv()
+//      to update the hardware inventory and then in addition to that push the new
+//      the new sytem endpoint data into the database.
 //
 func (s *SmD) doUpdateCompFoxconn(cep *sm.ComponentEndpoint, ep *rf.RedfishEP) error {
-	s.Log(LOG_INFO, "-----> JW_DEBUG: doUpdateCompFoxconn(%s): calling doUpdateCompHWInv", cep.ID)
 	// First update the hardware inventory.  This also updates system info in the
 	// component endpoint from the ProcesorModule_0 chassis
 	err := s.doUpdateCompHWInv(cep, ep)
@@ -910,8 +910,7 @@ func (s *SmD) doUpdateCompFoxconn(cep *sm.ComponentEndpoint, ep *rf.RedfishEP) e
 		return err
 	}
 
-	s.Log(LOG_INFO, "-----> JW_DEBUG: doUpdateCompFoxconn: Calling DiscoverComponentEndpointArray")
-	// Now push the new endpoint data into the database
+	// Now push the new system endpoint data into the database
 	ceps, err := s.DiscoverComponentEndpointArray(ep)
 	if err != nil {
 		if err == base.ErrHMSTypeInvalid || err == base.ErrHMSTypeUnsupported {
@@ -923,13 +922,11 @@ func (s *SmD) doUpdateCompFoxconn(cep *sm.ComponentEndpoint, ep *rf.RedfishEP) e
 			return err
 		}
 	}
-	s.Log(LOG_INFO, "-----> JW_DEBUG: doUpdateCompFoxconn: Calling UpsertCompEndpoints")
 	err = s.db.UpsertCompEndpoints(ceps)
 	if err != nil {
 		s.Log(LOG_INFO, "doUpdateCompFoxconn(%s): Failed to update component endpoints: %s",
 			cep.ID, err)
 	}
-	s.Log(LOG_INFO, "-----> JW_DEBUG: doUpdateCompFoxconn: done")
 	return nil
 }
 
