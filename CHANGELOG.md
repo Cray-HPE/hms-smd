@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Re-discover Power data in the system endpoint when the node power on event is received
+-  Paradise: Re-discover Power data in the system endpoint when the node power on event is received
 
 ## [2.11.13] - 2024-05-29
 
