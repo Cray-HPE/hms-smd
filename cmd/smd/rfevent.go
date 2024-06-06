@@ -893,14 +893,12 @@ func (s *SmD) doUpdateCompHWInv(cep *sm.ComponentEndpoint, ep *rf.RedfishEP) err
 
 // doUpdateCompFoxconn - Update both the hwinv and the redfish system endpoint data.
 //
-//      For Foxconn Paradise hardware we can't just call doUpdateCompHWInv() alone.
+//      For Foxconn Paradise hardware we want to do more than just call doUpdateCompHWInv().
 //      If the last discover was run with the node powered off, the PowerURL and
 //      PowerControl system information may not have been updated due to a BMC fw
 //      bug (see PRDIS-198).  doUpdateCompHWInv() would indeed update this system
-//      information correctly since the node is now powered on, but it will not push
-//      it into the database.  The function here function will call doUpdateCompHWInv()
-//      to update the hardware inventory and then in addition to that push the new
-//      the new sytem endpoint data into the database.
+//      information correctly in the endpoint 'ep' since the node is now powered on, but
+//      it will not push it into the database.
 //
 func (s *SmD) doUpdateCompFoxconn(cep *sm.ComponentEndpoint, ep *rf.RedfishEP) error {
 	// First update the hardware inventory.  This also updates system info in the
@@ -910,23 +908,22 @@ func (s *SmD) doUpdateCompFoxconn(cep *sm.ComponentEndpoint, ep *rf.RedfishEP) e
 		return err
 	}
 
-	// Now push the new system endpoint data into the database
-	ceps, err := s.DiscoverComponentEndpointArray(ep)
-	if err != nil {
-		if err == base.ErrHMSTypeInvalid || err == base.ErrHMSTypeUnsupported {
-			// Non-fatal, one or more components wasn't supported.  Likely to
-			// recur if discovery re-run.
-			s.Log(LOG_INFO, "doUpdateCompFoxconn(%s): One or more: %s", cep.ID, err)
-		} else {
-			s.Log(LOG_INFO, "doUpdateCompFoxconn(%s): Fatal error storing: %s", cep.ID, err)
-			return err
+	// Prep for writing to the database
+	sysceps := new(sm.ComponentEndpointArray)
+	for _, sysEP := range ep.Systems.OIDs {
+		syscep := s.DiscoverCompEndpointSystem(sysEP)
+		if syscep != nil {
+			sysceps.ComponentEndpoints = append(sysceps.ComponentEndpoints, syscep)
 		}
 	}
-	err = s.db.UpsertCompEndpoints(ceps)
+
+	// Now push into the database
+	err = s.db.UpsertCompEndpoints(sysceps)
 	if err != nil {
-		s.Log(LOG_INFO, "doUpdateCompFoxconn(%s): Failed to update component endpoints: %s",
+		s.Log(LOG_INFO, "doUpdateCompFoxconn(%s): Failed to update system component endpoints: %s",
 			cep.ID, err)
 	}
+
 	return nil
 }
 
