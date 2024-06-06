@@ -1172,7 +1172,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 	nodeChassis, ok := s.epRF.Chassis.OIDs[s.SystemRF.Id]
 	if !ok {
 		if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
-			// Foxconn Paradise uses the ProcessorModule_0 chassis to find the
+			// Foxconn Paradise uses the ProcessorModule_0 chassis to find the 
 			// Power endpoint for power capping.
 			nodeChassis, ok = s.epRF.Chassis.OIDs["ProcessorModule_0"]
 			if !ok {
