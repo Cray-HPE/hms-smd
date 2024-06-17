@@ -436,7 +436,7 @@ test_name: Call the Hardware Inventory Query API with a Node xname
 stages:
   - name: Retrieve a node xname from the Components collection to use in the next stage
     request:
-      url: "{hsm_base_url}/hsm/v2/State/Components?type=Node&id=x3000c0s33b2n0"
+      url: "{hsm_base_url}/hsm/v2/State/Components?type=Node"
       method: GET
       verify: !bool "{verify}"
     response:
