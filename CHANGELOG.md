@@ -5,17 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.16] - 2024-07-12
+
+### Fixed
+
+- Paradise: Adapted SMD to BMC fw changing the behavior of the /Power endpoint read over redfish
+
 ## [2.11.15] - 2024-06-17
 
 ### Fixed
 
--  Paradise: Fixed functional hardware test to pass processor types of "FPGA"
+- Paradise: Fixed functional hardware test to pass processor types of "FPGA"
 
 ## [2.11.14] - 2024-06-06
 
 ### Fixed
 
--  Paradise: Re-discover Power data in the system endpoint when the node power on event is received
+- Paradise: Re-discover Power data in the system endpoint when the node power on event is received
 
 ## [2.11.13] - 2024-05-29
 
