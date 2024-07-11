@@ -1338,7 +1338,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 			// type that can support ints and floats) - Needed for Foxconn Paradise,
 			// perhaps others in the future
 			for _, pwrCtl := range s.PowerInfo.PowerControl {
-				errlog.Printf("JW_DEBUG: pwrCtl.PowerConsumedWatts = %v, pwrCtl.PowerCapacityWattc = %v\n", pwrCtl.PowerConsumedWatts, pwrCtl.PowerCapacityWatts)
+				errlog.Printf("JW_DEBUG: pwrCtl.PowerConsumedWatts = %v, pwrCtl.PowerCapacityWatts = %v\n", pwrCtl.PowerConsumedWatts, pwrCtl.PowerCapacityWatts)
 				if pwrCtl.PowerConsumedWatts != nil {
 					switch v := pwrCtl.PowerConsumedWatts.(type) {
 					case float64:	// Convert to int
@@ -1348,38 +1348,34 @@ func (s *EpSystem) discoverRemotePhase1() {
 						pwrCtl.PowerConsumedWatts = int(0)
 						errlog.Printf("ERROR: unexpected type/value '%T'/'%v' detected for PowerConsumedWatts, setting to 0\n", pwrCtl.PowerConsumedWatts, pwrCtl.PowerConsumedWatts)
 					}
-
-					errlog.Printf("JW_DEBUG: here?\n")
-					if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
-						// Even though we've successfully read the /Power endpoint, we have
-						// observed that the Paradise BMC fw may not have populated it with
-						// all of the data that we depend on if the node was just powered on.
-						// There is sometimes a lag after we receive the node power on event,
-						// and when /Power is correctly populated.  We check for what we
-						// depend upon here, and retry the /Power read after a short delay if
-						// we find any data missing.  If all the retries fail, just log an
-						// error and continue.
-						//
-						// The longest observed delay thus far has been just under 2 minutes.
-						// We thus size FoxconnPowerRetryDelay to be 8 seconds, and because
-						// we double it after each retry, end up with a total delay, across all
-						// retries, of at most 2 minutes.
-						errlog.Printf("JW_DEBUG: powerRetryCount = %d\n", powerRetryCount)
-						if powerRetryCount == 4 && (pwrCtl.PowerCapacityWatts == 0 || pwrCtl.PowerConsumedWatts == 0) {
-							errlog.Printf("Foxconn Paradise WARNING: /Power endpoint not ready, retry %d in %d seconds\n", FoxconnPowerRetryNum + 1, FoxconnPowerRetryDelay)
-							time.Sleep(time.Duration(FoxconnPowerRetryDelay) * time.Second)
-							if FoxconnPowerRetryNum == powerRetryCount {
-								errlog.Printf("Foxconn Paradise ERROR: Unable to read /Power endpoint after %d retries.  A manual discover with node power on is required to rediscover power cap data\n", FoxconnPowerRetryNum)
-								goto FoxconnPowerTimedOut
-							} else {
-								FoxconnPowerRetryNum++
-								FoxconnPowerRetryDelay *= 2
-								goto FoxconnPowerRetry
-							}
+				}
+				if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
+					// Even though we've successfully read the /Power endpoint, we have
+					// observed that the Paradise BMC fw may not have populated it with
+					// all of the data that we depend on if the node was just powered on.
+					// There is sometimes a lag after we receive the node power on event,
+					// and when /Power is correctly populated.  We check for what we
+					// depend upon here, and retry the /Power read after a short delay if
+					// we find any data missing.  If all the retries fail, just log an
+					// error and continue.
+					//
+					// The longest observed delay thus far has been just under 2 minutes.
+					// We thus size FoxconnPowerRetryDelay to be 8 seconds, and because
+					// we double it after each retry, end up with a total delay, across all
+					// retries, of at most 2 minutes.
+					errlog.Printf("JW_DEBUG: powerRetryCount = %d\n", powerRetryCount)
+					if powerRetryCount == 4 && (pwrCtl.PowerCapacityWatts == nil || pwrCtl.PowerConsumedWatts == 0) {
+						errlog.Printf("Foxconn Paradise WARNING: /Power endpoint not ready, retry %d in %d seconds\n", FoxconnPowerRetryNum + 1, FoxconnPowerRetryDelay)
+						time.Sleep(time.Duration(FoxconnPowerRetryDelay) * time.Second)
+						if FoxconnPowerRetryNum == powerRetryCount {
+							errlog.Printf("Foxconn Paradise ERROR: Unable to read /Power endpoint after %d retries.  A manual discover with node power on is required to rediscover power cap data\n", FoxconnPowerRetryNum)
+							goto FoxconnPowerTimedOut
+						} else {
+							FoxconnPowerRetryNum++
+							FoxconnPowerRetryDelay *= 2
+							goto FoxconnPowerRetry
 						}
 					}
-				} else {
-					errlog.Printf("JW_DEBUG: may need to go here?\n")
 				}
 			}
 
