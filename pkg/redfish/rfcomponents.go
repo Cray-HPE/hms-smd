@@ -1287,7 +1287,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 		}
 		if nodeChassis.ChassisRF.Power.Oid != "" {
 			FoxconnPowerRetryNum := 0
-			FoxconnPowerRetryDelay := 8
+			FoxconnPowerRetryDelay := 2
 
 			FoxconnPowerRetry:
 
