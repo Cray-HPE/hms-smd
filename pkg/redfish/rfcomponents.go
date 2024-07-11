@@ -1338,6 +1338,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 			// type that can support ints and floats) - Needed for Foxconn Paradise,
 			// perhaps others in the future
 			for _, pwrCtl := range s.PowerInfo.PowerControl {
+				errlog.Printf("JW_DEBUG: pwrCtl.PowerConsumedWatts = %v, pwrCtl.PowerCapacityWattc = %v\n", pwrCtl.PowerConsumedWatts, pwrCtl.PowerCapacityWatts)
 				if pwrCtl.PowerConsumedWatts != nil {
 					switch v := pwrCtl.PowerConsumedWatts.(type) {
 					case float64:	// Convert to int
@@ -1348,6 +1349,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 						errlog.Printf("ERROR: unexpected type/value '%T'/'%v' detected for PowerConsumedWatts, setting to 0\n", pwrCtl.PowerConsumedWatts, pwrCtl.PowerConsumedWatts)
 					}
 
+					errlog.Printf("JW_DEBUG: here?\n")
 					if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
 						// Even though we've successfully read the /Power endpoint, we have
 						// observed that the Paradise BMC fw may not have populated it with
@@ -1362,6 +1364,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 						// We thus size FoxconnPowerRetryDelay to be 8 seconds, and because
 						// we double it after each retry, end up with a total delay, across all
 						// retries, of at most 2 minutes.
+						errlog.Printf("JW_DEBUG: powerRetryCount = %d\n", powerRetryCount)
 						if powerRetryCount == 4 && (pwrCtl.PowerCapacityWatts == 0 || pwrCtl.PowerConsumedWatts == 0) {
 							errlog.Printf("Foxconn Paradise WARNING: /Power endpoint not ready, retry %d in %d seconds\n", FoxconnPowerRetryNum + 1, FoxconnPowerRetryDelay)
 							time.Sleep(time.Duration(FoxconnPowerRetryDelay) * time.Second)
@@ -1375,6 +1378,8 @@ func (s *EpSystem) discoverRemotePhase1() {
 							}
 						}
 					}
+				} else {
+					errlog.Printf("JW_DEBUG: may need to go here?\n")
 				}
 			}
 
