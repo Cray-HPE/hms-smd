@@ -1287,7 +1287,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 		}
 		if nodeChassis.ChassisRF.Power.Oid != "" {
 			FoxconnPowerRetryNum := 1
-			FoxconnPowerRetryDelay := 8
+			FoxconnPowerRetryDelay := 10
 
 			FoxconnPowerRetry:
 
@@ -1356,13 +1356,9 @@ func (s *EpSystem) discoverRemotePhase1() {
 					// There is sometimes a lag after we receive the node power on event,
 					// and when /Power is correctly populated.  We check for what we
 					// depend upon here, and retry the /Power read after a short delay if
-					// we find any data missing.  If all the retries fail, just log an
+					// we find any data missing.  The delay/retry count were selected based
+					// upon emperical observation.  If all the retries fail, just log an
 					// error and continue.
-					//
-					// The longest observed delay thus far has been just under 2 minutes.
-					// We thus size FoxconnPowerRetryDelay to be 8 seconds, and because
-					// we double it after each retry, end up with a total delay, across all
-					// retries, of at most 2 minutes.
 					errlog.Printf("JW_DEBUG: powerRetryCount = %d\n", powerRetryCount)
 					if powerRetryCount == 4 && (pwrCtl.PowerConsumedWatts == nil || pwrCtl.PowerCapacityWatts == 0) {
 						errlog.Printf("Foxconn Paradise WARNING: /Power endpoint not ready (%v, %d), retry %d in %d seconds\n", pwrCtl.PowerConsumedWatts, pwrCtl.PowerCapacityWatts, FoxconnPowerRetryNum, FoxconnPowerRetryDelay)
