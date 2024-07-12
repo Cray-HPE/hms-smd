@@ -1338,7 +1338,6 @@ func (s *EpSystem) discoverRemotePhase1() {
 			// type that can support ints and floats) - Needed for Foxconn Paradise,
 			// perhaps others in the future
 			for _, pwrCtl := range s.PowerInfo.PowerControl {
-				errlog.Printf("JW_DEBUG: pwrCtl.PowerConsumedWatts = %v, pwrCtl.PowerCapacityWatts = %v\n", pwrCtl.PowerConsumedWatts, pwrCtl.PowerCapacityWatts)
 				if pwrCtl.PowerConsumedWatts != nil {
 					switch v := pwrCtl.PowerConsumedWatts.(type) {
 					case float64:	// Convert to int
@@ -1359,7 +1358,6 @@ func (s *EpSystem) discoverRemotePhase1() {
 					// we find any data missing.  The delay/retry count were selected based
 					// upon emperical observation.  If all the retries fail, just log an
 					// error and continue.
-					errlog.Printf("JW_DEBUG: powerRetryCount = %d\n", powerRetryCount)
 					if powerRetryCount == 4 && (pwrCtl.PowerConsumedWatts == nil || pwrCtl.PowerCapacityWatts == 0) {
 						errlog.Printf("Foxconn Paradise WARNING: /Power endpoint not ready (%v, %d), retry %d in %d seconds\n", pwrCtl.PowerConsumedWatts, pwrCtl.PowerCapacityWatts, FoxconnPowerRetryNum, FoxconnPowerRetryDelay)
 						time.Sleep(time.Duration(FoxconnPowerRetryDelay) * time.Second)
