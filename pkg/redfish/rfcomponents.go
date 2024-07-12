@@ -1287,7 +1287,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 		}
 		if nodeChassis.ChassisRF.Power.Oid != "" {
 			FoxconnPowerRetryNum := 1
-			FoxconnPowerRetryDelay := 2
+			FoxconnPowerRetryDelay := 8
 
 			FoxconnPowerRetry:
 
@@ -1365,7 +1365,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 					// retries, of at most 2 minutes.
 					errlog.Printf("JW_DEBUG: powerRetryCount = %d\n", powerRetryCount)
 					if powerRetryCount == 4 && (pwrCtl.PowerConsumedWatts == nil || pwrCtl.PowerCapacityWatts == 0) {
-						errlog.Printf("Foxconn Paradise WARNING: /Power endpoint not ready (%v %d), retry %d in %d seconds\n", pwrCtl.PowerConsumedWatts, pwrCtl.PowerCapacityWatts, FoxconnPowerRetryNum, FoxconnPowerRetryDelay)
+						errlog.Printf("Foxconn Paradise WARNING: /Power endpoint not ready (%v, %d), retry %d in %d seconds\n", pwrCtl.PowerConsumedWatts, pwrCtl.PowerCapacityWatts, FoxconnPowerRetryNum, FoxconnPowerRetryDelay)
 						time.Sleep(time.Duration(FoxconnPowerRetryDelay) * time.Second)
 						if FoxconnPowerRetryNum == powerRetryCount {
 							errlog.Printf("Foxconn Paradise ERROR: Unable to read /Power endpoint after %d retries.  A manual discover with node power on is required to rediscover power cap data\n", FoxconnPowerRetryNum)
