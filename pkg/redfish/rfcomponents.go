@@ -1165,7 +1165,8 @@ func (s *EpSystem) discoverRemotePhase1() {
 	// Some info (Power, NodeAccelRiser, HSN NIC, etc) is at the chassis level
 	// but we associate it with nodes (systems). There will be a chassis URL
 	// with our system's id if there is info to get.
-	powerRetryCount := 3
+	maxPowerRetries := 3
+	isFoxconnPowerOnEventDiscovery := false
 	nodeChassis, ok := s.epRF.Chassis.OIDs[s.SystemRF.Id]
 	if !ok {
 		if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
@@ -1214,11 +1215,8 @@ func (s *EpSystem) discoverRemotePhase1() {
 					// not sufficient.  We specify a retry count of 4 here which should be
 					// sufficient due to the exponential backoff delay in the GetRelative()
 					// function.
-					// 
-					// Because we know that node power is on here, we can check the value
-					// of powerRetryCount in later parts of code  to determine this.  It will
-					// only be set to 4 if node power is on.
-					powerRetryCount = 4
+					maxPowerRetries = 4
+					isFoxconnPowerOnEventDiscovery = true
 				} else {
 					ok = false
 					errlog.Printf("Foxconn Paradise ERROR: Could not rediscover ProcessorModule_0 chassis\n")
@@ -1284,13 +1282,13 @@ func (s *EpSystem) discoverRemotePhase1() {
 			}
 		}
 		if nodeChassis.ChassisRF.Power.Oid != "" {
-			FoxconnPowerRetryNum := 1
-			FoxconnPowerRetryDelay := 10
+			foxconnPowerRetryNum := 1
+			foxconnPowerRetryDelay := 10
 
 			FoxconnPowerRetry:
 
 			path = nodeChassis.ChassisRF.Power.Oid
-			pwrCtlURLJSON, err := s.epRF.GETRelative(path, powerRetryCount)
+			pwrCtlURLJSON, err := s.epRF.GETRelative(path, maxPowerRetries)
 			if err != nil || pwrCtlURLJSON == nil {
 				if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
 					// When the node power is off, the Power endpoint for the ProcessorModule_0
@@ -1306,7 +1304,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 					//
 					// Yes, the goto is ugly but we went down this route so as to not have to
 					// completely reorganize the code to handle this special case.
-					if powerRetryCount == 4 {
+					if isFoxconnPowerOnEventDiscovery {
 						// Node power is on, so this is a real error
 						errlog.Printf("Foxconn Paradise ERROR: Timed out querying Power endpoint at %s when node power is %s\n", path, nodeChassis.ChassisRF.PowerState)
 					} else {
@@ -1356,15 +1354,15 @@ func (s *EpSystem) discoverRemotePhase1() {
 					// we find any data missing.  The delay/retry count were selected based
 					// upon emperical observation.  If all the retries fail, just log an
 					// error and continue.
-					if powerRetryCount == 4 && (pwrCtl.PowerConsumedWatts == nil || pwrCtl.PowerCapacityWatts == 0) {
-						errlog.Printf("Foxconn Paradise WARNING: /Power endpoint not ready (%v, %d), retry %d in %d seconds\n", pwrCtl.PowerConsumedWatts, pwrCtl.PowerCapacityWatts, FoxconnPowerRetryNum, FoxconnPowerRetryDelay)
-						time.Sleep(time.Duration(FoxconnPowerRetryDelay) * time.Second)
-						if FoxconnPowerRetryNum == powerRetryCount {
-							errlog.Printf("Foxconn Paradise ERROR: Unable to read /Power endpoint after %d retries.  A manual discover with node power on is required to rediscover power cap data\n", FoxconnPowerRetryNum)
+					if isFoxconnPowerOnEventDiscovery && (pwrCtl.PowerConsumedWatts == nil || pwrCtl.PowerCapacityWatts == 0) {
+						errlog.Printf("Foxconn Paradise WARNING: /Power endpoint not ready (%v, %d), retry %d in %d seconds\n", pwrCtl.PowerConsumedWatts, pwrCtl.PowerCapacityWatts, foxconnPowerRetryNum, foxconnPowerRetryDelay)
+						time.Sleep(time.Duration(foxconnPowerRetryDelay) * time.Second)
+						if foxconnPowerRetryNum == maxPowerRetries {
+							errlog.Printf("Foxconn Paradise ERROR: Unable to read /Power endpoint after %d retries.  A manual discover with node power on is required to rediscover power cap data\n", foxconnPowerRetryNum)
 							goto FoxconnPowerTimedOut
 						} else {
-							FoxconnPowerRetryNum++
-							FoxconnPowerRetryDelay *= 2
+							foxconnPowerRetryNum++
+							foxconnPowerRetryDelay *= 2
 							goto FoxconnPowerRetry
 						}
 					}
