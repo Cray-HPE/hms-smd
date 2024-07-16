@@ -1359,7 +1359,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 					if isFoxconnPowerOnEventDiscovery && (pwrCtl.PowerConsumedWatts == nil || pwrCtl.PowerCapacityWatts == 0) {
 						errlog.Printf("Foxconn Paradise WARNING: /Power endpoint not ready (%v, %d), retry %d in %d seconds\n", pwrCtl.PowerConsumedWatts, pwrCtl.PowerCapacityWatts, foxconnPowerRetryNum, foxconnPowerRetryDelay)
 						time.Sleep(time.Duration(foxconnPowerRetryDelay) * time.Second)
-						if foxconnPowerRetryNum == maxPowerRetries {
+						if foxconnPowerRetryNum >= maxPowerRetries {
 							errlog.Printf("Foxconn Paradise ERROR: Unable to read /Power endpoint after %d retries.  A manual discover with node power on is required to rediscover power cap data\n", foxconnPowerRetryNum)
 							goto FoxconnPowerTimedOut
 						} else {
