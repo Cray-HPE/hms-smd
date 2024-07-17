@@ -345,7 +345,6 @@ func (c *EpChassis) discoverRemotePhase1() {
 	// in the Processor_Module_0 chassis during the Systems discovery phase.
 	//
 
-errlog.Printf("JW_DEBUG: c.ChassisRF.Power.Oid=%s isFoxconnChassis=%t c.OdataID=%s\n", c.ChassisRF.Power.Oid, isFoxconnChassis(c), c.OdataID)
 	if c.ChassisRF.Power.Oid == "" || (isFoxconnChassis(c) && c.OdataID != "/redfish/v1/Chassis/Baseboard_0") {
 		c.PowerSupplies.Num = 0
 		c.PowerSupplies.OIDs = make(map[string]*EpPowerSupply)
