@@ -264,16 +264,15 @@ func (c *EpChassis) discoverRemotePhase1() {
 		return
 	}
 	if  c.OdataID == "/redfish/v1/Chassis/ERoT_CPU_0" || c.OdataID == "/redfish/v1/Chassis/ERoT_CPU_1" {
-		// We skip these Foxconn Paradise chassis for the reasons below.
-		// We cannot look at SystemRF.Manufacturer to skip them because it
-		// hasn't yet been discovered, so just skip if the names match. The
-		// names should be unique to Foxconn Paradise.
+		// We skip these as a workaround for the problem described in PRDIS-189.  If
+		// we attempto to discover them we will get multiple timeouts before they
+		// become available.  We do not pull anything useful from them to begin with
+		// so there is no hard in skipping them.
 		//
-		// ERoT_CPU_*: We skip these as a workaround for the problem described
-		// in PRDIS-189.  This avoids long BMC responses from these chassis at
-		// times when they have a very long response time.  They may bea added
-		// back in the future by way of CASMHMS-6192
-		//
+		// We determin to skip them based on their chassis name rather than checking
+		// the Manufacturer name as that is not yet available at this point during
+		// discovery.
+
 		c.LastStatus = RedfishSubtypeNoSupport
 		c.RedfishSubtype = RFSubtypeUnknown
 		errlog.Printf("Skipping Foxconn chassis %s", c.OdataID)
@@ -1185,7 +1184,8 @@ func (s *EpSystem) discoverRemotePhase1() {
 	// Some info (Power, NodeAccelRiser, HSN NIC, etc) is at the chassis level
 	// but we associate it with nodes (systems). There will be a chassis URL
 	// with our system's id if there is info to get.
-	powerRetryCount := 3
+	maxPowerRetries := 3
+	isFoxconnPowerOnEventDiscovery := false
 	nodeChassis, ok := s.epRF.Chassis.OIDs[s.SystemRF.Id]
 	if !ok {
 		if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
@@ -1193,15 +1193,24 @@ func (s *EpSystem) discoverRemotePhase1() {
 			// Power endpoint for power capping.
 			nodeChassis, ok = s.epRF.Chassis.OIDs["ProcessorModule_0"]
 			if !ok {
-				// If the ProcessorModule_0 chassis is not found, we're likely coming through
-				// here after receiving a node power on event.  If that is the case,  we must
-				// rediscover the /Power endpoint in the ProcessorModule_0 chassis. This is
-				// necessary because if this node was discovered with node power off, the
-				// /Power endpoint in the ProcessorModule_0 chassis was not discovered due
-				// to PRDIS-198.  We need to rediscover it here, with the node power on.
+				// Unlike other platforms, when node power is off earlier BMC fw versions for
+				// the Foxconn Paradise platform were observed to return a server error when
+				// trying to read the /Power endpoint.  In later versions of the BMC fw the
+				// /Power endpoint could be read but did not contain all of the power cap
+				// information necessary as the BMC fw requires the node to be powered on in
+				// order to populate the /Power endpoint with the correct data.  This created
+				// an issue because if the BMC is discovered with node power off, we weren't
+				// able to read the full data necessary for power capping.  Unlike other
+				// platforms, we thus need to read the /Power endpoint whenever the node is
+				// powered on because we don't have a way to tell if it was previously read
+				// correctly.
 				//
-				// The ProcessorModule_0 chassis info first needs to be reread as we do not
-				// rediscover any chassis data after node on events.  
+				// If the ProcessorModule_0 chassis is not found, it means we haven't done a
+				// chassis discovery on it, which means we got here through the doCompUpdate()
+				// path after receiving a node power on event.  We thus must do the
+				// ProcessorModule_0 chassis discovery here so that we can read the /Power
+				// endpoint for the necessary power capping information since we know node
+				// power is now on.
 
 				errlog.Printf("Foxconn Paradise WARNING: Could not find ProcessorModule_0 chassis - rediscovering\n")
 
@@ -1210,10 +1219,12 @@ func (s *EpSystem) discoverRemotePhase1() {
 
 				if nodeChassis.LastStatus == VerifyingData {
 					ok = true
-					// Since we only went through EpChassis:discoverRemotePhase1() and never
-					// went through EPChassis:discoverLocalPhase2() we fudge the status to
-					// DiscoverOK.  We don't need to call discoverLocalPhase2() because we
-					// won't push any data from it to the db after a node on event.
+					// Since we only went through nodeChassis.discoverRemotePhase1() and never
+					// went through nodeChassis.discoverLocalPhase2() we fudge the status to
+					// DiscoverOK.  We don't need to call nodeChassis.discoverLocalPhase2()
+					// because we don't want to push any data from it to the db after a node on
+					// event.  We only care pushing the power cap related data to the db which
+					// is associated with the system, not the chassis.
 					nodeChassis.LastStatus = DiscoverOK
 
 					// Additionally, we will need to supply a higher retry count to
@@ -1223,7 +1234,8 @@ func (s *EpSystem) discoverRemotePhase1() {
 					// not sufficient.  We specify a retry count of 4 here which should be
 					// sufficient due to the exponential backoff delay in the GetRelative()
 					// function.
-					powerRetryCount = 4
+					maxPowerRetries = 4
+					isFoxconnPowerOnEventDiscovery = true
 				} else {
 					ok = false
 					errlog.Printf("Foxconn Paradise ERROR: Could not rediscover ProcessorModule_0 chassis\n")
@@ -1289,16 +1301,21 @@ func (s *EpSystem) discoverRemotePhase1() {
 			}
 		}
 		if nodeChassis.ChassisRF.Power.Oid != "" {
+			foxconnPowerRetryNum := 1
+			foxconnPowerRetryDelay := 10
+
+			FoxconnPowerRetry:
+
 			path = nodeChassis.ChassisRF.Power.Oid
-			pwrCtlURLJSON, err := s.epRF.GETRelative(path, powerRetryCount)
+			pwrCtlURLJSON, err := s.epRF.GETRelative(path, maxPowerRetries)
 			if err != nil || pwrCtlURLJSON == nil {
 				if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
 					// When the node power is off, the Power endpoint for the ProcessorModule_0
-					// chassis is not available and the s.epRF.GetRelative() call will time out.
-					// We cannot treat this as a fatal error because we still need to discover
-					// the rest of the node. We'll lack the ability to power cap this node until
-					// it is rediscovered after it is powered on but at least it will have
-					// been discovered.
+					// has been observed with earlier versions of BMC fw to not available and
+					// thus the s.epRF.GetRelative() call will time out. We cannot treat this
+					// as a fatal error because we still need to discover the rest of the node.
+					// We'll lack the ability to power cap this node until it is rediscovered
+					// after it is powered on but at least it will have been discovered.
 					//
 					// When the node power is on, the Power endpoint for the ProcessorModule_0
 					// chassis is available and the s.epRF.GetRelative() call should succeed.
@@ -1306,7 +1323,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 					//
 					// Yes, the goto is ugly but we went down this route so as to not have to
 					// completely reorganize the code to handle this special case.
-					if powerRetryCount == 4 {
+					if isFoxconnPowerOnEventDiscovery {
 						// Node power is on, so this is a real error
 						errlog.Printf("Foxconn Paradise ERROR: Timed out querying Power endpoint at %s when node power is %s\n", path, nodeChassis.ChassisRF.PowerState)
 					} else {
@@ -1344,6 +1361,29 @@ func (s *EpSystem) discoverRemotePhase1() {
 					default:		// unexpected type, set to zero
 						pwrCtl.PowerConsumedWatts = int(0)
 						errlog.Printf("ERROR: unexpected type/value '%T'/'%v' detected for PowerConsumedWatts, setting to 0\n", pwrCtl.PowerConsumedWatts, pwrCtl.PowerConsumedWatts)
+					}
+				}
+				if IsManufacturer(s.SystemRF.Manufacturer, FoxconnMfr) == 1 {
+					// Even though we've successfully read the /Power endpoint, we have
+					// observed that the Paradise BMC fw may not have populated it with
+					// all of the data that we depend on if the node was just powered on.
+					// There is sometimes a lag after we receive the node power on event,
+					// and when /Power is correctly populated.  We check for what we
+					// depend upon here, and retry the /Power read after a short delay if
+					// we find any data missing.  The delay/retry count were selected based
+					// upon emperical observation.  If all the retries fail, just log an
+					// error and continue.
+					if isFoxconnPowerOnEventDiscovery && (pwrCtl.PowerConsumedWatts == nil || pwrCtl.PowerCapacityWatts == 0) {
+						errlog.Printf("Foxconn Paradise WARNING: /Power endpoint not ready (%v, %d), retry %d in %d seconds\n", pwrCtl.PowerConsumedWatts, pwrCtl.PowerCapacityWatts, foxconnPowerRetryNum, foxconnPowerRetryDelay)
+						time.Sleep(time.Duration(foxconnPowerRetryDelay) * time.Second)
+						if foxconnPowerRetryNum >= maxPowerRetries {
+							errlog.Printf("Foxconn Paradise ERROR: Unable to read /Power endpoint after %d retries.  A manual discover with node power on is required to rediscover power cap data\n", foxconnPowerRetryNum)
+							goto FoxconnPowerTimedOut
+						} else {
+							foxconnPowerRetryNum++
+							foxconnPowerRetryDelay *= 2
+							goto FoxconnPowerRetry
+						}
 					}
 				}
 			}
