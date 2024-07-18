@@ -651,6 +651,25 @@ func (m *EpManager) discoverRemotePhase1() {
 	m.ManagedSystems = m.ManagerRF.Links.ManagerForServers
 	if m.ManagerRF.Actions != nil {
 		m.Actions = m.ManagerRF.Actions
+		mr := m.Actions.ManagerReset
+		if mr.RFActionInfo != "" {
+			actionInfoJSON, err := m.epRF.GETRelative(mr.RFActionInfo)
+			if err != nil || actionInfoJSON == nil {
+				m.LastStatus = HTTPsGetFailed
+				return
+			}
+			var actionInfo ResetActionInfo
+			err = json.Unmarshal(actionInfoJSON, &actionInfo)
+			if err != nil {
+				errlog.Printf("Failed to decode %s: %s\n", url, err)
+				m.LastStatus = EPResponseFailedDecode
+			}
+			for _, p := range actionInfo.RAParameters {
+				if p.Name == "ResetType" {
+					m.Actions.ManagerReset.AllowableValues = p.AllowableValues
+				}
+			}
+		}
 	}
 
 	// Get link to Manager's ethernet interfaces
