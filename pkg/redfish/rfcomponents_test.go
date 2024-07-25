@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright [2019-2022] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2019-2022,2024] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -3945,6 +3945,14 @@ func NewRTFuncGBT1() RTFunc {
 				// Header must always be non-nil or it will cause a panic.
 				Header: make(http.Header),
 			}
+		case "https://" + testFQDN + testPathGBT_managers_self_reset_action_info:
+			return &http.Response{
+				StatusCode: 200,
+				// Send mock response for rpath
+				Body: ioutil.NopCloser(bytes.NewBufferString(testPayloadGBT_managers_self_reset_action_info)),
+				// Header must always be non-nil or it will cause a panic.
+				Header: make(http.Header),
+			}
 		case "https://" + testFQDN + testPathGBT_managers_self_ethernet_interfaces:
 			return &http.Response{
 				StatusCode: 200,
@@ -4411,6 +4419,30 @@ const testPayloadGBT_managers_self = `
    },
    "Model" : "410810600",
    "@odata.type" : "#Manager.v1_5_0.Manager"
+}
+`
+
+const testPathGBT_managers_self_reset_action_info = "/redfish/v1/Managers/Self/ResetActionInfo"
+
+const testPayloadGBT_managers_self_reset_action_info = `
+{
+  "@odata.context": "/redfish/v1/$metadata#ActionInfo.ActionInfo",
+  "@odata.etag": "W/\"1721044073\"",
+  "@odata.id": "/redfish/v1/Managers/Self/ResetActionInfo",
+  "@odata.type": "#ActionInfo.v1_1_1.ActionInfo",
+  "Description": "This action is used to reset the Managers",
+  "Id": "ResetAction",
+  "Name": "ResetAction",
+  "Parameters": [
+    {
+      "AllowableValues": [
+        "ForceRestart"
+      ],
+      "DataType": "String",
+      "Name": "ResetType",
+      "Required": true
+    }
+  ]
 }
 `
 
