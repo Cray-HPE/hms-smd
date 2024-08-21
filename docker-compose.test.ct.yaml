@@ -78,7 +78,7 @@ services:
     networks:
       - smd
   cray-sls-init:
-    image: artifactory.algol60.net/csm-docker/stable/cray-sls:2.3.0
+    image: artifactory.algol60.net/csm-docker/stable/cray-sls:2.4.0
     command: ["sls-init"]
     environment:
       - POSTGRES_HOST=sls-postgres
@@ -89,7 +89,7 @@ services:
     networks:
       - smd
   cray-sls:
-    image: artifactory.algol60.net/csm-docker/stable/cray-sls:2.3.0
+    image: artifactory.algol60.net/csm-docker/stable/cray-sls:2.4.0
     environment:
       - POSTGRES_HOST=cray-sls-postgres
       - DBOPTS=sslmode=disable
