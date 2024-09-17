@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed failing tavern test for ethernet interfaces named DC[0-9A-Za-z]+
+- Fixed failing tavern test for ethernet interfaces named DC[0-9A-Za-z]+ and updated CT/Unit tests to use "docker compose" rather than "docker-compose"
 
 ## [2.28.0] - 2024-07-22
 

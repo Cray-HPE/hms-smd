@@ -276,6 +276,7 @@ ncsi[0-9]+"
 [0-9]+|\
 HPCNet[0-9]+|\
 ManagementEthernet|\
+DC[0-9A-Za-z]+|\
 DE[0-9A-Za-z]+|\
 ncsi[0-9]+-p[0-9]+-c[0-9]+(-primary_eth)?"
                                   "@odata.id":
