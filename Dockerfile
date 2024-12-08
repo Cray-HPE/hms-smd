@@ -50,9 +50,9 @@ FROM base AS builder
 
 # Base image contains everything needed for Go building, just build.
 RUN set -ex \
-    && go build -v -tags musl -i github.com/Cray-HPE/hms-smd/v2/cmd/smd \
-    && go build -v -tags musl -i github.com/Cray-HPE/hms-smd/v2/cmd/smd-loader \
-    && go build -v -tags musl -i github.com/Cray-HPE/hms-smd/v2/cmd/smd-init
+    && go build -v -tags musl github.com/Cray-HPE/hms-smd/v2/cmd/smd \
+    && go build -v -tags musl github.com/Cray-HPE/hms-smd/v2/cmd/smd-loader \
+    && go build -v -tags musl github.com/Cray-HPE/hms-smd/v2/cmd/smd-init
 
 
 ### Final Stage ###
