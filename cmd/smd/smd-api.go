@@ -292,6 +292,7 @@ func compGetLockFltrToCompLockV2Filter(cglf CompGetLockFltr) (clf sm.CompLockV2F
 // be a resource leak.  Additionally, if the body is not read at all, the
 // network connection will be closed and will not be reused even though the
 // http server will properly drain and close the request body.
+// TODO: This should be moved into hms-base
 
 func DrainAndCloseRequestBody(req *http.Request) {
 	if req != nil && req.Body != nil {
