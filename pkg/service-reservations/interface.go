@@ -50,6 +50,7 @@ const DefaultSleepTime = 10
 
 // Response bodies should always be drained and closed, else we leak resources
 // and fail to reuse network connections.
+// TODO: This should be moved into hms-base
 func DrainAndCloseResponseBody(resp *http.Response) {
 	if resp != nil && resp.Body != nil {
 			_, _ = io.Copy(io.Discard, resp.Body) // ok even if already drained
