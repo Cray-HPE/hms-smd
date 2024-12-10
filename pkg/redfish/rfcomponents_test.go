@@ -28,12 +28,13 @@ package rf
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"testing"
 
-	"github.com/Cray-HPE/hms-xname/xnametypes"
 	"github.com/Cray-HPE/hms-certs/pkg/hms_certs"
+	"github.com/Cray-HPE/hms-xname/xnametypes"
 )
 
 // RoundTrip method override
@@ -1094,8 +1095,24 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 //                         Proliant - Mock Client
 //////////////////////////////////////////////////////////////////////////////
 
+// While it is generally not a requirement to close request bodies in server
+// handlers, it is good practice.  If a body is only partially read, there can
+// be a resource leak.  Additionally, if the body is not read at all, the
+// network connection will be closed and will not be reused even though the
+// http server will properly drain and close the request body.
+// TODO: This should be moved into hms-base
+
+func DrainAndCloseRequestBody(req *http.Request) {
+	if req != nil && req.Body != nil {
+			_, _ = io.Copy(io.Discard, req.Body) // ok even if already drained
+			req.Body.Close()                     // ok even if already closed
+	}
+}
+
 func NewRTFuncPRLT1() RTFunc {
 	return func(req *http.Request) *http.Response {
+    defer DrainAndCloseRequestBody(req)
+
 		// Test request parameters
 		switch req.URL.String() {
 		case "https://" + testFQDN + testPathPRLT_redfish_v1:

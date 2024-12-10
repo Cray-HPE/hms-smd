@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright [2020-2021] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2020-2021,2024] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -28,13 +28,15 @@ package hbtdapi
 
 import (
 	"bytes"
-	"github.com/hashicorp/go-retryablehttp"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"testing"
-	"github.com/Cray-HPE/hms-base/v2"
+
+	base "github.com/Cray-HPE/hms-base/v2"
+	"github.com/hashicorp/go-retryablehttp"
 )
 
 var client *retryablehttp.Client
@@ -200,8 +202,24 @@ const testPayloadHBTDAPI_goodNoHB = `
 	}]
 }`
 
+// While it is generally not a requirement to close request bodies in server
+// handlers, it is good practice.  If a body is only partially read, there can
+// be a resource leak.  Additionally, if the body is not read at all, the
+// network connection will be closed and will not be reused even though the
+// http server will properly drain and close the request body.
+// TODO: This should be moved into hms-base
+
+func DrainAndCloseRequestBody(req *http.Request) {
+	if req != nil && req.Body != nil {
+			_, _ = io.Copy(io.Discard, req.Body) // ok even if already drained
+			req.Body.Close()                     // ok even if already closed
+	}
+}
+
 func NewRTFuncSLSAPI() RTFunc {
 	return func(req *http.Request) *http.Response {
+		defer DrainAndCloseRequestBody(req)
+
 		bad := true
 		if (len(req.Header) > 0) {
 			vals,ok := req.Header[base.USERAGENT]
