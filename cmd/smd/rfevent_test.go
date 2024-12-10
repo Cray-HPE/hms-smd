@@ -742,6 +742,7 @@ func TestDoHandleRFEvent(t *testing.T) {
 
 func DummyHandler(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(404)
+	DrainAndCloseRequestBody(req)
 	return
 }
 
@@ -750,6 +751,8 @@ func DummyHandler(w http.ResponseWriter, req *http.Request) {
 //////////////////////////////////////////////////////////////////////////////
 
 func GigabyteHandler(w http.ResponseWriter, req *http.Request) {
+	defer DrainAndCloseRequestBody(req)
+
 	// Test request parameters
 	switch req.URL.RequestURI() {
 

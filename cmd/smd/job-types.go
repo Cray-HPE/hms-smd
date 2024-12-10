@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright [2018-2023] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2018-2024] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -27,7 +27,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/go-retryablehttp"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -35,9 +35,21 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hashicorp/go-retryablehttp"
+
 	base "github.com/Cray-HPE/hms-base/v2"
 	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
 )
+
+// Response bodies should always be drained and closed, else we leak resources
+// and fail to reuse network connections.
+// TODO: This should be moved into hms-base
+func DrainAndCloseResponseBody(resp *http.Response) {
+	if resp != nil && resp.Body != nil {
+			_, _ = io.Copy(io.Discard, resp.Body) // ok even if already drained
+			resp.Body.Close()                     // ok even if already closed
+	}
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Job definitions
@@ -195,12 +207,13 @@ func (j *JobSCN) Run() {
 				}
 				rsp, err := client.Do(newRequest)
 				if err != nil {
+					DrainAndCloseResponseBody(rsp)
 					j.s.LogAlways("WARNING: SCN POST failed for %s: %v", urlStr, err)
 				} else {
 					if rsp.Body != nil {
 						strbody, _ = ioutil.ReadAll(rsp.Body)
-						rsp.Body.Close()
 					}
+					DrainAndCloseResponseBody(rsp)
 					if rsp.StatusCode != 200 {
 						j.s.LogAlways("WARNING: An error occurred uploading SCN to %s: %s %s", urlStr, rsp.Status, string(strbody))
 					} else {
