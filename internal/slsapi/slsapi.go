@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright [2019-2022] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2019-2022,2024] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -26,13 +26,15 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/go-retryablehttp"
-	"github.com/sirupsen/logrus"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	base "github.com/Cray-HPE/hms-base"
 	"time"
+
+	base "github.com/Cray-HPE/hms-base"
+	"github.com/hashicorp/go-retryablehttp"
+	"github.com/sirupsen/logrus"
 )
 
 const DefaultSlsUrl string = "http://cray-sls/"
@@ -72,6 +74,16 @@ type NodeInfo struct {
 }
 
 var serviceName string
+
+// Response bodies should always be drained and closed, else we leak resources
+// and fail to reuse network connections.
+// TODO: This should be moved into hms-base
+func DrainAndCloseResponseBody(resp *http.Response) {
+	if resp != nil && resp.Body != nil {
+			_, _ = io.Copy(io.Discard, resp.Body) // ok even if already drained
+			resp.Body.Close()                     // ok even if already closed
+	}
+}
 
 // Allocate and initialize new SLS struct.
 func NewSLS(slsUrl string, httpClient *retryablehttp.Client, svcName string) *SLS {
@@ -190,12 +202,12 @@ func (sls *SLS) doRequest(req *http.Request) ([]byte, error) {
 	newRequest.Header.Set("Content-Type", "application/json")
 
 	rsp, err := sls.Client.Do(newRequest)
+	defer DrainAndCloseResponseBody(rsp)
 	if err != nil {
 		return nil, err
 	}
 
 	// Read the response
-	defer rsp.Body.Close()
 	body, err := ioutil.ReadAll(rsp.Body)
 	if err != nil {
 		return nil, err

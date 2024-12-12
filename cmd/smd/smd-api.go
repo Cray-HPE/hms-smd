@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright [2018-2023] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2018-2024] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -25,6 +25,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -286,12 +287,28 @@ func compGetLockFltrToCompLockV2Filter(cglf CompGetLockFltr) (clf sm.CompLockV2F
 	return clf
 }
 
+// While it is generally not a requirement to close request bodies in server
+// handlers, it is good practice.  If a body is only partially read, there can
+// be a resource leak.  Additionally, if the body is not read at all, the
+// network connection will be closed and will not be reused even though the
+// http server will properly drain and close the request body.
+// TODO: This should be moved into hms-base
+
+func DrainAndCloseRequestBody(req *http.Request) {
+	if req != nil && req.Body != nil {
+			_, _ = io.Copy(io.Discard, req.Body) // ok even if already drained
+			req.Body.Close()                     // ok even if already closed
+	}
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // HSM Service Info
 /////////////////////////////////////////////////////////////////////////////
 
 // Get the readiness state of HSM
 func (s *SmD) doReadyGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	// If we got here then the initial database connection was successful
 	// Check that the DB connection is still available
 	err := s.db.TestConnection()
@@ -306,52 +323,72 @@ func (s *SmD) doReadyGet(w http.ResponseWriter, r *http.Request) {
 
 // Get the liveness state of HSM
 func (s *SmD) doLivenessGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	// Let the caller know we are accepting HTTP requests.
 	w.WriteHeader(http.StatusNoContent)
 }
 
 // Get all HMS base enum values
 func (s *SmD) doValuesGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.getHMSValues(HMSValAll, w, r)
 }
 
 // Get HMS base enum values for arch
 func (s *SmD) doArchValuesGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.getHMSValues(HMSValArch, w, r)
 }
 
 // Get HMS base enum values for class
 func (s *SmD) doClassValuesGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.getHMSValues(HMSValClass, w, r)
 }
 
 // Get HMS base enum values for flag
 func (s *SmD) doFlagValuesGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.getHMSValues(HMSValFlag, w, r)
 }
 
 // Get HMS base enum values for nettype
 func (s *SmD) doNetTypeValuesGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.getHMSValues(HMSValNetType, w, r)
 }
 
 // Get HMS base enum values for role
 func (s *SmD) doRoleValuesGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.getHMSValues(HMSValRole, w, r)
 }
 
 // Get HMS base enum values for subrole
 func (s *SmD) doSubRoleValuesGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.getHMSValues(HMSValSubRole, w, r)
 }
 
 // Get HMS base enum values for state
 func (s *SmD) doStateValuesGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.getHMSValues(HMSValState, w, r)
 }
 
 // Get HMS base enum values for type
 func (s *SmD) doTypeValuesGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.getHMSValues(HMSValType, w, r)
 }
 
@@ -393,6 +430,8 @@ func (s *SmD) getHMSValues(valSelect HMSValueSelect, w http.ResponseWriter, r *h
 
 // Get single HMS component by xname ID
 func (s *SmD) doComponentGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	vars := mux.Vars(r)
 	xname := base.NormalizeHMSCompID(vars["xname"])
 
@@ -412,6 +451,8 @@ func (s *SmD) doComponentGet(w http.ResponseWriter, r *http.Request) {
 
 // Delete single ComponentEndpoint, by its xname ID.
 func (s *SmD) doComponentDelete(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.lg.Printf("doComponentDelete(): trying...")
 	vars := mux.Vars(r)
 	xname := base.NormalizeHMSCompID(vars["xname"])
@@ -436,6 +477,8 @@ func (s *SmD) doComponentDelete(w http.ResponseWriter, r *http.Request) {
 
 // Get all HMS Components as named array
 func (s *SmD) doComponentsGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	comps := new(base.ComponentArray)
 	var err error
 
@@ -482,6 +525,8 @@ func (s *SmD) doComponentsGet(w http.ResponseWriter, r *http.Request) {
 // overwritten unless force=true in which case State, Flag, Subtype, NetType,
 // Arch, and Class will get overwritten.
 func (s *SmD) doComponentsPost(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	var compsIn sm.ComponentsPost
 
@@ -601,6 +646,8 @@ func (s *SmD) doComponentsPost(w http.ResponseWriter, r *http.Request) {
 
 // Get all HMS Components under multiple parent components as named array
 func (s *SmD) doComponentsQueryPost(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	comps := new(base.ComponentArray)
 	var err error
 
@@ -645,6 +692,8 @@ func (s *SmD) doComponentsQueryPost(w http.ResponseWriter, r *http.Request) {
 
 // Get all HMS Components under a single parent component as named array
 func (s *SmD) doComponentsQueryGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	comps := new(base.ComponentArray)
 	ids := make([]string, 0, 1)
 	var err error
@@ -694,6 +743,8 @@ func (s *SmD) doComponentsQueryGet(w http.ResponseWriter, r *http.Request) {
 
 // Delete entire collection of ComponentEndpoints, undoing discovery.
 func (s *SmD) doComponentsDeleteAll(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	numDeleted, err := s.db.DeleteComponentsAll()
 	if err != nil {
@@ -712,6 +763,8 @@ func (s *SmD) doComponentsDeleteAll(w http.ResponseWriter, r *http.Request) {
 // Get single HMS component by NID, if it exists and is a type that has a
 // NID (i.e. a node)
 func (s *SmD) doComponentByNIDGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	vars := mux.Vars(r)
 	xname := vars["nid"]
 
@@ -732,6 +785,8 @@ func (s *SmD) doComponentByNIDGet(w http.ResponseWriter, r *http.Request) {
 // Get an array of HMS component by NID, if it exists and is a type that has a
 // NID (i.e. a node)
 func (s *SmD) doComponentByNIDQueryPost(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	comps := new(base.ComponentArray)
 	var err error
 
@@ -788,6 +843,8 @@ func (s *SmD) doComponentByNIDQueryPost(w http.ResponseWriter, r *http.Request) 
 // Bulk NID patch.  Unlike other patch methods, there needs to be a
 // NID for each ID given, so the handling has to be a little different.
 func (s *SmD) doCompBulkNIDPatch(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 
 	var compsIn componentArrayIn
@@ -819,30 +876,40 @@ func (s *SmD) doCompBulkNIDPatch(w http.ResponseWriter, r *http.Request) {
 
 // Update component state and flag for a list of components
 func (s *SmD) doCompBulkStateDataPatch(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.compBulkPatch(w, r, StateDataUpdate, "doCompBulkStateDataPatch")
 	return
 }
 
 // Update component state and flag for a list of components
 func (s *SmD) doCompBulkFlagOnlyPatch(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.compBulkPatch(w, r, FlagOnlyUpdate, "doCompBulkFlagOnlyPatch")
 	return
 }
 
 // Update component 'Enabled' boolean for a list of components
 func (s *SmD) doCompBulkEnabledPatch(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.compBulkPatch(w, r, EnabledUpdate, "doCompBulkEnabledPatch")
 	return
 }
 
 // Update component SoftwareStatus field for a list of components
 func (s *SmD) doCompBulkSwStatusPatch(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.compBulkPatch(w, r, SwStatusUpdate, "doCompBulkSwStatusPatch")
 	return
 }
 
 // Update component state and flag for a list of components
 func (s *SmD) doCompBulkRolePatch(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.compBulkPatch(w, r, RoleUpdate, "doCompBulkRolePatch")
 	return
 }
@@ -928,12 +995,16 @@ func (s *SmD) compPatchHelper(
 // Patch the State and Flag field (latter defaults to OK) for a single
 // component.
 func (s *SmD) doCompStateDataPatch(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.componentPatch(w, r, StateDataUpdate, "doCompStateDataPatch")
 	return
 }
 
 // Patch the Flag field only (state does not change) for a single component.
 func (s *SmD) doCompFlagOnlyPatch(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.componentPatch(w, r, FlagOnlyUpdate, "doCompFlagOnlyPatch")
 	return
 }
@@ -941,6 +1012,8 @@ func (s *SmD) doCompFlagOnlyPatch(w http.ResponseWriter, r *http.Request) {
 // Patch the Enabled boolean for a single component, leaving other fields
 // in place.
 func (s *SmD) doCompEnabledPatch(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.componentPatch(w, r, EnabledUpdate, "doCompEnabledPatch")
 	return
 }
@@ -948,12 +1021,16 @@ func (s *SmD) doCompEnabledPatch(w http.ResponseWriter, r *http.Request) {
 // Patch the SoftwareStatus field for a single component, leaving other
 // fields in place.
 func (s *SmD) doCompSwStatusPatch(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.componentPatch(w, r, SwStatusUpdate, "doCompSwStatusPatch")
 	return
 }
 
 // Patch the Role field for a single component, leaving other fields in place.
 func (s *SmD) doCompRolePatch(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.componentPatch(w, r, RoleUpdate, "doCompRolePatch")
 	return
 }
@@ -961,6 +1038,8 @@ func (s *SmD) doCompRolePatch(w http.ResponseWriter, r *http.Request) {
 // Update the NID (Node ID) for a single component, leaving other fields
 // in place.
 func (s *SmD) doCompNIDPatch(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.componentPatch(w, r, SingleNIDUpdate, "doCompNIDPatch")
 	return
 }
@@ -1018,6 +1097,8 @@ func (s *SmD) componentPatch(
 // In any case, it should not be needed except to force changes to what should
 // otherwise be write-only fields.
 func (s *SmD) doComponentPut(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	vars := mux.Vars(r)
 	xname := base.NormalizeHMSCompID(vars["xname"])
 
@@ -1108,6 +1189,8 @@ func (s *SmD) doComponentPut(w http.ResponseWriter, r *http.Request) {
 
 // Get one specific NodeMap entry, previously created, by its xname ID.
 func (s *SmD) doNodeMapGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.lg.Printf("doNodeMapGet(): trying...")
 	vars := mux.Vars(r)
 	xname := vars["xname"]
@@ -1128,6 +1211,8 @@ func (s *SmD) doNodeMapGet(w http.ResponseWriter, r *http.Request) {
 // Get all NodeMap entries in database, by doing a GET against the
 // entire collection.
 func (s *SmD) doNodeMapsGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	nnms := new(sm.NodeMapArray)
 	var err error
 
@@ -1150,6 +1235,8 @@ type scanableNodeMap struct {
 // CREATE new or UPDATE EXISTING Node->NID mapping
 // Accept either a named array or a single entry.
 func (s *SmD) doNodeMapsPost(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var scanMap scanableNodeMap
 	nnms := new(sm.NodeMapArray)
 
@@ -1214,6 +1301,8 @@ func (s *SmD) doNodeMapsPost(w http.ResponseWriter, r *http.Request) {
 
 // UPDATE EXISTING Node->NID mapping by it's xname URI.
 func (s *SmD) doNodeMapPut(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	vars := mux.Vars(r)
 	xname := base.NormalizeHMSCompID(vars["xname"])
 
@@ -1266,6 +1355,8 @@ func (s *SmD) doNodeMapPut(w http.ResponseWriter, r *http.Request) {
 
 // Delete single NodeMap, by its xname ID.
 func (s *SmD) doNodeMapDelete(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.lg.Printf("doNodeMapDelete(): trying...")
 	vars := mux.Vars(r)
 	xname := base.NormalizeHMSCompID(vars["xname"])
@@ -1290,6 +1381,8 @@ func (s *SmD) doNodeMapDelete(w http.ResponseWriter, r *http.Request) {
 
 // Delete collection containing all NodeMap entries.
 func (s *SmD) doNodeMapsDeleteAll(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	numDeleted, err := s.db.DeleteNodeMapsAll()
 	if err != nil {
@@ -1311,6 +1404,8 @@ func (s *SmD) doNodeMapsDeleteAll(w http.ResponseWriter, r *http.Request) {
 
 // Get single HWInvByLocation entry by it's xname
 func (s *SmD) doHWInvByLocationGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	vars := mux.Vars(r)
 	xname := vars["xname"]
 	hl, err := s.db.GetHWInvByLocID(xname)
@@ -1329,6 +1424,8 @@ func (s *SmD) doHWInvByLocationGet(w http.ResponseWriter, r *http.Request) {
 // Get all HWInvByLocation entries in database, by doing a GET against the
 // entire collection.
 func (s *SmD) doHWInvByLocationGetAll(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	if err := r.ParseForm(); err != nil {
 		s.lg.Printf("doHWInvByLocationGetAll(): ParseForm: %s", err)
 		sendJsonError(w, http.StatusInternalServerError,
@@ -1423,6 +1520,8 @@ func (s *SmD) doHWInvByLocationGetAll(w http.ResponseWriter, r *http.Request) {
 
 // Create/update HWInv entries.
 func (s *SmD) doHWInvByLocationPost(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var hwIn HwInvIn
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -1455,6 +1554,8 @@ func (s *SmD) doHWInvByLocationPost(w http.ResponseWriter, r *http.Request) {
 
 // Get single HWInvByFRU entry by its FRU ID
 func (s *SmD) doHWInvByFRUGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	vars := mux.Vars(r)
 	fruID := vars["fruid"]
 	hf, err := s.db.GetHWInvByFRUID(fruID)
@@ -1473,6 +1574,8 @@ func (s *SmD) doHWInvByFRUGet(w http.ResponseWriter, r *http.Request) {
 // Get all HWInvByFRU entries in database, by doing a GET against the
 // entire collection.
 func (s *SmD) doHWInvByFRUGetAll(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	if err := r.ParseForm(); err != nil {
 		s.lg.Printf("doHWInvByFRUGetAll(): ParseForm: %s", err)
 		sendJsonError(w, http.StatusInternalServerError,
@@ -1542,6 +1645,8 @@ func (s *SmD) doHWInvByFRUGetAll(w http.ResponseWriter, r *http.Request) {
 // Provides a xthwinv-type collection of system components, sorted by type
 // and optionally nested (fully, or node subcomponents only).
 func (s *SmD) doHWInvByLocationQueryGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var (
 		compType    base.HMSType
 		parentQuery bool
@@ -1697,6 +1802,8 @@ func (s *SmD) doHWInvByLocationQueryGet(w http.ResponseWriter, r *http.Request) 
 
 // Delete a single HWInvByLocation by its xname ID.
 func (s *SmD) doHWInvByLocationDelete(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	vars := mux.Vars(r)
 	xname := vars["xname"]
 	didDelete, err := s.db.DeleteHWInvByLocID(xname)
@@ -1715,6 +1822,8 @@ func (s *SmD) doHWInvByLocationDelete(w http.ResponseWriter, r *http.Request) {
 
 // Delete collection containing all HWInvByLocation entries
 func (s *SmD) doHWInvByLocationDeleteAll(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	numDeleted, err := s.db.DeleteHWInvByLocsAll()
 	if err != nil {
@@ -1732,6 +1841,8 @@ func (s *SmD) doHWInvByLocationDeleteAll(w http.ResponseWriter, r *http.Request)
 
 // Delete a single HWInvByFRUD entry, by its FRU ID.
 func (s *SmD) doHWInvByFRUDelete(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	vars := mux.Vars(r)
 	fruID := vars["fruid"]
 	didDelete, err := s.db.DeleteHWInvByFRUID(fruID)
@@ -1750,6 +1861,8 @@ func (s *SmD) doHWInvByFRUDelete(w http.ResponseWriter, r *http.Request) {
 
 // Delete collection containing all HWInvByFRU entries
 func (s *SmD) doHWInvByFRUDeleteAll(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	numDeleted, err := s.db.DeleteHWInvByFRUsAll()
 	if err != nil {
@@ -1771,11 +1884,15 @@ func (s *SmD) doHWInvByFRUDeleteAll(w http.ResponseWriter, r *http.Request) {
 
 // Get all HWInvHist entries in the database for a single locational xname.
 func (s *SmD) doHWInvHistByLocationGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.hwInvHistGet(w, r, sm.HWInvHistFmtByLoc)
 }
 
 // Get all HWInvHist entries in the database for a single FRU ID.
 func (s *SmD) doHWInvHistByFRUGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.hwInvHistGet(w, r, sm.HWInvHistFmtByFRU)
 }
 
@@ -1880,12 +1997,16 @@ func (s *SmD) hwInvHistGet(w http.ResponseWriter, r *http.Request, format sm.HWI
 // entire collection. Sorted by location xname associated with the HWInvHist
 // entries.
 func (s *SmD) doHWInvHistByLocationGetAll(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.hwInvHistGetAll(w, r, sm.HWInvHistFmtByLoc)
 }
 
 // Get all HWInvHist entries in the database, by doing a GET against the
 // entire collection. Sorted by FRU ID associated with the HWInvHist entries.
 func (s *SmD) doHWInvHistByFRUGetAll(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.hwInvHistGetAll(w, r, sm.HWInvHistFmtByFRU)
 }
 
@@ -1985,6 +2106,8 @@ func (s *SmD) hwInvHistGetAll(w http.ResponseWriter, r *http.Request, format sm.
 
 // Delete the HWInvHist entries for a single HWInvByLocation by its xname ID.
 func (s *SmD) doHWInvHistByLocationDelete(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	vars := mux.Vars(r)
 	xname := vars["xname"]
 	normId := base.VerifyNormalizeCompID(xname)
@@ -2009,6 +2132,8 @@ func (s *SmD) doHWInvHistByLocationDelete(w http.ResponseWriter, r *http.Request
 
 // Delete collection containing all HWInvHist entries
 func (s *SmD) doHWInvHistDeleteAll(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	numDeleted, err := s.db.DeleteHWInvHistAll()
 	if err != nil {
@@ -2026,6 +2151,8 @@ func (s *SmD) doHWInvHistDeleteAll(w http.ResponseWriter, r *http.Request) {
 
 // Delete the HWInvHist entries for a single HWInvByFRUD entry, by its FRU ID.
 func (s *SmD) doHWInvHistByFRUDelete(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	vars := mux.Vars(r)
 	fruID := vars["fruid"]
 	numDeleted, err := s.db.DeleteHWInvHistByFRUID(fruID)
@@ -2048,6 +2175,8 @@ func (s *SmD) doHWInvHistByFRUDelete(w http.ResponseWriter, r *http.Request) {
 
 // Get one specific RedfishEndpoint, previously created, by its xname ID.
 func (s *SmD) doRedfishEndpointGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.lg.Printf("doRedfishEndpointGet(): trying...")
 	vars := mux.Vars(r)
 	xname := vars["xname"]
@@ -2067,6 +2196,8 @@ func (s *SmD) doRedfishEndpointGet(w http.ResponseWriter, r *http.Request) {
 // Get all RedfishEndpoint entries in database, by doing a GET against the
 // entire collection.
 func (s *SmD) doRedfishEndpointsGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	eps := new(sm.RedfishEndpointArray)
 	var err error
 
@@ -2105,6 +2236,8 @@ func (s *SmD) doRedfishEndpointsGet(w http.ResponseWriter, r *http.Request) {
 // RedfishEndpoints collection then it is superflouous.  That would be
 // more REST-like.
 func (s *SmD) doRedfishEndpointQueryGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	eps := new(sm.RedfishEndpointArray)
 
 	vars := mux.Vars(r)
@@ -2128,6 +2261,8 @@ func (s *SmD) doRedfishEndpointQueryGet(w http.ResponseWriter, r *http.Request) 
 // Delete single RedfishEndpoint, by its xname ID.  This also deletes any
 // child ComponentEndpoints, though not other structures.
 func (s *SmD) doRedfishEndpointDelete(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.lg.Printf("doRedfishEndpointDelete(): trying...")
 	vars := mux.Vars(r)
 	xname := vars["xname"]
@@ -2154,6 +2289,8 @@ func (s *SmD) doRedfishEndpointDelete(w http.ResponseWriter, r *http.Request) {
 
 // Delete collection containing all RedfishEndoint entries.
 func (s *SmD) doRedfishEndpointsDeleteAll(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	numDeleted, affectedIDs, err := s.db.DeleteRFEndpointsAllSetEmpty()
 	if err != nil {
@@ -2180,6 +2317,8 @@ func (s *SmD) doRedfishEndpointsDeleteAll(w http.ResponseWriter, r *http.Request
 // UPDATE existing RedfishEndpoint entry in full (or all least all
 // user-writable portions).
 func (s *SmD) doRedfishEndpointPut(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	vars := mux.Vars(r)
 	xname := base.NormalizeHMSCompID(vars["xname"])
 
@@ -2284,6 +2423,8 @@ func (s *SmD) doRedfishEndpointPut(w http.ResponseWriter, r *http.Request) {
 
 // PATCH existing RedfishEndpoint entry but only the fields specified.
 func (s *SmD) doRedfishEndpointPatch(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	vars := mux.Vars(r)
 	xname := base.VerifyNormalizeCompID(vars["xname"])
 
@@ -2396,6 +2537,8 @@ type scanableRedfishEndpoint struct {
 // CREATE new RedfishEndpoint or Endpoints if there is a named array provided
 // instead of a single entry.
 func (s *SmD) doRedfishEndpointsPost(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var scanEPs scanableRedfishEndpoint
 	eps := new(sm.RedfishEndpointArray)
 	creds := []compcreds.CompCredentials{}
@@ -2510,6 +2653,8 @@ func (s *SmD) doRedfishEndpointsPost(w http.ResponseWriter, r *http.Request) {
 // Retrieves a single ComponentEndpoint (discovered info from Redfish on a
 // component underneath a RedfishEndpoint).
 func (s *SmD) doComponentEndpointGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.lg.Printf("doComponentEndpointGet(): trying...")
 	vars := mux.Vars(r)
 	xname := vars["xname"]
@@ -2528,6 +2673,8 @@ func (s *SmD) doComponentEndpointGet(w http.ResponseWriter, r *http.Request) {
 
 // Get collection of all ComponentEndpoints
 func (s *SmD) doComponentEndpointsGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	ceps := new(sm.ComponentEndpointArray)
 	var err error
 
@@ -2563,6 +2710,8 @@ func (s *SmD) doComponentEndpointsGet(w http.ResponseWriter, r *http.Request) {
 
 // Delete single ComponentEndpoint, by its xname ID.
 func (s *SmD) doComponentEndpointDelete(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.lg.Printf("doComponentEndpointDelete(): trying...")
 	vars := mux.Vars(r)
 	xname := vars["xname"]
@@ -2589,6 +2738,8 @@ func (s *SmD) doComponentEndpointDelete(w http.ResponseWriter, r *http.Request) 
 
 // Delete entire collection of ComponentEndpoints, undoing discovery.
 func (s *SmD) doComponentEndpointsDeleteAll(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	numDeleted, affectedIDs, err := s.db.DeleteCompEndpointsAllSetEmpty()
 	if err != nil {
@@ -2614,6 +2765,8 @@ func (s *SmD) doComponentEndpointsDeleteAll(w http.ResponseWriter, r *http.Reque
 
 // Might not need this.  Might be able to use normal get on collection.
 func (s *SmD) doComponentEndpointQueryGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	ceps := new(sm.ComponentEndpointArray)
 	vars := mux.Vars(r)
 	xname := vars["xname"]
@@ -2640,6 +2793,8 @@ func (s *SmD) doComponentEndpointQueryGet(w http.ResponseWriter, r *http.Request
 // Retrieves a single ServiceEndpoint (discovered info from Redfish on a
 // service underneath a RedfishEndpoint).
 func (s *SmD) doServiceEndpointGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	vars := mux.Vars(r)
 	svc := vars["service"]
 	xname := vars["xname"]
@@ -2660,6 +2815,8 @@ func (s *SmD) doServiceEndpointGet(w http.ResponseWriter, r *http.Request) {
 
 // Get collection of all ServiceEndpoints
 func (s *SmD) doServiceEndpointsGetAll(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	seps := new(sm.ServiceEndpointArray)
 	var err error
 
@@ -2697,6 +2854,8 @@ func (s *SmD) doServiceEndpointsGetAll(w http.ResponseWriter, r *http.Request) {
 
 // Get collection of all ServiceEndpoints by service
 func (s *SmD) doServiceEndpointsGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	seps := new(sm.ServiceEndpointArray)
 	var err error
 	vars := mux.Vars(r)
@@ -2737,6 +2896,8 @@ func (s *SmD) doServiceEndpointsGet(w http.ResponseWriter, r *http.Request) {
 
 // Delete single ServiceEndpoint, by its service type and xname ID.
 func (s *SmD) doServiceEndpointDelete(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	vars := mux.Vars(r)
 	svc := vars["service"]
 	xname := vars["xname"]
@@ -2757,6 +2918,8 @@ func (s *SmD) doServiceEndpointDelete(w http.ResponseWriter, r *http.Request) {
 
 // Delete entire collection of ServiceEndpoints, undoing discovery.
 func (s *SmD) doServiceEndpointsDeleteAll(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	numDeleted, err := s.db.DeleteServiceEndpointsAll()
 	if err != nil {
@@ -2780,6 +2943,8 @@ func (s *SmD) doServiceEndpointsDeleteAll(w http.ResponseWriter, r *http.Request
 
 // Delete collection containing all component ethernet interface entries.
 func (s *SmD) doCompEthInterfaceDeleteAll(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	numDeleted, err := s.db.DeleteCompEthInterfacesAll()
 	if err != nil {
@@ -2797,6 +2962,8 @@ func (s *SmD) doCompEthInterfaceDeleteAll(w http.ResponseWriter, r *http.Request
 
 // Delete component ethernet interface {id}.
 func (s *SmD) doCompEthInterfaceDelete(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	vars := mux.Vars(r)
 	id := strings.ToLower(vars["id"])
 
@@ -2824,6 +2991,8 @@ func (s *SmD) doCompEthInterfaceDelete(w http.ResponseWriter, r *http.Request) {
 // Get all component ethernet interfaces that currently exist, optionally filtering the set,
 // returning an array of component ethernet interface records.
 func (s *SmD) doCompEthInterfacesGetV2(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	if err := r.ParseForm(); err != nil {
 		s.lg.Printf("doCompEthInterfacesGetV2(): ParseForm: %s", err)
@@ -2919,6 +3088,8 @@ func (s *SmD) doCompEthInterfacesGetV2(w http.ResponseWriter, r *http.Request) {
 
 // Create a new component ethernet interface.
 func (s *SmD) doCompEthInterfacePostV2(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var ceiIn sm.CompEthInterfaceV2
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -2963,6 +3134,8 @@ func (s *SmD) doCompEthInterfacePostV2(w http.ResponseWriter, r *http.Request) {
 
 // Retrieve the component ethernet interface which was created with the given {id}.
 func (s *SmD) doCompEthInterfaceGetV2(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	vars := mux.Vars(r)
 	id := strings.ToLower(vars["id"])
@@ -2994,6 +3167,8 @@ func (s *SmD) doCompEthInterfaceGetV2(w http.ResponseWriter, r *http.Request) {
 // a PATCH operation can be used. Omitted fields are not updated. LastUpdate is
 // only updated if an IP address is specified.
 func (s *SmD) doCompEthInterfacePatchV2(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var ceip sm.CompEthInterfaceV2Patch
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -3035,6 +3210,8 @@ func (s *SmD) doCompEthInterfacePatchV2(w http.ResponseWriter, r *http.Request) 
 // Get a array of all IP Addresses mappings that are currently
 // associated with this Component Ethernet Interface
 func (s *SmD) doCompEthInterfaceIPAddressesGetV2(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -3067,6 +3244,8 @@ func (s *SmD) doCompEthInterfaceIPAddressesGetV2(w http.ResponseWriter, r *http.
 // Create a new IP Addresses of Component Ethernet Interface {id} with the IP address {ipaddr} provided
 // in the payload. New IP Addresses should not already exist in the given Component Ethernet Interface.
 func (s *SmD) doCompEthInterfaceIPAddressPostV2(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var ipAddressIn sm.IPAddressMapping
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -3115,6 +3294,8 @@ func (s *SmD) doCompEthInterfaceIPAddressPostV2(w http.ResponseWriter, r *http.R
 
 // Patch the field fields of an IP Address {ipaddr} associated with Component Ethernet interface {id}
 func (s *SmD) doCompEthInterfaceIPAddressPatchV2(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var ipmPatch sm.IPAddressMappingPatch
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -3158,6 +3339,8 @@ func (s *SmD) doCompEthInterfaceIPAddressPatchV2(w http.ResponseWriter, r *http.
 
 // Remove IP Address {ipaddr} from the IP Addresses of the Component Ethernet Interface {id}.
 func (s *SmD) doCompEthInterfaceIPAddressDeleteV2(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	vars := mux.Vars(r)
 	id := vars["id"]
 	ipAddr := vars["ipaddr"]
@@ -3200,6 +3383,8 @@ func (s *SmD) doCompEthInterfaceIPAddressDeleteV2(w http.ResponseWriter, r *http
 /////////////////////////////////////////////////////////////////////////////
 
 func (s *SmD) doDiscoveryStatusGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	vars := mux.Vars(r)
 	idStr := vars["id"]
 
@@ -3224,6 +3409,8 @@ func (s *SmD) doDiscoveryStatusGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *SmD) doDiscoveryStatusGetAll(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	stats, err := s.db.GetDiscoveryStatusAll()
 	if err != nil {
 		sendJsonError(w, http.StatusInternalServerError,
@@ -3236,6 +3423,8 @@ func (s *SmD) doDiscoveryStatusGetAll(w http.ResponseWriter, r *http.Request) {
 
 // Do discovery.
 func (s *SmD) doInventoryDiscoverPost(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var discIn sm.DiscoverIn
 	var id uint = 0
 
@@ -3306,6 +3495,8 @@ func (s *SmD) doInventoryDiscoverPost(w http.ResponseWriter, r *http.Request) {
 // Get all currently held SCN subscriptions. This returns the list of SCN
 // subscriptions that this instance of HSM has.
 func (s *SmD) doGetSCNSubscriptionsAll(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	subs, err := s.db.GetSCNSubscriptionsAll()
 	if err != nil {
 		s.lg.Printf("doGetSCNSubscriptionsAll(): Lookup failure: %s", err)
@@ -3317,6 +3508,8 @@ func (s *SmD) doGetSCNSubscriptionsAll(w http.ResponseWriter, r *http.Request) {
 
 // Create a new SCN subscription
 func (s *SmD) doPostSCNSubscription(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	var found bool
 
@@ -3431,6 +3624,8 @@ func (s *SmD) doPostSCNSubscription(w http.ResponseWriter, r *http.Request) {
 
 // Delete all SCN subscriptions.
 func (s *SmD) doDeleteSCNSubscriptionsAll(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 
 	s.scnSubLock.Lock()
@@ -3451,6 +3646,8 @@ func (s *SmD) doDeleteSCNSubscriptionsAll(w http.ResponseWriter, r *http.Request
 
 // Get a currently held SCN subscription. This returns the specified SCN subscription.
 func (s *SmD) doGetSCNSubscription(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	vars := mux.Vars(r)
 	idStr := vars["id"]
 
@@ -3478,6 +3675,8 @@ func (s *SmD) doGetSCNSubscription(w http.ResponseWriter, r *http.Request) {
 
 // Update a SCN subscription entirely.
 func (s *SmD) doPutSCNSubscription(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	vars := mux.Vars(r)
 	idStr := vars["id"]
@@ -3598,6 +3797,8 @@ func (s *SmD) doPutSCNSubscription(w http.ResponseWriter, r *http.Request) {
 
 // Patch update a SCN subscription.
 func (s *SmD) doPatchSCNSubscription(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	vars := mux.Vars(r)
 	idStr := vars["id"]
@@ -3845,6 +4046,8 @@ func (s *SmD) doPatchSCNSubscription(w http.ResponseWriter, r *http.Request) {
 
 // Delete a SCN subscription.
 func (s *SmD) doDeleteSCNSubscription(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	vars := mux.Vars(r)
 	idStr := vars["id"]
@@ -3896,6 +4099,8 @@ func (s *SmD) doDeleteSCNSubscription(w http.ResponseWriter, r *http.Request) {
 // Get all groups that currently exist, optionally filtering the set, returning
 // an array of groups.
 func (s *SmD) doGroupsGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	groups := make([]sm.Group, 0)
 	if err := r.ParseForm(); err != nil {
@@ -4009,6 +4214,8 @@ func (s *SmD) doGroupsGet(w http.ResponseWriter, r *http.Request) {
 // explicitly, and should not conflict with any existing group, or an error
 // will occur.
 func (s *SmD) doGroupsPost(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var groupIn sm.Group
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -4055,6 +4262,8 @@ func (s *SmD) doGroupsPost(w http.ResponseWriter, r *http.Request) {
 
 // Retrieve the group which was created with the given {group_label}.
 func (s *SmD) doGroupGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	vars := mux.Vars(r)
 	label := sm.NormalizeGroupField(vars["group_label"])
@@ -4117,6 +4326,8 @@ func (s *SmD) doGroupGet(w http.ResponseWriter, r *http.Request) {
 // Delete the given group label. Any members previously in the group will no
 // longer have the deleted group label associated with them.
 func (s *SmD) doGroupDelete(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	vars := mux.Vars(r)
 	label := sm.NormalizeGroupField(vars["group_label"])
 
@@ -4147,6 +4358,8 @@ func (s *SmD) doGroupDelete(w http.ResponseWriter, r *http.Request) {
 //       individual members can be removed or added with the
 //       POST/DELETE {group_label}/members API.
 func (s *SmD) doGroupPatch(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var groupPatch sm.GroupPatch
 	vars := mux.Vars(r)
 	label := sm.NormalizeGroupField(vars["group_label"])
@@ -4199,6 +4412,8 @@ func (s *SmD) doGroupPatch(w http.ResponseWriter, r *http.Request) {
 // Get a string array of all group labels (i.e. group names) that currently
 // exist in HSM.
 func (s *SmD) doGroupLabelsGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	labels, err := s.db.GetGroupLabels()
 	if err != nil {
 		s.lg.Printf("doGroupLabelsGet(): Lookup failure: %s", err)
@@ -4212,6 +4427,8 @@ func (s *SmD) doGroupLabelsGet(w http.ResponseWriter, r *http.Request) {
 // Get all members of an existing group {group_label}, optionally filtering the set,
 // returning a members set containing the component xname IDs.
 func (s *SmD) doGroupMembersGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	vars := mux.Vars(r)
 	label := sm.NormalizeGroupField(vars["group_label"])
@@ -4275,6 +4492,8 @@ func (s *SmD) doGroupMembersGet(w http.ResponseWriter, r *http.Request) {
 // Create a new member of group {group_label} with the component xname id provided
 // in the payload. New member should not already exist in the given group.
 func (s *SmD) doGroupMembersPost(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var memberIn sm.MemberAddBody
 	vars := mux.Vars(r)
 	label := sm.NormalizeGroupField(vars["group_label"])
@@ -4325,6 +4544,8 @@ func (s *SmD) doGroupMembersPost(w http.ResponseWriter, r *http.Request) {
 
 // Remove component {xname_id} from the members of group {group_label}.
 func (s *SmD) doGroupMemberDelete(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	vars := mux.Vars(r)
 	label := sm.NormalizeGroupField(vars["group_label"])
 	id := base.NormalizeHMSCompID(vars["xname_id"])
@@ -4366,6 +4587,8 @@ func (s *SmD) doGroupMemberDelete(w http.ResponseWriter, r *http.Request) {
 // Get all partitions that currently exist, optionally filtering the set,
 // returning an array of partition records.
 func (s *SmD) doPartitionsGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	partitions := make([]sm.Partition, 0)
 	if err := r.ParseForm(); err != nil {
@@ -4467,6 +4690,8 @@ func (s *SmD) doPartitionsGet(w http.ResponseWriter, r *http.Request) {
 // partition, or an error will occur. In addition, the member list must not
 // overlap with any existing partition.
 func (s *SmD) doPartitionsPost(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var partIn sm.Partition
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -4512,6 +4737,8 @@ func (s *SmD) doPartitionsPost(w http.ResponseWriter, r *http.Request) {
 
 // Retrieve the partition which was created with the given {partition_name}.
 func (s *SmD) doPartitionGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	vars := mux.Vars(r)
 	name := sm.NormalizeGroupField(vars["partition_name"])
@@ -4542,6 +4769,8 @@ func (s *SmD) doPartitionGet(w http.ResponseWriter, r *http.Request) {
 // Delete partition {partition_name}. Any members previously in the partition
 // will no longer have the deleted partition name associated with them.
 func (s *SmD) doPartitionDelete(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	vars := mux.Vars(r)
 	name := sm.NormalizeGroupField(vars["partition_name"])
 
@@ -4572,6 +4801,8 @@ func (s *SmD) doPartitionDelete(w http.ResponseWriter, r *http.Request) {
 //       individual members can be removed or added with the POST/DELETE
 //       {partition_name}/members API.
 func (s *SmD) doPartitionPatch(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var partPatch sm.PartitionPatch
 	vars := mux.Vars(r)
 	name := sm.NormalizeGroupField(vars["partition_name"])
@@ -4631,6 +4862,8 @@ func (s *SmD) doPartitionPatch(w http.ResponseWriter, r *http.Request) {
 // Get a string array of all partition names that currently exist in HSM.
 // These are just the names, not the complete partition records.
 func (s *SmD) doPartitionNamesGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	names, err := s.db.GetPartitionNames()
 	if err != nil {
 		s.lg.Printf("doPartitionNamesGet(): Lookup failure: %s", err)
@@ -4644,6 +4877,8 @@ func (s *SmD) doPartitionNamesGet(w http.ResponseWriter, r *http.Request) {
 // Get all members of existing partition {partition_name}, optionally filtering
 // the set, returning a members set that includes the component xname IDs.
 func (s *SmD) doPartitionMembersGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	vars := mux.Vars(r)
 	name := sm.NormalizeGroupField(vars["partition_name"])
@@ -4675,6 +4910,8 @@ func (s *SmD) doPartitionMembersGet(w http.ResponseWriter, r *http.Request) {
 // id provided in the payload. New member should not already exist in the given
 // partition
 func (s *SmD) doPartitionMembersPost(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var memberIn sm.MemberAddBody
 	vars := mux.Vars(r)
 	name := sm.NormalizeGroupField(vars["partition_name"])
@@ -4726,6 +4963,8 @@ func (s *SmD) doPartitionMembersPost(w http.ResponseWriter, r *http.Request) {
 
 // Remove component {xname_id} from the members of partition {partition_name}.
 func (s *SmD) doPartitionMemberDelete(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	vars := mux.Vars(r)
 	name := sm.NormalizeGroupField(vars["partition_name"])
 	id := base.NormalizeHMSCompID(vars["xname_id"])
@@ -4765,6 +5004,8 @@ func (s *SmD) doPartitionMemberDelete(w http.ResponseWriter, r *http.Request) {
  */
 
 func (s *SmD) doMembershipsGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 
 	// Parse arguments
@@ -4798,6 +5039,8 @@ func (s *SmD) doMembershipsGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *SmD) doMembershipGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	vars := mux.Vars(r)
 	xname := base.NormalizeHMSCompID(vars["xname"])
@@ -4857,6 +5100,8 @@ func (s *SmD) compLocksV2Helper(w http.ResponseWriter, r *http.Request, action s
 }
 
 func (s *SmD) doCompLocksReservationRemove(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var filter sm.CompLockV2Filter
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -4887,6 +5132,8 @@ func (s *SmD) doCompLocksReservationRemove(w http.ResponseWriter, r *http.Reques
 }
 
 func (s *SmD) doCompLocksReservationRelease(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var filter sm.CompLockV2ReservationFilter
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -4917,6 +5164,8 @@ func (s *SmD) doCompLocksReservationRelease(w http.ResponseWriter, r *http.Reque
 }
 
 func (s *SmD) doCompLocksReservationCreate(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var filter sm.CompLockV2Filter
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -4948,6 +5197,8 @@ func (s *SmD) doCompLocksReservationCreate(w http.ResponseWriter, r *http.Reques
 }
 
 func (s *SmD) doCompLocksServiceReservationRenew(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var filter sm.CompLockV2ReservationFilter
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -4983,11 +5234,15 @@ func (s *SmD) doCompLocksServiceReservationRenew(w http.ResponseWriter, r *http.
 }
 
 func (s *SmD) doCompLocksServiceReservationRelease(w http.ResponseWriter, r *http.Request) {
+	// defer DrainAndCloseRequestBody(r) - DO NOT CALL - s.doCompLocksReservationRelease() will call this
+
 	s.doCompLocksReservationRelease(w, r)
 	return
 }
 
 func (s *SmD) doCompLocksServiceReservationCreate(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var filter sm.CompLockV2Filter
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -5023,6 +5278,8 @@ func (s *SmD) doCompLocksServiceReservationCreate(w http.ResponseWriter, r *http
 }
 
 func (s *SmD) doCompLocksServiceReservationCheck(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var filter sm.CompLockV2DeputyKeyArray
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -5053,6 +5310,8 @@ func (s *SmD) doCompLocksServiceReservationCheck(w http.ResponseWriter, r *http.
 }
 
 func (s *SmD) doCompLocksStatus(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var filter sm.CompLockV2Filter
 	var results sm.CompLockV2Status
 	results.Components = make([]sm.CompLockV2, 0, 1)
@@ -5098,6 +5357,8 @@ func (s *SmD) doCompLocksStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *SmD) doCompLocksStatusGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var inFilter CompGetLockFltr
 	var filter sm.CompLockV2Filter
 	var results sm.CompLockV2Status
@@ -5157,21 +5418,29 @@ func (s *SmD) doCompLocksStatusGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *SmD) doCompLocksLock(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.compLocksV2Helper(w, r, hmsds.CLUpdateActionLock)
 	return
 }
 
 func (s *SmD) doCompLocksUnlock(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.compLocksV2Helper(w, r, hmsds.CLUpdateActionUnlock)
 	return
 }
 
 func (s *SmD) doCompLocksRepair(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.compLocksV2Helper(w, r, hmsds.CLUpdateActionRepair)
 	return
 }
 
 func (s *SmD) doCompLocksDisable(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.compLocksV2Helper(w, r, hmsds.CLUpdateActionDisable)
 	return
 }
@@ -5182,6 +5451,8 @@ func (s *SmD) doCompLocksDisable(w http.ResponseWriter, r *http.Request) {
 
 // Get one specific PowerMap entry, previously created, by its xname ID.
 func (s *SmD) doPowerMapGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.lg.Printf("doPowerMapGet(): trying...")
 	vars := mux.Vars(r)
 	xname := base.NormalizeHMSCompID(vars["xname"])
@@ -5207,6 +5478,8 @@ func (s *SmD) doPowerMapGet(w http.ResponseWriter, r *http.Request) {
 // Get all PowerMap entries in database, by doing a GET against the
 // entire collection.
 func (s *SmD) doPowerMapsGet(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	ms, err := s.db.GetPowerMapsAll()
 	if err != nil {
 		s.LogAlways("doPowerMapsGet(): Lookup failure: %s", err)
@@ -5218,6 +5491,8 @@ func (s *SmD) doPowerMapsGet(w http.ResponseWriter, r *http.Request) {
 
 // CREATE new or UPDATE EXISTING Power mapping
 func (s *SmD) doPowerMapsPost(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	msIn := make([]sm.PowerMap, 0, 1)
 	ms := make([]sm.PowerMap, 0, 1)
 
@@ -5263,6 +5538,8 @@ func (s *SmD) doPowerMapsPost(w http.ResponseWriter, r *http.Request) {
 
 // UPDATE EXISTING Power mapping by it's xname URI.
 func (s *SmD) doPowerMapPut(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	vars := mux.Vars(r)
 	xname := base.NormalizeHMSCompID(vars["xname"])
 
@@ -5311,6 +5588,8 @@ func (s *SmD) doPowerMapPut(w http.ResponseWriter, r *http.Request) {
 
 // Delete single PowerMap, by its xname ID.
 func (s *SmD) doPowerMapDelete(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	s.lg.Printf("doPowerMapDelete(): trying...")
 	vars := mux.Vars(r)
 	xname := base.NormalizeHMSCompID(vars["xname"])
@@ -5335,6 +5614,8 @@ func (s *SmD) doPowerMapDelete(w http.ResponseWriter, r *http.Request) {
 
 // Delete collection containing all PowerMap entries.
 func (s *SmD) doPowerMapsDeleteAll(w http.ResponseWriter, r *http.Request) {
+	defer DrainAndCloseRequestBody(r)
+
 	var err error
 	numDeleted, err := s.db.DeletePowerMapsAll()
 	if err != nil {
