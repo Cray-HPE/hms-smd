@@ -20,7 +20,7 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 
-# Service
+# CSM Service
 NAME ?= cray-smd
 VERSION ?= $(shell cat .version)
 
@@ -46,7 +46,7 @@ ct_image:
 binaries: smd smd-init smd-loader
 
 
-
+# OCHAMI Service
 BUILD := `git rev-parse --short HEAD`
 GVERSION := `git describe --tags --abbrev=0`
 LDFLAGS=-ldflags "-X=$(GIT)build.Build=$(BUILD) -X=$(GIT)build.Version=$(GVERSION)"
