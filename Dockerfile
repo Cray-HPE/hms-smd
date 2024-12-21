@@ -1,6 +1,6 @@
 # MIT License
 #
-# (C) Copyright [2019-2024] Hewlett Packard Enterprise Development LP
+# (C) Copyright [2019-2025] Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -48,12 +48,23 @@ COPY vendor $GOPATH/src/github.com/Cray-HPE/hms-smd/v2/vendor
 ### Build Stage ###
 FROM base AS builder
 
-# Base image contains everything needed for Go building, just build.
-RUN set -ex \
-    && go build -v -tags musl github.com/Cray-HPE/hms-smd/v2/cmd/smd \
-    && go build -v -tags musl github.com/Cray-HPE/hms-smd/v2/cmd/smd-loader \
-    && go build -v -tags musl github.com/Cray-HPE/hms-smd/v2/cmd/smd-init
+# Set profiling to disabled by default
+ARG ENABLE_PPROF=false
 
+# Conditionally build with the pprof tag if profiling is enabled
+RUN if [ "$ENABLE_PPROF" = "true" ]; then \
+	# Base image contains everything needed for Go building, just build. \
+	set -ex \
+	    && go build -v -tags "musl pprof" github.com/Cray-HPE/hms-smd/v2/cmd/smd \
+	    && go build -v -tags "musl pprof" github.com/Cray-HPE/hms-smd/v2/cmd/smd-loader \
+	    && go build -v -tags "musl pprof" github.com/Cray-HPE/hms-smd/v2/cmd/smd-init
+    else \
+	# Base image contains everything needed for Go building, just build. \
+	set -ex \
+	    && go build -v -tags musl github.com/Cray-HPE/hms-smd/v2/cmd/smd \
+	    && go build -v -tags musl github.com/Cray-HPE/hms-smd/v2/cmd/smd-loader \
+	    && go build -v -tags musl github.com/Cray-HPE/hms-smd/v2/cmd/smd-init
+    fi
 
 ### Final Stage ###
 FROM artifactory.algol60.net/docker.io/alpine:3.15
