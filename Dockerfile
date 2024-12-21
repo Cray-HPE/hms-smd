@@ -57,13 +57,13 @@ RUN if [ "$ENABLE_PPROF" = "true" ]; then \
 	set -ex \
 	    && go build -v -tags "musl pprof" github.com/Cray-HPE/hms-smd/v2/cmd/smd \
 	    && go build -v -tags "musl pprof" github.com/Cray-HPE/hms-smd/v2/cmd/smd-loader \
-	    && go build -v -tags "musl pprof" github.com/Cray-HPE/hms-smd/v2/cmd/smd-init \
+	    && go build -v -tags "musl pprof" github.com/Cray-HPE/hms-smd/v2/cmd/smd-init; \
     else \
 	# Base image contains everything needed for Go building, just build. \
 	set -ex \
 	    && go build -v -tags musl github.com/Cray-HPE/hms-smd/v2/cmd/smd \
 	    && go build -v -tags musl github.com/Cray-HPE/hms-smd/v2/cmd/smd-loader \
-	    && go build -v -tags musl github.com/Cray-HPE/hms-smd/v2/cmd/smd-init \
+	    && go build -v -tags musl github.com/Cray-HPE/hms-smd/v2/cmd/smd-init; \
     fi
 
 ### Final Stage ###
