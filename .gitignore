@@ -3,7 +3,7 @@
 *.swp
 .vscode
 cmd/smd-loader/node_nid_map.json
-kubernetes/cray-hms-smd/helm
+kubernetes/cray-smd/helm
 .idea
 
 # Prevent certificates from getting checked in
@@ -13,3 +13,5 @@ kubernetes/cray-hms-smd/helm
 *.csr
 *.key
 *.pem
+
+dist/

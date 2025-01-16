@@ -1,0 +1,204 @@
+version: 2.4
+project_name: smd
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod tidy
+
+builds:
+  - id: smd
+    main: ./cmd/smd/
+    binary: smd
+    # export GIT_STATE=$(if git diff-index --quiet HEAD --; then echo 'clean'; else echo 'dirty'; fi)
+    # export BUILD_HOST=$(hostname)
+    # export GO_VERSION=$(go version | awk '{print $3}')
+    # export BUILD_USER=$(whoami)
+    ldflags:
+      - "-X main.GitCommit={{.Commit}} \
+         -X main.BuildTime={{.Timestamp}} \
+         -X main.Version={{.Version}} \
+         -X main.GitBranch={{.Branch}} \
+         -X main.GitTag={{.Tag}} \
+         -X main.GitState={{ .Env.GIT_STATE }} \
+         -X main.BuildHost={{ .Env.BUILD_HOST }} \
+         -X main.GoVersion={{ .Env.GO_VERSION }} \
+         -X main.BuildUser={{ .Env.BUILD_USER }} "
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    goamd64:
+      - v3
+
+    env:
+      - CGO_ENABLED=0
+
+  - id: smd-init
+    main: ./cmd/smd-init/
+    binary: smd-init
+    ldflags:
+      - "-X main.GitCommit={{.Commit}} \
+         -X main.BuildTime={{.Timestamp}} \
+         -X main.Version={{.Version}} \
+         -X main.GitBranch={{.Branch}} \
+         -X main.GitTag={{.Tag}} \
+         -X main.GitState={{ .Env.GIT_STATE }} \
+         -X main.BuildHost={{ .Env.BUILD_HOST }} \
+         -X main.GoVersion={{ .Env.GO_VERSION }} \
+         -X main.BuildUser={{ .Env.BUILD_USER }} "
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    goamd64:
+      - v3
+
+    env:
+      - CGO_ENABLED=0
+
+
+  - id: smd-loader
+    main: ./cmd/smd-loader/
+    binary: smd-loader
+    ldflags:
+      - "-X main.GitCommit={{.Commit}} \
+         -X main.BuildTime={{.Timestamp}} \
+         -X main.Version={{.Version}} \
+         -X main.GitBranch={{.Branch}} \
+         -X main.GitTag={{.Tag}} \
+         -X main.GitState={{ .Env.GIT_STATE }} \
+         -X main.BuildHost={{ .Env.BUILD_HOST }} \
+         -X main.GoVersion={{ .Env.GO_VERSION }} \
+         -X main.BuildUser={{ .Env.BUILD_USER }} "
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    goamd64:
+      - v3
+
+
+    env:
+      - CGO_ENABLED=0
+
+dockers:
+  - image_templates:
+      - &amd64_linux_image ghcr.io/openchami/{{.ProjectName}}:{{ .Tag }}-amd64
+      - ghcr.io/openchami/{{.ProjectName}}:{{ .Major }}-amd64
+      - ghcr.io/openchami/{{.ProjectName}}:{{ .Major }}.{{ .Minor }}-amd64
+    use: buildx
+    build_flag_templates:
+      - "--pull"
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+    goarch: amd64
+    goamd64: v3
+
+    extra_files:
+      - LICENSE
+      - CHANGELOG.md
+      - README.md
+      - migrations/
+  - image_templates:
+      - &arm64v8_linux_image ghcr.io/openchami/{{.ProjectName}}:{{ .Tag }}-arm64
+      - ghcr.io/openchami/{{.ProjectName}}:{{ .Major }}-arm64
+      - ghcr.io/openchami/{{.ProjectName}}:{{ .Major }}.{{ .Minor }}-arm64
+    use: buildx
+    build_flag_templates:
+      - "--pull"
+      - "--platform=linux/arm64"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+    extra_files:
+      - LICENSE
+      - CHANGELOG.md
+      - README.md
+      - migrations/
+    goarch: arm64
+
+docker_manifests:
+  - name_template: "ghcr.io/openchami/{{.ProjectName}}:latest"
+    image_templates:
+      - *amd64_linux_image
+      - *arm64v8_linux_image
+
+  - name_template: "ghcr.io/openchami/{{.ProjectName}}:{{ .Tag }}"
+    image_templates:
+      - *amd64_linux_image
+      - *arm64v8_linux_image
+
+  - name_template: "ghcr.io/openchami/{{.ProjectName}}:{{ .Major }}"
+    image_templates:
+      - *amd64_linux_image
+      - *arm64v8_linux_image
+
+  - name_template: "ghcr.io/openchami/{{.ProjectName}}:{{ .Major }}.{{ .Minor }}"
+    image_templates:
+      - *amd64_linux_image
+      - *arm64v8_linux_image
+
+archives:
+  - format: tar.gz
+    # this name template makes the OS and Arch compatible with the results of uname.
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    files:
+      - migrations/*
+      - LICENSE
+      - CHANGELOG.md
+      - README.md
+
+nfpms:
+        - id: smd
+          formats: 
+          - deb
+          - rpm
+          - apk
+          maintainer: "Alex Lovell-Troy <alovelltroy@lanl.gov>"
+          description: "SMD is a tool for managing the inventory of an HPC system.  Read more at https://www.openchami.org"
+          homepage: "https://www.openchami.org"
+          license: MIT
+          section: utils
+          priority: optional
+          contents:
+            - src: dist/smd_{{ .Os }}_{{ if eq .Arch "amd64" }}{{ .Arch }}_{{ .Amd64 }}{{ else if eq .Arch "arm64" }}{{ .Arch }}_{{ .Arm64 }}{{ else }}{{ .Arch }}{{ end }}/smd
+              dst: /usr/local/bin/smd
+            - src: dist/smd-init_{{ .Os }}_{{ if eq .Arch "amd64" }}{{ .Arch }}_{{ .Amd64 }}{{ else if eq .Arch "arm64" }}{{ .Arch }}_{{ .Arm64 }}{{ else }}{{ .Arch }}{{ end }}/smd-init
+              dst: /usr/local/bin/smd-init
+            - src: dist/smd-loader_{{ .Os }}_{{ if eq .Arch "amd64" }}{{ .Arch }}_{{ .Amd64 }}{{ else if eq .Arch "arm64" }}{{ .Arch }}_{{ .Arm64 }}{{ else }}{{ .Arch }}{{ end }}/smd-loader
+              dst: /usr/local/bin/smd-loader
+    
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+# The lines beneath this are called `modelines`. See `:help modeline`
+# Feel free to remove those if you don't want/use them.
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj

@@ -21,13 +21,32 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 
 # Service
-NAME ?= cray-smd
-VERSION ?= $(shell cat .version)
+NAME       ?= smd
+GIT_STATE  := $(shell if git diff-index --quiet HEAD --; then echo 'clean'; else echo 'dirty'; fi)
+BUILD_HOST := $(shell hostname)
+BUILD_TIME := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+GO_VERSION := $(shell go version | awk '{print $3}')
+BUILD_USER := $(shell whoami)
+BRANCH     := $(shell git rev-parse --abbrev-ref HEAD)
+COMMIT     := $(shell git rev-parse HEAD)
+VERSION    ?= $(shell git describe --tags --always --abbrev=0)
+VERSION_D  := $(shell git describe --tags --always --abbrev=0 --dirty --broken)
+LDFLAGS    := -ldflags "-X main.GitCommit=$(COMMIT) \
+	-X 'main.BuildTime=$(BUILD_TIME)' \
+	-X 'main.Version=$(VERSION)' \
+	-X 'main.GitBranch=$(BRANCH)' \
+	-X 'main.GitTag=$(VERSION)' \
+	-X 'main.GitState=$(GIT_STATE)' \
+	-X 'main.BuildHost=$(BUILD_HOST)' \
+	-X 'main.GoVersion=$(GO_VERSION)' \
+	-X 'main.BuildUser=$(BUILD_USER)'"
 
 all: image unittest ct snyk ct_image
 
+.PHONY : all image unittest snyk ct ct_image binaries coverage docker
+
 image:
-	docker build ${NO_CACHE} --pull ${DOCKER_ARGS} --tag '${NAME}:${VERSION}' -f Dockerfile .
+	docker build $(NO_CACHE) --pull $(DOCKER_ARGS) --tag '$(NAME):$(VERSION)' -f Dockerfile .
 
 unittest:
 	./runUnitTest.sh
@@ -39,4 +58,36 @@ ct:
 	./runCT.sh
 
 ct_image:
-	docker build --no-cache -f test/ct/Dockerfile test/ct/ --tag hms-smd-test:${VERSION} 
+	docker build --no-cache -f test/ct/Dockerfile test/ct/ --tag smd-test:$(VERSION})
+
+binaries: smd smd-init smd-loader native
+
+
+
+smd: cmd/smd/*.go
+	GOOS=linux GOARCH=amd64 go build -o smd -v -tags musl $(LDFLAGS) ./cmd/smd
+
+smd-init: cmd/smd-init/*.go
+	GOOS=linux GOARCH=amd64 go build -o smd-init -v -tags musl $(LDFLAGS) ./cmd/smd-init
+
+native:
+	go build -o smd-init-native -v -tags musl $(LDFLAGS) ./cmd/smd-init
+	go build -o smd-native -v -tags musl $(LDFLAGS) ./cmd/smd
+	go build -o smd-loader-native -v -tags musl $(LDFLAGS) ./cmd/smd-loader
+
+
+
+smd-loader: cmd/smd-loader/*.go
+	GOOS=linux GOARCH=amd64 go build -o smd-loader -v -tags musl $(LDFLAGS) ./cmd/smd-loader
+
+coverage:
+	go test -cover -v -tags musl ./cmd/* ./internal/* ./pkg/*
+
+clean:
+	rm -f smd smd-init smd-loader smd-native smd-init-native
+	go clean -testcache
+	go clean -cache
+	go clean -modcache
+
+docker: smd smd-init smd-loader
+	docker build -t ghcr.io/openchami/smd:$(VERSION_D) .

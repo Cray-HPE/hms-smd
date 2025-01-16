@@ -25,6 +25,8 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -32,17 +34,13 @@ import (
 
 	base "github.com/Cray-HPE/hms-base"
 	compcreds "github.com/Cray-HPE/hms-compcredentials"
-	"github.com/Cray-HPE/hms-smd/v2/internal/hmsds"
-	rf "github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
-	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
-
-	"github.com/gorilla/mux"
+	"github.com/OpenCHAMI/smd/v2/internal/hmsds"
+	"github.com/OpenCHAMI/smd/v2/pkg/rf"
+	"github.com/OpenCHAMI/smd/v2/pkg/sm"
+	"github.com/go-chi/chi/v5"
+	"github.com/openchami/schemas/schemas"
+	redfish "github.com/openchami/schemas/schemas/csm"
 )
-
-type componentIn struct {
-	base.Component
-	ExtendedInfo json.RawMessage `json:"ExtendedInfo,omitempty"`
-}
 
 type componentArrayIn struct {
 	Components   []base.Component `json:"Components"`
@@ -128,15 +126,6 @@ type CompEthInterfaceFltr struct {
 	CompID    []string `json:"componentid"`
 	Type      []string `json:"type"`
 }
-
-const (
-	compUpdateState    = "State"
-	compUpdateFlagOnly = "FlagOnly"
-	compUpdateEnabled  = "Enabled"
-	compUpdateSwStatus = "SoftwareStatus"
-	compUpdateRole     = "Role"
-	compUpdateNID      = "NID"
-)
 
 type HMSValueSelect int
 
@@ -248,7 +237,7 @@ func nidRangeToCompFilter(nidRanges []string, f *hmsds.ComponentFilter) (*hmsds.
 		if len(nidRange) > 1 {
 			// NID Range
 			if len(nidRange[0]) == 0 || len(nidRange[len(nidRange)-1]) == 0 {
-				return f, errors.New("Argument was not a valid NID Range")
+				return f, errors.New("argument was not a valid NID Range")
 			}
 			NIDStart = append(NIDStart, nidRange[0])
 			NIDEnd = append(NIDEnd, nidRange[len(nidRange)-1])
@@ -393,8 +382,9 @@ func (s *SmD) getHMSValues(valSelect HMSValueSelect, w http.ResponseWriter, r *h
 
 // Get single HMS component by xname ID
 func (s *SmD) doComponentGet(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	xname := base.NormalizeHMSCompID(vars["xname"])
+	// TODO: get route variables using chi instead of mux
+
+	xname := base.NormalizeHMSCompID(chi.URLParam(r, "xname"))
 
 	cmp, err := s.db.GetComponentByID(xname)
 	if err != nil {
@@ -413,8 +403,8 @@ func (s *SmD) doComponentGet(w http.ResponseWriter, r *http.Request) {
 // Delete single ComponentEndpoint, by its xname ID.
 func (s *SmD) doComponentDelete(w http.ResponseWriter, r *http.Request) {
 	s.lg.Printf("doComponentDelete(): trying...")
-	vars := mux.Vars(r)
-	xname := base.NormalizeHMSCompID(vars["xname"])
+
+	xname := base.NormalizeHMSCompID(chi.URLParam(r, "xname"))
 
 	if !base.IsHMSCompIDValid(xname) {
 		sendJsonError(w, http.StatusBadRequest, "invalid xname")
@@ -427,7 +417,7 @@ func (s *SmD) doComponentDelete(w http.ResponseWriter, r *http.Request) {
 		sendJsonDBError(w, "", "", err)
 		return
 	}
-	if didDelete == false {
+	if !didDelete {
 		sendJsonError(w, http.StatusNotFound, "no such xname.")
 		return
 	}
@@ -596,7 +586,6 @@ func (s *SmD) doComponentsPost(w http.ResponseWriter, r *http.Request) {
 
 	// Send 204 status (success, no content in response)
 	sendJsonError(w, http.StatusNoContent, "operation completed")
-	return
 }
 
 // Get all HMS Components under multiple parent components as named array
@@ -648,8 +637,8 @@ func (s *SmD) doComponentsQueryGet(w http.ResponseWriter, r *http.Request) {
 	comps := new(base.ComponentArray)
 	ids := make([]string, 0, 1)
 	var err error
-	vars := mux.Vars(r)
-	xname := base.NormalizeHMSCompID(vars["xname"])
+
+	xname := base.NormalizeHMSCompID(chi.URLParam(r, "xname"))
 
 	// Parse arguments
 	if err := r.ParseForm(); err != nil {
@@ -712,8 +701,8 @@ func (s *SmD) doComponentsDeleteAll(w http.ResponseWriter, r *http.Request) {
 // Get single HMS component by NID, if it exists and is a type that has a
 // NID (i.e. a node)
 func (s *SmD) doComponentByNIDGet(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	xname := vars["nid"]
+
+	xname := chi.URLParam(r, "nid")
 
 	cmp, err := s.db.GetComponentByNID(xname)
 	if err != nil {
@@ -814,37 +803,35 @@ func (s *SmD) doCompBulkNIDPatch(w http.ResponseWriter, r *http.Request) {
 
 	// Send 204 status (success, no content in response)
 	sendJsonError(w, http.StatusNoContent, "")
-	return
 }
 
 // Update component state and flag for a list of components
 func (s *SmD) doCompBulkStateDataPatch(w http.ResponseWriter, r *http.Request) {
 	s.compBulkPatch(w, r, StateDataUpdate, "doCompBulkStateDataPatch")
-	return
 }
 
 // Update component state and flag for a list of components
 func (s *SmD) doCompBulkFlagOnlyPatch(w http.ResponseWriter, r *http.Request) {
 	s.compBulkPatch(w, r, FlagOnlyUpdate, "doCompBulkFlagOnlyPatch")
-	return
+
 }
 
 // Update component 'Enabled' boolean for a list of components
 func (s *SmD) doCompBulkEnabledPatch(w http.ResponseWriter, r *http.Request) {
 	s.compBulkPatch(w, r, EnabledUpdate, "doCompBulkEnabledPatch")
-	return
+
 }
 
 // Update component SoftwareStatus field for a list of components
 func (s *SmD) doCompBulkSwStatusPatch(w http.ResponseWriter, r *http.Request) {
 	s.compBulkPatch(w, r, SwStatusUpdate, "doCompBulkSwStatusPatch")
-	return
+
 }
 
 // Update component state and flag for a list of components
 func (s *SmD) doCompBulkRolePatch(w http.ResponseWriter, r *http.Request) {
 	s.compBulkPatch(w, r, RoleUpdate, "doCompBulkRolePatch")
-	return
+
 }
 
 // Helper function for doing a bulk patch via http.  CompUpdateInvalid
@@ -897,7 +884,7 @@ func (s *SmD) compPatchHelper(
 			sendJsonError(w, http.StatusBadRequest, err.Error())
 		} else {
 			// Non-HMS error, print generic error message.
-			if isBulk == true {
+			if isBulk {
 				// print generic message for bulk error
 				sendJsonError(w, http.StatusBadRequest, "operation 'Bulk "+
 					op+" Update' failed")
@@ -922,47 +909,47 @@ func (s *SmD) compPatchHelper(
 	}
 	// Send 204 status (success, no content in response)
 	sendJsonError(w, http.StatusNoContent, "")
-	return
+
 }
 
 // Patch the State and Flag field (latter defaults to OK) for a single
 // component.
 func (s *SmD) doCompStateDataPatch(w http.ResponseWriter, r *http.Request) {
 	s.componentPatch(w, r, StateDataUpdate, "doCompStateDataPatch")
-	return
+
 }
 
 // Patch the Flag field only (state does not change) for a single component.
 func (s *SmD) doCompFlagOnlyPatch(w http.ResponseWriter, r *http.Request) {
 	s.componentPatch(w, r, FlagOnlyUpdate, "doCompFlagOnlyPatch")
-	return
+
 }
 
 // Patch the Enabled boolean for a single component, leaving other fields
 // in place.
 func (s *SmD) doCompEnabledPatch(w http.ResponseWriter, r *http.Request) {
 	s.componentPatch(w, r, EnabledUpdate, "doCompEnabledPatch")
-	return
+
 }
 
 // Patch the SoftwareStatus field for a single component, leaving other
 // fields in place.
 func (s *SmD) doCompSwStatusPatch(w http.ResponseWriter, r *http.Request) {
 	s.componentPatch(w, r, SwStatusUpdate, "doCompSwStatusPatch")
-	return
+
 }
 
 // Patch the Role field for a single component, leaving other fields in place.
 func (s *SmD) doCompRolePatch(w http.ResponseWriter, r *http.Request) {
 	s.componentPatch(w, r, RoleUpdate, "doCompRolePatch")
-	return
+
 }
 
 // Update the NID (Node ID) for a single component, leaving other fields
 // in place.
 func (s *SmD) doCompNIDPatch(w http.ResponseWriter, r *http.Request) {
 	s.componentPatch(w, r, SingleNIDUpdate, "doCompNIDPatch")
-	return
+
 }
 
 // Scan function to keep compatibility with API, though we don't really
@@ -980,8 +967,8 @@ func (s *SmD) componentPatch(
 	r *http.Request, t CompUpdateType,
 	name string,
 ) {
-	vars := mux.Vars(r)
-	xname := vars["xname"]
+
+	xname := chi.URLParam(r, "xname")
 
 	var update compPatchIn
 	body, err := ioutil.ReadAll(r.Body)
@@ -1018,8 +1005,8 @@ func (s *SmD) componentPatch(
 // In any case, it should not be needed except to force changes to what should
 // otherwise be write-only fields.
 func (s *SmD) doComponentPut(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	xname := base.NormalizeHMSCompID(vars["xname"])
+
+	xname := base.NormalizeHMSCompID(chi.URLParam(r, "xname"))
 
 	var compIn sm.ComponentPut
 	body, err := ioutil.ReadAll(r.Body)
@@ -1099,7 +1086,7 @@ func (s *SmD) doComponentPut(w http.ResponseWriter, r *http.Request) {
 
 	// Send 204 status (success, no content in response)
 	sendJsonError(w, http.StatusNoContent, "operation completed")
-	return
+
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1109,8 +1096,8 @@ func (s *SmD) doComponentPut(w http.ResponseWriter, r *http.Request) {
 // Get one specific NodeMap entry, previously created, by its xname ID.
 func (s *SmD) doNodeMapGet(w http.ResponseWriter, r *http.Request) {
 	s.lg.Printf("doNodeMapGet(): trying...")
-	vars := mux.Vars(r)
-	xname := vars["xname"]
+
+	xname := chi.URLParam(r, "xname")
 	m, err := s.db.GetNodeMapByID(xname)
 	if err != nil {
 		s.LogAlways("doNodeMapGet(): Lookup failure: (%s) %s",
@@ -1209,17 +1196,17 @@ func (s *SmD) doNodeMapsPost(w http.ResponseWriter, r *http.Request) {
 
 	numStr := strconv.FormatInt(int64(len(nnms.NodeMaps)), 10)
 	sendJsonError(w, http.StatusOK, "Created or modified "+numStr+" entries")
-	return
+
 }
 
 // UPDATE EXISTING Node->NID mapping by it's xname URI.
 func (s *SmD) doNodeMapPut(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	xname := base.NormalizeHMSCompID(vars["xname"])
+
+	xname := base.NormalizeHMSCompID(chi.URLParam(r, "xname"))
 
 	var m sm.NodeMap
-	body, err := ioutil.ReadAll(r.Body)
-	err = json.Unmarshal(body, &m)
+	body, _ := io.ReadAll(r.Body)
+	err := json.Unmarshal(body, &m)
 	if err != nil {
 		sendJsonError(w, http.StatusInternalServerError,
 			"error decoding JSON "+err.Error())
@@ -1261,14 +1248,14 @@ func (s *SmD) doNodeMapPut(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sendJsonNodeMapRsp(w, nnm)
-	return
+
 }
 
 // Delete single NodeMap, by its xname ID.
 func (s *SmD) doNodeMapDelete(w http.ResponseWriter, r *http.Request) {
 	s.lg.Printf("doNodeMapDelete(): trying...")
-	vars := mux.Vars(r)
-	xname := base.NormalizeHMSCompID(vars["xname"])
+
+	xname := base.NormalizeHMSCompID(chi.URLParam(r, "xname"))
 
 	if !base.IsHMSCompIDValid(xname) {
 		sendJsonError(w, http.StatusBadRequest, "invalid xname")
@@ -1281,7 +1268,7 @@ func (s *SmD) doNodeMapDelete(w http.ResponseWriter, r *http.Request) {
 		sendJsonDBError(w, "", "", err)
 		return
 	}
-	if didDelete == false {
+	if !didDelete {
 		sendJsonError(w, http.StatusNotFound, "no such xname.")
 		return
 	}
@@ -1311,8 +1298,8 @@ func (s *SmD) doNodeMapsDeleteAll(w http.ResponseWriter, r *http.Request) {
 
 // Get single HWInvByLocation entry by it's xname
 func (s *SmD) doHWInvByLocationGet(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	xname := vars["xname"]
+
+	xname := chi.URLParam(r, "xname")
 	hl, err := s.db.GetHWInvByLocID(xname)
 	if err != nil {
 		s.LogAlways("doHWInvByLocationGet(): Lookup failure: (%s) %s", xname, err)
@@ -1450,13 +1437,13 @@ func (s *SmD) doHWInvByLocationPost(w http.ResponseWriter, r *http.Request) {
 
 	numStr := strconv.Itoa(len(hwlocs))
 	sendJsonError(w, http.StatusOK, "Created "+numStr+" entries")
-	return
+
 }
 
 // Get single HWInvByFRU entry by its FRU ID
 func (s *SmD) doHWInvByFRUGet(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	fruID := vars["fruid"]
+
+	fruID := chi.URLParam(r, "fruid")
 	hf, err := s.db.GetHWInvByFRUID(fruID)
 	if err != nil {
 		s.LogAlways("doHWInvByFRUGet(): Lookup failure: (%s) %s", fruID, err)
@@ -1546,8 +1533,8 @@ func (s *SmD) doHWInvByLocationQueryGet(w http.ResponseWriter, r *http.Request) 
 		compType    base.HMSType
 		parentQuery bool
 	)
-	vars := mux.Vars(r)
-	xname := vars["xname"]
+
+	xname := chi.URLParam(r, "xname")
 	format := sm.HWInvFormatNestNodesOnly
 
 	// Parse arguments
@@ -1697,8 +1684,8 @@ func (s *SmD) doHWInvByLocationQueryGet(w http.ResponseWriter, r *http.Request) 
 
 // Delete a single HWInvByLocation by its xname ID.
 func (s *SmD) doHWInvByLocationDelete(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	xname := vars["xname"]
+
+	xname := chi.URLParam(r, "xname")
 	didDelete, err := s.db.DeleteHWInvByLocID(xname)
 	if err != nil {
 		s.LogAlways("doHWInvByLocationDelete(): delete failure: (%s) %s",
@@ -1706,7 +1693,7 @@ func (s *SmD) doHWInvByLocationDelete(w http.ResponseWriter, r *http.Request) {
 		sendJsonDBError(w, "", "", err)
 		return
 	}
-	if didDelete == false {
+	if !didDelete {
 		sendJsonError(w, http.StatusNotFound, "no such xname.")
 		return
 	}
@@ -1732,8 +1719,8 @@ func (s *SmD) doHWInvByLocationDeleteAll(w http.ResponseWriter, r *http.Request)
 
 // Delete a single HWInvByFRUD entry, by its FRU ID.
 func (s *SmD) doHWInvByFRUDelete(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	fruID := vars["fruid"]
+
+	fruID := chi.URLParam(r, "fruid")
 	didDelete, err := s.db.DeleteHWInvByFRUID(fruID)
 	if err != nil {
 		s.LogAlways("doHWInvByFRUDelete(): delete failure: (%s) %s",
@@ -1741,7 +1728,7 @@ func (s *SmD) doHWInvByFRUDelete(w http.ResponseWriter, r *http.Request) {
 		sendJsonDBError(w, "", "", err)
 		return
 	}
-	if didDelete == false {
+	if !didDelete {
 		sendJsonError(w, http.StatusNotFound, "no such FRU ID.")
 		return
 	}
@@ -1784,12 +1771,11 @@ func (s *SmD) doHWInvHistByFRUGet(w http.ResponseWriter, r *http.Request) {
 func (s *SmD) hwInvHistGet(w http.ResponseWriter, r *http.Request, format sm.HWInvHistFmt) {
 	var id string
 
-	vars := mux.Vars(r)
 	switch format {
 	case sm.HWInvHistFmtByLoc:
-		id = vars["xname"]
+		id = chi.URLParam(r, "xname")
 	case sm.HWInvHistFmtByFRU:
-		id = vars["fruid"]
+		id = chi.URLParam(r, "fruid")
 	default:
 		// Shouldn't happen
 		return
@@ -1985,8 +1971,8 @@ func (s *SmD) hwInvHistGetAll(w http.ResponseWriter, r *http.Request, format sm.
 
 // Delete the HWInvHist entries for a single HWInvByLocation by its xname ID.
 func (s *SmD) doHWInvHistByLocationDelete(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	xname := vars["xname"]
+
+	xname := chi.URLParam(r, "xname")
 	normId := base.VerifyNormalizeCompID(xname)
 	if normId == "" {
 		s.lg.Printf("doHWInvHistByLocationDelete(%s): Invalid xname: %s", xname, xname)
@@ -2026,8 +2012,8 @@ func (s *SmD) doHWInvHistDeleteAll(w http.ResponseWriter, r *http.Request) {
 
 // Delete the HWInvHist entries for a single HWInvByFRUD entry, by its FRU ID.
 func (s *SmD) doHWInvHistByFRUDelete(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	fruID := vars["fruid"]
+
+	fruID := chi.URLParam(r, "fruid")
 	numDeleted, err := s.db.DeleteHWInvHistByFRUID(fruID)
 	if err != nil {
 		s.LogAlways("doHWInvByFRUDelete(): Delete failure: (%s) %s", fruID, err)
@@ -2049,8 +2035,8 @@ func (s *SmD) doHWInvHistByFRUDelete(w http.ResponseWriter, r *http.Request) {
 // Get one specific RedfishEndpoint, previously created, by its xname ID.
 func (s *SmD) doRedfishEndpointGet(w http.ResponseWriter, r *http.Request) {
 	s.lg.Printf("doRedfishEndpointGet(): trying...")
-	vars := mux.Vars(r)
-	xname := vars["xname"]
+
+	xname := chi.URLParam(r, "xname")
 	ep, err := s.db.GetRFEndpointByID(xname)
 	if err != nil {
 		s.LogAlways("doRedfishEndpointGet(): Lookup failure: (%s) %s", xname, err)
@@ -2107,8 +2093,7 @@ func (s *SmD) doRedfishEndpointsGet(w http.ResponseWriter, r *http.Request) {
 func (s *SmD) doRedfishEndpointQueryGet(w http.ResponseWriter, r *http.Request) {
 	eps := new(sm.RedfishEndpointArray)
 
-	vars := mux.Vars(r)
-	xname := vars["xname"]
+	xname := chi.URLParam(r, "xname")
 	if xname == "" || xname == "all" || xname == "s0" {
 		var err error
 		eps.RedfishEndpoints, err = s.db.GetRFEndpointsAll()
@@ -2129,15 +2114,15 @@ func (s *SmD) doRedfishEndpointQueryGet(w http.ResponseWriter, r *http.Request) 
 // child ComponentEndpoints, though not other structures.
 func (s *SmD) doRedfishEndpointDelete(w http.ResponseWriter, r *http.Request) {
 	s.lg.Printf("doRedfishEndpointDelete(): trying...")
-	vars := mux.Vars(r)
-	xname := vars["xname"]
+
+	xname := chi.URLParam(r, "xname")
 	didDelete, affectedIDs, err := s.db.DeleteRFEndpointByIDSetEmpty(xname)
 	if err != nil {
 		s.LogAlways("doRedfishEndpointDelete(): delete failure: (%s) %s", xname, err)
 		sendJsonDBError(w, "", "", err)
 		return
 	}
-	if didDelete == false {
+	if !didDelete {
 		sendJsonError(w, http.StatusNotFound, "no such xname.")
 		return
 	}
@@ -2180,8 +2165,8 @@ func (s *SmD) doRedfishEndpointsDeleteAll(w http.ResponseWriter, r *http.Request
 // UPDATE existing RedfishEndpoint entry in full (or all least all
 // user-writable portions).
 func (s *SmD) doRedfishEndpointPut(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	xname := base.NormalizeHMSCompID(vars["xname"])
+
+	xname := base.NormalizeHMSCompID(chi.URLParam(r, "xname"))
 
 	var rep rf.RawRedfishEP
 	var cred compcreds.CompCredentials
@@ -2279,13 +2264,13 @@ func (s *SmD) doRedfishEndpointPut(w http.ResponseWriter, r *http.Request) {
 
 	// Send 200 status (success
 	sendJsonRFEndpointRsp(w, retEP)
-	return
+
 }
 
 // PATCH existing RedfishEndpoint entry but only the fields specified.
 func (s *SmD) doRedfishEndpointPatch(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	xname := base.VerifyNormalizeCompID(vars["xname"])
+
+	xname := base.VerifyNormalizeCompID(chi.URLParam(r, "xname"))
 
 	var rep sm.RedfishEndpointPatch
 	var epUser string
@@ -2383,7 +2368,7 @@ func (s *SmD) doRedfishEndpointPatch(w http.ResponseWriter, r *http.Request) {
 
 	// Send 200 status (success
 	sendJsonRFEndpointRsp(w, retEP)
-	return
+
 }
 
 // Polymorphic type that takes either a single (scan-friendly) RedfishEndpoint
@@ -2455,6 +2440,7 @@ func (s *SmD) doRedfishEndpointsPost(w http.ResponseWriter, r *http.Request) {
 			eps.RedfishEndpoints = append(eps.RedfishEndpoints, ep)
 		}
 	}
+
 	err = s.db.InsertRFEndpoints(eps)
 	if err != nil {
 		s.lg.Printf("failed: %s Err: %s", r.RemoteAddr, err)
@@ -2495,12 +2481,306 @@ func (s *SmD) doRedfishEndpointsPost(w http.ResponseWriter, r *http.Request) {
 	// Do discovery if needed on new Endpoints.  Should never need to
 	// force this because the endpoint should always be new, else we would
 	// have already failed the operation.
-	go s.discoverFromEndpoints(eps.RedfishEndpoints, 0, true, false)
+	if !s.disableDiscovery {
+		go s.discoverFromEndpoints(eps.RedfishEndpoints, 0, true, false)
+	}
+
+	// check for the data format sent via the schema version
+	schemaVersion := s.getSchemaVersion(w, body)
+	if schemaVersion <= 0 {
+		// parse data and populate component endpoints before inserting into db
+		err = s.parseRedfishPostData(w, eps, body)
+		if err != nil {
+			sendJsonError(w, http.StatusInternalServerError,
+				fmt.Sprintf("failed parsing post data: %w", err))
+		}
+	} else {
+		// parse data using the new inventory data format (will conform to schema)
+		err = s.parseRedfishPostDataV2(w, body)
+		if err != nil {
+			sendJsonError(w, http.StatusInternalServerError,
+				fmt.Sprintf("failed parsing post data (V2): %w", err))
+		}
+	}
 
 	// Send a URI array of the created resources, along with 201 (created).
 	uris := eps.GetResourceURIArray(s.redfishEPBaseV2)
 	sendJsonNewResourceIDArray(w, s.redfishEPBaseV2, uris)
 	return
+}
+
+// Parse the incoming JSON data, extracts specific keys, and writes the data
+// to the database
+func (s *SmD) parseRedfishPostData(w http.ResponseWriter, eps *sm.RedfishEndpointArray, data []byte) error {
+	s.lg.Printf("parsing request data using default parsing method...")
+	var obj map[string]any
+	err := json.Unmarshal(data, &obj)
+	if err != nil {
+		sendJsonError(w, http.StatusInternalServerError,
+			fmt.Sprintf("failed to unmarshal data: %v", err))
+	}
+
+	// systems
+	systems, foundSystems := obj["Systems"]
+	if foundSystems && systems != nil {
+		for _, system := range systems.([]any) {
+			// component
+			data, foundData := system.(map[string]any)["Data"]
+			status, ok := data.(map[string]any)["Status"].(map[string]any)["State"]
+			enabled := ok && status == "Enabled"
+			if foundData {
+				// get ethernet interface link status
+				component := base.Component{
+					ID: obj["ID"].(string),
+					// State: "On",
+					Type:    "Node",
+					Enabled: &enabled,
+				}
+				_, err := s.db.InsertComponent(&component)
+				if err != nil {
+					sendJsonError(w, http.StatusInternalServerError,
+						fmt.Sprintf("failed to insert component: %v", err))
+					return err
+				}
+			}
+
+			// component endpoints
+			uuid, ok := data.(map[string]any)["UUID"]
+			if !ok {
+				uuid = ""
+			}
+			// get system status (specifically if it is enabled?)
+
+			cep := sm.ComponentEndpoint{
+				ComponentDescription: rf.ComponentDescription{
+					ID:             obj["ID"].(string),
+					Type:           "Node",
+					RedfishType:    "ComputerSystem",
+					RedfishSubtype: data.(map[string]any)["SystemType"].(string),
+					UUID:           uuid.(string),
+					RfEndpointID:   obj["ID"].(string),
+				},
+				RfEndpointFQDN:        "",
+				URL:                   data.(map[string]any)["@odata.id"].(string),
+				ComponentEndpointType: "ComponentEndpointComputerSystem",
+				Enabled:               enabled,
+				RedfishSystemInfo:     nil,
+			}
+
+			// add ethernet interfaces to component endpoint
+			interfaces, foundInterfaces := system.(map[string]any)["EthernetInterfaces"]
+			if foundInterfaces {
+				nicInfo := []*rf.EthernetNICInfo{}
+				for _, i := range interfaces.([]any) {
+					in := i.(map[string]any)
+					enabled := in["InterfaceEnabled"].(bool)
+					nicInfo = append(nicInfo, &rf.EthernetNICInfo{
+						InterfaceEnabled: &enabled,
+						RedfishId:        in["Id"].(string),
+						Oid:              in["@odata.id"].(string),
+						Description:      in["Description"].(string),
+						MACAddress:       strings.ToLower(in["MACAddress"].(string)),
+					})
+				}
+				cep.RedfishSystemInfo = &rf.ComponentSystemInfo{
+					Actions:    nil,
+					EthNICInfo: nicInfo,
+				}
+			}
+
+			// finally, insert component endpoint into DB
+			err = s.db.UpsertCompEndpoint(&cep)
+			if err != nil {
+				sendJsonError(w, http.StatusInternalServerError,
+					fmt.Sprintf("failed to upsert component endpoint: %v", err))
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (s *SmD) parseRedfishPostDataV2(w http.ResponseWriter, data []byte) error {
+	s.lg.Printf("parsing request data using V2 parsing method...")
+
+	// NOTE: temporary definition for manager
+	type Manager struct {
+		URI                string                      `json:"uri,omitempty"`
+		UUID               string                      `json:"uuid,omitempty"`
+		Name               string                      `json:"name,omitempty"`
+		Description        string                      `json:"description,omitempty"`
+		Model              string                      `json:"model,omitempty"`
+		Type               string                      `json:"type,omitempty"`
+		FirmwareVersion    string                      `json:"firmware_version,omitempty"`
+		EthernetInterfaces []schemas.EthernetInterface `json:"ethernet_interfaces,omitempty"`
+	}
+
+	type Root struct {
+		redfish.RedfishEndpoint
+		Systems  []schemas.InventoryDetail
+		Managers []Manager
+	}
+	var (
+		root Root
+		err  error
+	)
+
+	// unmarshal the root JSON object from data
+	err = json.Unmarshal(data, &root)
+	if err != nil {
+		sendJsonError(w, http.StatusInternalServerError,
+			fmt.Sprintf("failed to unmarshal Redfish data: %w", err))
+		return fmt.Errorf("failed to unmarshal Redfish data: %w", err)
+	}
+
+	var addEthernetInterfacesToNICInfo = func(eths []schemas.EthernetInterface, enabled bool) []*rf.EthernetNICInfo {
+		// append NIC info to component endpoint
+		nicInfo := make([]*rf.EthernetNICInfo, len(eths))
+		for i, eth := range eths {
+			nicInfo[i] = &rf.EthernetNICInfo{
+				InterfaceEnabled: &enabled,        // NOTE: get via RF "InterfaceEnabled"
+				RedfishId:        eth.URI,         // NOTE: what should this value be from RF?
+				Oid:              eth.URI,         // NOTE: what should this value be from RF?
+				Description:      eth.Description, // NOTE: intentionally set explicitly since this is included in V1
+				MACAddress:       eth.MAC,
+			}
+		}
+		return nicInfo
+	}
+
+	// iterate over all of the managers to create NodeBMC components and component endpoints
+	for _, manager := range root.Managers {
+		var (
+			enabled   = true
+			component = base.Component{
+				ID: root.ID,
+				// State:   manager.PowerState,
+				Type:    base.NodeBMC.String(),
+				Enabled: &enabled,
+			}
+		)
+		// components
+		rowsAffected, err := s.db.InsertComponent(&component)
+		if err != nil {
+			sendJsonError(w, http.StatusInternalServerError,
+				fmt.Sprintf("failed to insert %d component(s): %w", rowsAffected, err))
+			return fmt.Errorf("failed to insert %d component(s): %w", rowsAffected, err)
+		}
+
+		// create a new ethernet interface with reference to the component above
+		for _, eth := range manager.EthernetInterfaces {
+			// convert IP address from manager ethernet interface to IPAddressMapping
+			ips := []sm.IPAddressMapping{sm.IPAddressMapping{IPAddr: eth.IP}}
+			cei, err := sm.NewCompEthInterfaceV2(eth.Description, eth.MAC, component.ID, ips)
+			if err != nil {
+				sendJsonError(w, http.StatusBadRequest, err.Error())
+				continue
+			}
+			err = s.db.InsertCompEthInterface(cei)
+			if err != nil {
+				if err == hmsds.ErrHMSDSDuplicateKey {
+					sendJsonError(w, http.StatusConflict, "operation would conflict "+
+						"with an existing component ethernet interface that has the same MAC address.")
+				} else {
+					// Send this message as 500 or 400 plus error message if it is
+					// an HMSError and not, e.g. an internal DB error code.
+					sendJsonDBError(w, "", "operation 'POST' failed during store.", err)
+				}
+				continue
+			}
+		}
+	}
+
+	// iterate over all of the systems to create components and component endpoints
+	knownCEs := make(map[string]string)
+	ceNum := 0
+	for _, system := range root.Systems {
+		var nid json.Number
+		nidJNum, err := json.Marshal(ceNum+1)
+		if err != nil {
+			s.Log(LOG_NOTICE, "failed to marshal NID %d into json: %v", ceNum+1, err)
+		} else {
+			err = json.Unmarshal(nidJNum, &nid)
+			if err != nil {
+				s.Log(LOG_NOTICE, "failed to unmarshal NID %d into json.Number: %v", ceNum+1, err)
+			}
+		}
+		// use map to store known component endpoints by UUID to avoid adding duplicates
+		if _, gotten := knownCEs[system.UUID]; !gotten {
+			var (
+				enabled   = strings.ToLower(system.PowerState) == "on"
+				component = base.Component{
+					ID:      root.ID + fmt.Sprintf("n%d", ceNum),
+					NID:     nid,
+					State:   system.PowerState,
+					Type:    base.Node.String(),
+					Enabled: &enabled,
+				}
+				componentEndpoint = sm.ComponentEndpoint{
+					ComponentDescription: rf.ComponentDescription{
+						ID:             root.ID + fmt.Sprintf("n%d", ceNum),
+						Type:           base.Node.String(),
+						RedfishType:    rf.ComputerSystemType, // TODO: need to get the RF type
+						RedfishSubtype: system.SystemType,     // TODO: need to get the RF subtype (SystemType)
+						UUID:           system.UUID,           // TODO: need to get the UUID (UUID)
+						RfEndpointID:   root.ID,
+					},
+					RfEndpointFQDN:        "",
+					URL:                   system.URI,
+					ComponentEndpointType: "ComponentEndpointComputerSystem",
+					Enabled:               enabled,
+					RedfishSystemInfo: &rf.ComponentSystemInfo{
+						Actions:    nil,
+						EthNICInfo: addEthernetInterfacesToNICInfo(system.EthernetInterfaces, enabled),
+					},
+				}
+			)
+			knownCEs[system.UUID] = componentEndpoint.ComponentDescription.ID
+			ceNum++
+
+			// components
+			rowsAffected, err := s.db.InsertComponent(&component)
+			if err != nil {
+				sendJsonError(w, http.StatusInternalServerError,
+					fmt.Sprintf("failed to insert %d component(s): %w", rowsAffected, err))
+				return fmt.Errorf("failed to insert %d component(s): %w", rowsAffected, err)
+			}
+
+			// component endpoints
+			err = s.db.UpsertCompEndpoint(&componentEndpoint)
+			if err != nil {
+				sendJsonError(w, http.StatusInternalServerError,
+					fmt.Sprintf("failed to upsert component endpoint: %w", err))
+				return fmt.Errorf("failed to upsert component endpoint: %w", err)
+			}
+		}
+	}
+
+	return nil
+}
+
+// getSchemaVersion() tries to extract the schema version from the JSON data.
+func (s *SmD) getSchemaVersion(w http.ResponseWriter, data []byte) int {
+	var (
+		schemaVersion int = 0 // default to 0
+		root          map[string]any
+		ok            bool
+		err           error
+	)
+
+	// unmarshal JSON to root
+	err = json.Unmarshal(data, &root)
+	if err != nil {
+		sendJsonError(w, http.StatusInternalServerError,
+			fmt.Sprintf("failed to unmarshal data: %w", err))
+	}
+
+	// try and extract schema version and set if valid
+	version, ok := root["SchemaVersion"]
+	if ok {
+		schemaVersion = int(version.(float64))
+	}
+	return schemaVersion
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2511,8 +2791,8 @@ func (s *SmD) doRedfishEndpointsPost(w http.ResponseWriter, r *http.Request) {
 // component underneath a RedfishEndpoint).
 func (s *SmD) doComponentEndpointGet(w http.ResponseWriter, r *http.Request) {
 	s.lg.Printf("doComponentEndpointGet(): trying...")
-	vars := mux.Vars(r)
-	xname := vars["xname"]
+
+	xname := chi.URLParam(r, "xname")
 	cep, err := s.db.GetCompEndpointByID(xname)
 	if err != nil {
 		s.LogAlways("doComponentEndpointGet(): Lookup failure: (%s) %s", xname, err)
@@ -2564,15 +2844,15 @@ func (s *SmD) doComponentEndpointsGet(w http.ResponseWriter, r *http.Request) {
 // Delete single ComponentEndpoint, by its xname ID.
 func (s *SmD) doComponentEndpointDelete(w http.ResponseWriter, r *http.Request) {
 	s.lg.Printf("doComponentEndpointDelete(): trying...")
-	vars := mux.Vars(r)
-	xname := vars["xname"]
+
+	xname := chi.URLParam(r, "xname")
 	didDelete, affectedIDs, err := s.db.DeleteCompEndpointByIDSetEmpty(xname)
 	if err != nil {
 		s.lg.Printf("doComponentEndpointDelete(): delete failure: (%s) %s", xname, err)
 		sendJsonDBError(w, "", "", err)
 		return
 	}
-	if didDelete == false {
+	if !didDelete {
 		sendJsonError(w, http.StatusNotFound, "no such xname.")
 		return
 	}
@@ -2612,27 +2892,6 @@ func (s *SmD) doComponentEndpointsDeleteAll(w http.ResponseWriter, r *http.Reque
 	sendJsonError(w, http.StatusOK, "deleted "+numStr+" entries")
 }
 
-// Might not need this.  Might be able to use normal get on collection.
-func (s *SmD) doComponentEndpointQueryGet(w http.ResponseWriter, r *http.Request) {
-	ceps := new(sm.ComponentEndpointArray)
-	vars := mux.Vars(r)
-	xname := vars["xname"]
-	if xname == "" || xname == "all" || xname == "s0" {
-		var err error
-		ceps.ComponentEndpoints, err = s.db.GetCompEndpointsAll()
-		if err != nil {
-			s.LogAlways("doComponentEndpointQueryGet(): Lookup failure: %s", err)
-			sendJsonDBError(w, "", "", err)
-			return
-		}
-		sendJsonCompEndpointArrayRsp(w, ceps)
-		return
-	} else {
-		sendJsonError(w, http.StatusBadRequest, "not yet implemented")
-		return
-	}
-}
-
 /////////////////////////////////////////////////////////////////////////////
 // Service endpoints
 /////////////////////////////////////////////////////////////////////////////
@@ -2640,9 +2899,9 @@ func (s *SmD) doComponentEndpointQueryGet(w http.ResponseWriter, r *http.Request
 // Retrieves a single ServiceEndpoint (discovered info from Redfish on a
 // service underneath a RedfishEndpoint).
 func (s *SmD) doServiceEndpointGet(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	svc := vars["service"]
-	xname := vars["xname"]
+
+	svc := chi.URLParam(r, "service")
+	xname := chi.URLParam(r, "xname")
 	sep, err := s.db.GetServiceEndpointByID(svc, xname)
 	if err != nil {
 		s.lg.Printf("doServiceEndpointGet(): Lookup failure: (%s,%s) %s", svc, xname, err)
@@ -2699,8 +2958,8 @@ func (s *SmD) doServiceEndpointsGetAll(w http.ResponseWriter, r *http.Request) {
 func (s *SmD) doServiceEndpointsGet(w http.ResponseWriter, r *http.Request) {
 	seps := new(sm.ServiceEndpointArray)
 	var err error
-	vars := mux.Vars(r)
-	svc := vars["service"]
+
+	svc := chi.URLParam(r, "service")
 
 	// Parse arguments
 	if err := r.ParseForm(); err != nil {
@@ -2737,9 +2996,9 @@ func (s *SmD) doServiceEndpointsGet(w http.ResponseWriter, r *http.Request) {
 
 // Delete single ServiceEndpoint, by its service type and xname ID.
 func (s *SmD) doServiceEndpointDelete(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	svc := vars["service"]
-	xname := vars["xname"]
+
+	svc := chi.URLParam(r, "service")
+	xname := chi.URLParam(r, "xname")
 	didDelete, err := s.db.DeleteServiceEndpointByID(svc, xname)
 	if err != nil {
 		s.lg.Printf("doServiceEndpointDelete(): delete failure: (%s,%s) %s", svc, xname, err)
@@ -2748,7 +3007,7 @@ func (s *SmD) doServiceEndpointDelete(w http.ResponseWriter, r *http.Request) {
 		sendJsonDBError(w, "", "", err)
 		return
 	}
-	if didDelete == false {
+	if !didDelete {
 		sendJsonError(w, http.StatusNotFound, "no such service under redfish endpoint.")
 		return
 	}
@@ -2797,8 +3056,8 @@ func (s *SmD) doCompEthInterfaceDeleteAll(w http.ResponseWriter, r *http.Request
 
 // Delete component ethernet interface {id}.
 func (s *SmD) doCompEthInterfaceDelete(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := strings.ToLower(vars["id"])
+
+	id := strings.ToLower(chi.URLParam(r, "id"))
 
 	if len(id) == 0 {
 		s.lg.Printf("doCompEthInterfaceDelete(): Invalid id.")
@@ -2812,13 +3071,13 @@ func (s *SmD) doCompEthInterfaceDelete(w http.ResponseWriter, r *http.Request) {
 		sendJsonError(w, http.StatusInternalServerError, "DB query failed.")
 		return
 	}
-	if didDelete == false {
+	if !didDelete {
 		s.lg.Printf("doCompEthInterfaceDelete(): No such component ethernet interface, %s", id)
 		sendJsonError(w, http.StatusNotFound, "no such component ethernet interface.")
 		return
 	}
 	sendJsonError(w, http.StatusOK, "deleted 1 entry")
-	return
+
 }
 
 // Get all component ethernet interfaces that currently exist, optionally filtering the set,
@@ -2914,7 +3173,7 @@ func (s *SmD) doCompEthInterfacesGetV2(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sendJsonCompEthInterfaceV2ArrayRsp(w, ceis)
-	return
+
 }
 
 // Create a new component ethernet interface.
@@ -2956,16 +3215,16 @@ func (s *SmD) doCompEthInterfacePostV2(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uri := &sm.ResourceURI{s.compEthIntBaseV2 + "/" + cei.ID}
+	uri := &sm.ResourceURI{URI: s.compEthIntBaseV2 + "/" + cei.ID}
 	sendJsonNewResourceID(w, uri)
-	return
+
 }
 
 // Retrieve the component ethernet interface which was created with the given {id}.
 func (s *SmD) doCompEthInterfaceGetV2(w http.ResponseWriter, r *http.Request) {
 	var err error
-	vars := mux.Vars(r)
-	id := strings.ToLower(vars["id"])
+
+	id := strings.ToLower(chi.URLParam(r, "id"))
 
 	if len(id) == 0 {
 		s.lg.Printf("doCompEthInterfaceGetV2(): Invalid id.")
@@ -2980,14 +3239,14 @@ func (s *SmD) doCompEthInterfaceGetV2(w http.ResponseWriter, r *http.Request) {
 		sendJsonDBError(w, "bad query param: ", "", err)
 		return
 	}
-	if ceis == nil || len(ceis) == 0 {
+	if len(ceis) == 0 {
 		s.lg.Printf("doCompEthInterfaceGetV2(): No such component ethernet interface, %s", id)
 		sendJsonError(w, http.StatusNotFound, "No such component ethernet interface: "+id)
 		return
 	}
 
 	sendJsonCompEthInterfaceV2Rsp(w, ceis[0])
-	return
+
 }
 
 // To update the IP address and/or description of a component ethernet interface,
@@ -2995,8 +3254,8 @@ func (s *SmD) doCompEthInterfaceGetV2(w http.ResponseWriter, r *http.Request) {
 // only updated if an IP address is specified.
 func (s *SmD) doCompEthInterfacePatchV2(w http.ResponseWriter, r *http.Request) {
 	var ceip sm.CompEthInterfaceV2Patch
-	vars := mux.Vars(r)
-	id := vars["id"]
+
+	id := chi.URLParam(r, "id")
 
 	if len(id) == 0 {
 		s.lg.Printf("doCompEthInterfacePatchV2(): Invalid id.")
@@ -3029,15 +3288,15 @@ func (s *SmD) doCompEthInterfacePatchV2(w http.ResponseWriter, r *http.Request) 
 	}
 
 	sendJsonCompEthInterfaceV2Rsp(w, cei)
-	return
+
 }
 
 // Get a array of all IP Addresses mappings that are currently
 // associated with this Component Ethernet Interface
 func (s *SmD) doCompEthInterfaceIPAddressesGetV2(w http.ResponseWriter, r *http.Request) {
 	var err error
-	vars := mux.Vars(r)
-	id := vars["id"]
+
+	id := chi.URLParam(r, "id")
 
 	if len(id) == 0 {
 		s.lg.Printf("doCompEthInterfaceIPAddressesGetV2(): Invalid id.")
@@ -3054,7 +3313,7 @@ func (s *SmD) doCompEthInterfaceIPAddressesGetV2(w http.ResponseWriter, r *http.
 		sendJsonDBError(w, "bad query param: ", "", err)
 		return
 	}
-	if ceis == nil || len(ceis) == 0 {
+	if len(ceis) == 0 {
 		s.lg.Printf("doCompEthInterfaceIPAddressesGetV2(): No such component ethernet interface, %s", id)
 		sendJsonError(w, http.StatusNotFound, "No such component ethernet interface: "+id)
 		return
@@ -3068,8 +3327,8 @@ func (s *SmD) doCompEthInterfaceIPAddressesGetV2(w http.ResponseWriter, r *http.
 // in the payload. New IP Addresses should not already exist in the given Component Ethernet Interface.
 func (s *SmD) doCompEthInterfaceIPAddressPostV2(w http.ResponseWriter, r *http.Request) {
 	var ipAddressIn sm.IPAddressMapping
-	vars := mux.Vars(r)
-	id := vars["id"]
+
+	id := chi.URLParam(r, "id")
 
 	if len(id) == 0 {
 		s.lg.Printf("doCompEthInterfaceIPAddressesGetV2(): Invalid id.")
@@ -3109,16 +3368,16 @@ func (s *SmD) doCompEthInterfaceIPAddressPostV2(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	uri := &sm.ResourceURI{s.compEthIntBaseV2 + "/" + id + "/IPAddresses/" + ipID}
+	uri := &sm.ResourceURI{URI: s.compEthIntBaseV2 + "/" + id + "/IPAddresses/" + ipID}
 	sendJsonNewResourceID(w, uri)
 }
 
 // Patch the field fields of an IP Address {ipaddr} associated with Component Ethernet interface {id}
 func (s *SmD) doCompEthInterfaceIPAddressPatchV2(w http.ResponseWriter, r *http.Request) {
 	var ipmPatch sm.IPAddressMappingPatch
-	vars := mux.Vars(r)
-	id := vars["id"]
-	ipaddr := vars["ipaddr"]
+
+	id := chi.URLParam(r, "id")
+	ipaddr := chi.URLParam(r, "ipaddr")
 
 	if len(id) == 0 {
 		s.lg.Printf("doCompEthInterfaceMembersDelete(): Invalid id.")
@@ -3158,9 +3417,9 @@ func (s *SmD) doCompEthInterfaceIPAddressPatchV2(w http.ResponseWriter, r *http.
 
 // Remove IP Address {ipaddr} from the IP Addresses of the Component Ethernet Interface {id}.
 func (s *SmD) doCompEthInterfaceIPAddressDeleteV2(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
-	ipAddr := vars["ipaddr"]
+
+	id := chi.URLParam(r, "id")
+	ipAddr := chi.URLParam(r, "ipaddr")
 
 	if len(id) == 0 {
 		s.lg.Printf("doCompEthInterfaceMembersDelete(): Invalid id.")
@@ -3187,7 +3446,7 @@ func (s *SmD) doCompEthInterfaceIPAddressDeleteV2(w http.ResponseWriter, r *http
 		return
 	}
 
-	if didDelete == false {
+	if !didDelete {
 		s.lg.Printf("doCompEthInterfaceMembersDelete(): No such ip address, %s, in component ethernet interface, %s", ipAddr, id)
 		sendJsonError(w, http.StatusNotFound, "component ethernet interface has no such ip address.")
 		return
@@ -3200,8 +3459,8 @@ func (s *SmD) doCompEthInterfaceIPAddressDeleteV2(w http.ResponseWriter, r *http
 /////////////////////////////////////////////////////////////////////////////
 
 func (s *SmD) doDiscoveryStatusGet(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	idStr := vars["id"]
+
+	idStr := chi.URLParam(r, "id")
 
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
@@ -3451,8 +3710,8 @@ func (s *SmD) doDeleteSCNSubscriptionsAll(w http.ResponseWriter, r *http.Request
 
 // Get a currently held SCN subscription. This returns the specified SCN subscription.
 func (s *SmD) doGetSCNSubscription(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	idStr := vars["id"]
+
+	idStr := chi.URLParam(r, "id")
 
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
@@ -3479,8 +3738,8 @@ func (s *SmD) doGetSCNSubscription(w http.ResponseWriter, r *http.Request) {
 // Update a SCN subscription entirely.
 func (s *SmD) doPutSCNSubscription(w http.ResponseWriter, r *http.Request) {
 	var err error
-	vars := mux.Vars(r)
-	idStr := vars["id"]
+
+	idStr := chi.URLParam(r, "id")
 
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
@@ -3599,8 +3858,8 @@ func (s *SmD) doPutSCNSubscription(w http.ResponseWriter, r *http.Request) {
 // Patch update a SCN subscription.
 func (s *SmD) doPatchSCNSubscription(w http.ResponseWriter, r *http.Request) {
 	var err error
-	vars := mux.Vars(r)
-	idStr := vars["id"]
+
+	idStr := chi.URLParam(r, "id")
 
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
@@ -3846,8 +4105,8 @@ func (s *SmD) doPatchSCNSubscription(w http.ResponseWriter, r *http.Request) {
 // Delete a SCN subscription.
 func (s *SmD) doDeleteSCNSubscription(w http.ResponseWriter, r *http.Request) {
 	var err error
-	vars := mux.Vars(r)
-	idStr := vars["id"]
+
+	idStr := chi.URLParam(r, "id")
 
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
@@ -4002,7 +4261,7 @@ func (s *SmD) doGroupsGet(w http.ResponseWriter, r *http.Request) {
 		groups = append(groups, *group)
 	}
 	sendJsonGroupArrayRsp(w, &groups)
-	return
+
 }
 
 // Create a new group identified by the label field. Label should be given
@@ -4011,8 +4270,8 @@ func (s *SmD) doGroupsGet(w http.ResponseWriter, r *http.Request) {
 func (s *SmD) doGroupsPost(w http.ResponseWriter, r *http.Request) {
 	var groupIn sm.Group
 
-	body, err := ioutil.ReadAll(r.Body)
-	err = json.Unmarshal(body, &groupIn)
+	body, _ := io.ReadAll(r.Body)
+	err := json.Unmarshal(body, &groupIn)
 	if err != nil {
 		s.lg.Printf("doGroupsPost(): Unmarshal body: %s", err)
 		sendJsonError(w, http.StatusInternalServerError,
@@ -4048,16 +4307,16 @@ func (s *SmD) doGroupsPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uris := []*sm.ResourceURI{{s.groupsBaseV2 + "/" + label}}
+	uris := []*sm.ResourceURI{{URI: s.groupsBaseV2 + "/" + label}}
 	sendJsonNewResourceIDArray(w, s.groupsBaseV2, uris)
-	return
+
 }
 
 // Retrieve the group which was created with the given {group_label}.
 func (s *SmD) doGroupGet(w http.ResponseWriter, r *http.Request) {
 	var err error
-	vars := mux.Vars(r)
-	label := sm.NormalizeGroupField(vars["group_label"])
+
+	label := sm.NormalizeGroupField(chi.URLParam(r, "group_label"))
 
 	if sm.VerifyGroupField(label) != nil {
 		s.lg.Printf("doGroupGet(): Invalid group label.")
@@ -4111,14 +4370,14 @@ func (s *SmD) doGroupGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sendJsonGroupRsp(w, group)
-	return
+
 }
 
 // Delete the given group label. Any members previously in the group will no
 // longer have the deleted group label associated with them.
 func (s *SmD) doGroupDelete(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	label := sm.NormalizeGroupField(vars["group_label"])
+
+	label := sm.NormalizeGroupField(chi.URLParam(r, "group_label"))
 
 	if sm.VerifyGroupField(label) != nil {
 		s.lg.Printf("doGroupDelete(): Invalid group label.")
@@ -4132,24 +4391,25 @@ func (s *SmD) doGroupDelete(w http.ResponseWriter, r *http.Request) {
 		sendJsonError(w, http.StatusInternalServerError, "DB query failed.")
 		return
 	}
-	if didDelete == false {
+	if !didDelete {
 		s.lg.Printf("doGroupDelete(): No such group, %s", label)
 		sendJsonError(w, http.StatusNotFound, "no such group.")
 		return
 	}
 	sendJsonError(w, http.StatusOK, "deleted 1 entry")
-	return
+
 }
 
 // To update the tags array and/or description, a PATCH operation can be used.
 // Omitted fields are not updated.
 // NOTE: This cannot be used to completely replace the members list. Rather,
-//       individual members can be removed or added with the
-//       POST/DELETE {group_label}/members API.
+//
+//	individual members can be removed or added with the
+//	POST/DELETE {group_label}/members API.
 func (s *SmD) doGroupPatch(w http.ResponseWriter, r *http.Request) {
 	var groupPatch sm.GroupPatch
-	vars := mux.Vars(r)
-	label := sm.NormalizeGroupField(vars["group_label"])
+
+	label := sm.NormalizeGroupField(chi.URLParam(r, "group_label"))
 
 	body, err := ioutil.ReadAll(r.Body)
 	err = json.Unmarshal(body, &groupPatch)
@@ -4193,7 +4453,7 @@ func (s *SmD) doGroupPatch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sendJsonError(w, http.StatusNoContent, "Success")
-	return
+
 }
 
 // Get a string array of all group labels (i.e. group names) that currently
@@ -4206,15 +4466,15 @@ func (s *SmD) doGroupLabelsGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sendJsonStringArrayRsp(w, &labels)
-	return
+
 }
 
 // Get all members of an existing group {group_label}, optionally filtering the set,
 // returning a members set containing the component xname IDs.
 func (s *SmD) doGroupMembersGet(w http.ResponseWriter, r *http.Request) {
 	var err error
-	vars := mux.Vars(r)
-	label := sm.NormalizeGroupField(vars["group_label"])
+
+	label := sm.NormalizeGroupField(chi.URLParam(r, "group_label"))
 
 	if sm.VerifyGroupField(label) != nil {
 		s.lg.Printf("doGroupMembersGet(): Invalid group label.")
@@ -4269,15 +4529,15 @@ func (s *SmD) doGroupMembersGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sendJsonMembersRsp(w, &group.Members)
-	return
+
 }
 
 // Create a new member of group {group_label} with the component xname id provided
 // in the payload. New member should not already exist in the given group.
 func (s *SmD) doGroupMembersPost(w http.ResponseWriter, r *http.Request) {
 	var memberIn sm.MemberAddBody
-	vars := mux.Vars(r)
-	label := sm.NormalizeGroupField(vars["group_label"])
+
+	label := sm.NormalizeGroupField(chi.URLParam(r, "group_label"))
 
 	if sm.VerifyGroupField(label) != nil {
 		s.lg.Printf("doGroupMemberPost(): Invalid group label.")
@@ -4318,16 +4578,16 @@ func (s *SmD) doGroupMembersPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uris := []*sm.ResourceURI{{s.groupsBaseV2 + "/" + label + "/members/" + id}}
+	uris := []*sm.ResourceURI{{URI: s.groupsBaseV2 + "/" + label + "/members/" + id}}
 	sendJsonNewResourceIDArray(w, s.groupsBaseV2, uris)
-	return
+
 }
 
 // Remove component {xname_id} from the members of group {group_label}.
 func (s *SmD) doGroupMemberDelete(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	label := sm.NormalizeGroupField(vars["group_label"])
-	id := base.NormalizeHMSCompID(vars["xname_id"])
+
+	label := sm.NormalizeGroupField(chi.URLParam(r, "group_label"))
+	id := base.NormalizeHMSCompID(chi.URLParam(r, "xname_id"))
 
 	if sm.VerifyGroupField(label) != nil {
 		s.lg.Printf("doGroupMemberDelete(): Invalid group label.")
@@ -4350,13 +4610,13 @@ func (s *SmD) doGroupMemberDelete(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if didDelete == false {
+	if !didDelete {
 		s.lg.Printf("doGroupMemberDelete(): No such member, %s, in group, %s", id, label)
 		sendJsonError(w, http.StatusNotFound, "group has no such member.")
 		return
 	}
 	sendJsonError(w, http.StatusOK, "deleted 1 entry")
-	return
+
 }
 
 /*
@@ -4459,7 +4719,7 @@ func (s *SmD) doPartitionsGet(w http.ResponseWriter, r *http.Request) {
 		partitions = append(partitions, *partition)
 	}
 	sendJsonPartitionArrayRsp(w, &partitions)
-	return
+
 }
 
 // Create a new partition identified by the name field. Partition name
@@ -4505,16 +4765,16 @@ func (s *SmD) doPartitionsPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uris := []*sm.ResourceURI{{s.partitionsBaseV2 + "/" + name}}
+	uris := []*sm.ResourceURI{{URI: s.partitionsBaseV2 + "/" + name}}
 	sendJsonNewResourceIDArray(w, s.partitionsBaseV2, uris)
-	return
+
 }
 
 // Retrieve the partition which was created with the given {partition_name}.
 func (s *SmD) doPartitionGet(w http.ResponseWriter, r *http.Request) {
 	var err error
-	vars := mux.Vars(r)
-	name := sm.NormalizeGroupField(vars["partition_name"])
+
+	name := sm.NormalizeGroupField(chi.URLParam(r, "partition_name"))
 
 	if sm.VerifyGroupField(name) != nil {
 		s.lg.Printf("doPartitionGet(): Invalid partition name.")
@@ -4536,14 +4796,14 @@ func (s *SmD) doPartitionGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sendJsonPartitionRsp(w, part)
-	return
+
 }
 
 // Delete partition {partition_name}. Any members previously in the partition
 // will no longer have the deleted partition name associated with them.
 func (s *SmD) doPartitionDelete(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	name := sm.NormalizeGroupField(vars["partition_name"])
+
+	name := sm.NormalizeGroupField(chi.URLParam(r, "partition_name"))
 
 	if sm.VerifyGroupField(name) != nil {
 		s.lg.Printf("doPartitionDelete(): Invalid partition name.")
@@ -4557,24 +4817,25 @@ func (s *SmD) doPartitionDelete(w http.ResponseWriter, r *http.Request) {
 		sendJsonError(w, http.StatusInternalServerError, "DB query failed.")
 		return
 	}
-	if didDelete == false {
+	if !didDelete {
 		s.lg.Printf("doPartitionDelete(): No such partition, %s", name)
 		sendJsonError(w, http.StatusNotFound, "no such partition.")
 		return
 	}
 	sendJsonError(w, http.StatusOK, "deleted 1 entry")
-	return
+
 }
 
 // To update the tags array and/or description, a PATCH operation can be used.
 // Omitted fields are not updated.
 // NOTE: This cannot be used to completely replace the members list. Rather,
-//       individual members can be removed or added with the POST/DELETE
-//       {partition_name}/members API.
+//
+//	individual members can be removed or added with the POST/DELETE
+//	{partition_name}/members API.
 func (s *SmD) doPartitionPatch(w http.ResponseWriter, r *http.Request) {
 	var partPatch sm.PartitionPatch
-	vars := mux.Vars(r)
-	name := sm.NormalizeGroupField(vars["partition_name"])
+
+	name := sm.NormalizeGroupField(chi.URLParam(r, "partition_name"))
 
 	if sm.VerifyGroupField(name) != nil {
 		s.lg.Printf("doPartitionPatch(): Invalid partition name.")
@@ -4625,7 +4886,7 @@ func (s *SmD) doPartitionPatch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sendJsonError(w, http.StatusNoContent, "Success")
-	return
+
 }
 
 // Get a string array of all partition names that currently exist in HSM.
@@ -4638,15 +4899,15 @@ func (s *SmD) doPartitionNamesGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sendJsonStringArrayRsp(w, &names)
-	return
+
 }
 
 // Get all members of existing partition {partition_name}, optionally filtering
 // the set, returning a members set that includes the component xname IDs.
 func (s *SmD) doPartitionMembersGet(w http.ResponseWriter, r *http.Request) {
 	var err error
-	vars := mux.Vars(r)
-	name := sm.NormalizeGroupField(vars["partition_name"])
+
+	name := sm.NormalizeGroupField(chi.URLParam(r, "partition_name"))
 
 	if sm.VerifyGroupField(name) != nil {
 		s.lg.Printf("doPartitionMembersGet(): Invalid partition name.")
@@ -4668,7 +4929,7 @@ func (s *SmD) doPartitionMembersGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sendJsonMembersRsp(w, &part.Members)
-	return
+
 }
 
 // Create a new member of partition {partition_name} with the component xname
@@ -4676,8 +4937,8 @@ func (s *SmD) doPartitionMembersGet(w http.ResponseWriter, r *http.Request) {
 // partition
 func (s *SmD) doPartitionMembersPost(w http.ResponseWriter, r *http.Request) {
 	var memberIn sm.MemberAddBody
-	vars := mux.Vars(r)
-	name := sm.NormalizeGroupField(vars["partition_name"])
+
+	name := sm.NormalizeGroupField(chi.URLParam(r, "partition_name"))
 
 	if sm.VerifyGroupField(name) != nil {
 		s.lg.Printf("doPartitionMembersPost(): Invalid partition name.")
@@ -4693,12 +4954,14 @@ func (s *SmD) doPartitionMembersPost(w http.ResponseWriter, r *http.Request) {
 			"error decoding JSON "+err.Error())
 		return
 	}
-	normID := base.NormalizeHMSCompID(memberIn.ID)
-	if !base.IsHMSCompIDValid(normID) {
-		s.lg.Printf("doPartitionMembersPost(): Invalid xname ID.")
-		sendJsonError(w, http.StatusBadRequest, "invalid xname ID")
-		return
-	}
+	s.lg.Printf("doParitionMembersPost(): Skipping 'xname' check.")
+	// normID := base.NormalizeHMSCompID(memberIn.ID)
+	// if !base.IsHMSCompIDValid(normID) {
+	// 	s.lg.Printf("doPartitionMembersPost(): Invalid xname ID.")
+	// 	sendJsonError(w, http.StatusBadRequest, "invalid xname ID")
+	// 	return
+	// }
+	normID := memberIn.ID
 	id, err := s.db.AddPartitionMember(name, normID)
 	if err != nil {
 		s.lg.Printf("doPartitionMembersPost(): %s %s Err: %s", r.RemoteAddr,
@@ -4719,16 +4982,16 @@ func (s *SmD) doPartitionMembersPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uris := []*sm.ResourceURI{{s.partitionsBaseV2 + "/" + name + "/members/" + id}}
+	uris := []*sm.ResourceURI{{URI: s.partitionsBaseV2 + "/" + name + "/members/" + id}}
 	sendJsonNewResourceIDArray(w, s.partitionsBaseV2, uris)
-	return
+
 }
 
 // Remove component {xname_id} from the members of partition {partition_name}.
 func (s *SmD) doPartitionMemberDelete(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	name := sm.NormalizeGroupField(vars["partition_name"])
-	id := base.NormalizeHMSCompID(vars["xname_id"])
+
+	name := sm.NormalizeGroupField(chi.URLParam(r, "partition_name"))
+	id := base.NormalizeHMSCompID(chi.URLParam(r, "xname_id"))
 
 	if sm.VerifyGroupField(name) != nil {
 		s.lg.Printf("doPartitionMemberDelete(): Invalid partition name.")
@@ -4751,13 +5014,13 @@ func (s *SmD) doPartitionMemberDelete(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if didDelete == false {
+	if !didDelete {
 		s.lg.Printf("doPartitionMemberDelete(): No such member, %s, in partition, %s", id, name)
 		sendJsonError(w, http.StatusNotFound, "partition has no such member.")
 		return
 	}
 	sendJsonError(w, http.StatusOK, "deleted 1 entry")
-	return
+
 }
 
 /*
@@ -4799,8 +5062,8 @@ func (s *SmD) doMembershipsGet(w http.ResponseWriter, r *http.Request) {
 
 func (s *SmD) doMembershipGet(w http.ResponseWriter, r *http.Request) {
 	var err error
-	vars := mux.Vars(r)
-	xname := base.NormalizeHMSCompID(vars["xname"])
+
+	xname := base.NormalizeHMSCompID(chi.URLParam(r, "xname"))
 
 	if !base.IsHMSCompIDValid(xname) {
 		s.lg.Printf("doMembershipGet(): Invalid xname.")
@@ -4819,7 +5082,7 @@ func (s *SmD) doMembershipGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sendJsonMembershipRsp(w, membership)
-	return
+
 }
 
 /*
@@ -4853,7 +5116,7 @@ func (s *SmD) compLocksV2Helper(w http.ResponseWriter, r *http.Request, action s
 	}
 
 	sendJsonCompLockV2UpdateRsp(w, results)
-	return
+
 }
 
 func (s *SmD) doCompLocksReservationRemove(w http.ResponseWriter, r *http.Request) {
@@ -4883,7 +5146,7 @@ func (s *SmD) doCompLocksReservationRemove(w http.ResponseWriter, r *http.Reques
 	}
 
 	sendJsonCompLockV2UpdateRsp(w, results)
-	return
+
 }
 
 func (s *SmD) doCompLocksReservationRelease(w http.ResponseWriter, r *http.Request) {
@@ -4913,7 +5176,7 @@ func (s *SmD) doCompLocksReservationRelease(w http.ResponseWriter, r *http.Reque
 	}
 
 	sendJsonCompLockV2UpdateRsp(w, results)
-	return
+
 }
 
 func (s *SmD) doCompLocksReservationCreate(w http.ResponseWriter, r *http.Request) {
@@ -4944,7 +5207,7 @@ func (s *SmD) doCompLocksReservationCreate(w http.ResponseWriter, r *http.Reques
 	}
 
 	sendJsonCompReservationRsp(w, results)
-	return
+
 }
 
 func (s *SmD) doCompLocksServiceReservationRenew(w http.ResponseWriter, r *http.Request) {
@@ -4979,12 +5242,12 @@ func (s *SmD) doCompLocksServiceReservationRenew(w http.ResponseWriter, r *http.
 	}
 
 	sendJsonCompLockV2UpdateRsp(w, results)
-	return
+
 }
 
 func (s *SmD) doCompLocksServiceReservationRelease(w http.ResponseWriter, r *http.Request) {
 	s.doCompLocksReservationRelease(w, r)
-	return
+
 }
 
 func (s *SmD) doCompLocksServiceReservationCreate(w http.ResponseWriter, r *http.Request) {
@@ -5019,14 +5282,14 @@ func (s *SmD) doCompLocksServiceReservationCreate(w http.ResponseWriter, r *http
 	}
 
 	sendJsonCompReservationRsp(w, results)
-	return
+
 }
 
 func (s *SmD) doCompLocksServiceReservationCheck(w http.ResponseWriter, r *http.Request) {
 	var filter sm.CompLockV2DeputyKeyArray
 
-	body, err := ioutil.ReadAll(r.Body)
-	err = json.Unmarshal(body, &filter)
+	body, _ := io.ReadAll(r.Body)
+	err := json.Unmarshal(body, &filter)
 	if err != nil {
 		s.lg.Printf("doCompLocksServiceReservationCheck(): Unmarshal body: %s", err)
 		sendJsonError(w, http.StatusInternalServerError,
@@ -5049,7 +5312,7 @@ func (s *SmD) doCompLocksServiceReservationCheck(w http.ResponseWriter, r *http.
 	}
 
 	sendJsonCompReservationRsp(w, results)
-	return
+
 }
 
 func (s *SmD) doCompLocksStatus(w http.ResponseWriter, r *http.Request) {
@@ -5094,7 +5357,7 @@ func (s *SmD) doCompLocksStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sendJsonCompLockV2Rsp(w, results)
-	return
+
 }
 
 func (s *SmD) doCompLocksStatusGet(w http.ResponseWriter, r *http.Request) {
@@ -5153,27 +5416,27 @@ func (s *SmD) doCompLocksStatusGet(w http.ResponseWriter, r *http.Request) {
 	results.Components = locks
 
 	sendJsonCompLockV2Rsp(w, results)
-	return
+
 }
 
 func (s *SmD) doCompLocksLock(w http.ResponseWriter, r *http.Request) {
 	s.compLocksV2Helper(w, r, hmsds.CLUpdateActionLock)
-	return
+
 }
 
 func (s *SmD) doCompLocksUnlock(w http.ResponseWriter, r *http.Request) {
 	s.compLocksV2Helper(w, r, hmsds.CLUpdateActionUnlock)
-	return
+
 }
 
 func (s *SmD) doCompLocksRepair(w http.ResponseWriter, r *http.Request) {
 	s.compLocksV2Helper(w, r, hmsds.CLUpdateActionRepair)
-	return
+
 }
 
 func (s *SmD) doCompLocksDisable(w http.ResponseWriter, r *http.Request) {
 	s.compLocksV2Helper(w, r, hmsds.CLUpdateActionDisable)
-	return
+
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -5183,8 +5446,8 @@ func (s *SmD) doCompLocksDisable(w http.ResponseWriter, r *http.Request) {
 // Get one specific PowerMap entry, previously created, by its xname ID.
 func (s *SmD) doPowerMapGet(w http.ResponseWriter, r *http.Request) {
 	s.lg.Printf("doPowerMapGet(): trying...")
-	vars := mux.Vars(r)
-	xname := base.NormalizeHMSCompID(vars["xname"])
+
+	xname := base.NormalizeHMSCompID(chi.URLParam(r, "xname"))
 	if !base.IsHMSCompIDValid(xname) {
 		s.lg.Printf("doPowerMapGet(): Invalid xname.")
 		sendJsonError(w, http.StatusBadRequest, "invalid xname")
@@ -5258,13 +5521,13 @@ func (s *SmD) doPowerMapsPost(w http.ResponseWriter, r *http.Request) {
 
 	numStr := strconv.FormatInt(int64(len(ms)), 10)
 	sendJsonError(w, http.StatusOK, "Created or modified "+numStr+" entries")
-	return
+
 }
 
 // UPDATE EXISTING Power mapping by it's xname URI.
 func (s *SmD) doPowerMapPut(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	xname := base.NormalizeHMSCompID(vars["xname"])
+
+	xname := base.NormalizeHMSCompID(chi.URLParam(r, "xname"))
 
 	var mIn sm.PowerMap
 	body, err := ioutil.ReadAll(r.Body)
@@ -5306,14 +5569,14 @@ func (s *SmD) doPowerMapPut(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sendJsonPowerMapRsp(w, m)
-	return
+
 }
 
 // Delete single PowerMap, by its xname ID.
 func (s *SmD) doPowerMapDelete(w http.ResponseWriter, r *http.Request) {
 	s.lg.Printf("doPowerMapDelete(): trying...")
-	vars := mux.Vars(r)
-	xname := base.NormalizeHMSCompID(vars["xname"])
+
+	xname := base.NormalizeHMSCompID(chi.URLParam(r, "xname"))
 
 	if !base.IsHMSCompIDValid(xname) {
 		sendJsonError(w, http.StatusBadRequest, "invalid xname")
@@ -5326,7 +5589,7 @@ func (s *SmD) doPowerMapDelete(w http.ResponseWriter, r *http.Request) {
 		sendJsonDBError(w, "", "", err)
 		return
 	}
-	if didDelete == false {
+	if !didDelete {
 		sendJsonError(w, http.StatusNotFound, "no such xname.")
 		return
 	}

@@ -28,7 +28,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
+	"github.com/OpenCHAMI/smd/v2/pkg/sm"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	sq "github.com/Masterminds/squirrel"

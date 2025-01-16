@@ -24,7 +24,7 @@ package hmsds
 
 import (
 	base "github.com/Cray-HPE/hms-base"
-	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
+	"github.com/OpenCHAMI/smd/v2/pkg/sm"
 )
 
 var e = base.NewHMSError("hmsds", "GenericError")
@@ -1083,7 +1083,7 @@ type HMSDBTx interface {
 	// Update NID.  If NID is not set or negative, it is set to -1 which
 	// effectively unsets it and suppresses its output.
 	UpdateCompNIDTx(c *base.Component) error
-	
+
 	// Update NID.  If NID is not set or negative, it is set to -1 which
 	// effectively unsets it and suppresses its output.
 	BulkUpdateCompNIDTx(comps []base.Component) error

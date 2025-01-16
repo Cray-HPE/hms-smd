@@ -1,5 +1,55 @@
-# Cray Hardware State Manager (smd)
+# State Management Database(smd)
 
+This is a fork of the original SMD code from [Cray-HPE/hms-smd](https://github.com/Cray-HPE/hms-smd), suitable only for experimentation and demo purposes at this point.
+
+While the OpenCHAMI smd daemon is fundamentally the same as the original from HPE, it differs in a few ways:
+
+* The vendor directory has been removed and the go version has been updated
+* Releases are handled with goreleaser and containers are published to ghcr.io
+* Additional commandline arguments are available to disable internal "threads" in favor of external daemons
+* The `/components` endpoint supports POST
+* HPE build and test frameworks are not used
+
+It still provides inventory management services for HPC systems based on BMC discovery and enumeration.
+
+## Build/Install with goreleaser
+
+This project uses [GoReleaser](https://goreleaser.com/) to automate releases and include additional build metadata such as commit info, build time, and versioning. Below is a guide on how to set up and build the project locally using GoReleaser.
+
+### Environment Variables
+
+To include detailed build metadata, ensure the following environment variables are set:
+
+* __GIT_STATE__: Indicates whether there are uncommitted changes in the working directory. Set to clean if the repository is clean, or dirty if there are uncommitted changes.
+* __BUILD_HOST__: The hostname of the machine where the build is being performed. 
+* __GO_VERSION__: The version of Go used for the build. GoReleaser uses this to ensure consistent Go versioning information.
+* __BUILD_USER__: The username of the person or system performing the build.
+
+Set all the environment variables with:
+```bash
+export GIT_STATE=$(if git diff-index --quiet HEAD --; then echo 'clean'; else echo 'dirty'; fi)
+export BUILD_HOST=$(hostname)
+export GO_VERSION=$(go version | awk '{print $3}')
+export BUILD_USER=$(whoami)
+```
+
+### Building Locally with GoReleaser
+
+Once the environment variables are set, you can build the project locally using GoReleaser in snapshot mode (to avoid publishing).
+
+
+Follow the installation instructions from [GoReleaser’s documentation](https://goreleaser.com/install/).
+
+1. Run GoReleaser in snapshot mode with the --snapshot flag to create a local build without attempting to release it:
+  ```bash
+  goreleaser release --snapshot --clean
+  ```
+2.	Check the dist/ directory for the built binaries, which will include the metadata from the environment variables. You can inspect the binary output to confirm that the metadata was correctly embedded.
+
+__NOTE__ If you see errors, ensure that you are using the same version of goreleaser that is being used in the [Release Action](.github/workflows/Release.yml)
+
+
+The rest of this README is unchanged from the HPE version.
 __________________________________________________________________
 
 The Shasta Hardware State Manager monitors and interrogates hardware components
@@ -211,11 +261,11 @@ http://web.us.cray.com/~ekoen/cray-portal/public
 
 Latest detailed API usage examples:
 
-https://github.com/Cray-HPE/hms-smd/blob/master/docs/examples.adoc  (current)
+https://github.com/OpenCHAMI/smd/blob/master/docs/examples.adoc  (current)
 
 Latest swagger.yaml (if you would prefer to use the OpenAPI viewer of your choice):
 
-https://github.com/Cray-HPE/hms-smd/blob/master/api/swagger_v2.yaml (current)
+https://github.com/OpenCHAMI/smd/blob/master/api/swagger_v2.yaml (current)
 
 ## SMD CT Testing
 
@@ -503,7 +553,7 @@ be something simple.  Logging into each cray-smd pod using kubectl exec
 and doing "apk add openssh" will allow you to install ssh and use it to
 connect to external hosts, however the -D option gives an error logging in.
 In any case, you would have to reroll the values.yaml helm chart for
-cray-hms-smd (and incrememnt the version number in Chart.yaml) to add the
+cray-smd (and incrememnt the version number in Chart.yaml) to add the
 SMD_PROXY env variable (see above)
 
 ***Accessing Postgres Operator***

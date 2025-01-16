@@ -25,8 +25,8 @@ package main
 import (
 	"time"
 
+	reservation "github.com/OpenCHAMI/smd/v2/pkg/service-reservations"
 	"github.com/sirupsen/logrus"
-	reservation "github.com/Cray-HPE/hms-smd/v2/pkg/service-reservations"
 )
 
 func main() {

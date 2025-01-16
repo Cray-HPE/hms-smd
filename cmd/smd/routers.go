@@ -24,9 +24,18 @@ package main
 
 import (
 	"net/http"
+	"os"
 	"strings"
+	"time"
 
-	"github.com/gorilla/mux"
+	jwtauth "github.com/OpenCHAMI/jwtauth/v5"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/gorilla/handlers"
+	openchami_authenticator "github.com/openchami/chi-middleware/auth"
+	openchami_logger "github.com/openchami/chi-middleware/log"
+	"github.com/rs/zerolog"
+	zlog "github.com/rs/zerolog/log"
 )
 
 type Route struct {
@@ -38,25 +47,83 @@ type Route struct {
 
 type Routes []Route
 
-func (s *SmD) NewRouter(routes []Route) *mux.Router {
-	router := mux.NewRouter().StrictSlash(true)
-	for _, route := range routes {
-		var handler http.Handler
-		handler = route.HandlerFunc
-		if s.lgLvl >= LOG_DEBUG ||
-			(!strings.Contains(route.Name, "doReadyGet") &&
-			!strings.Contains(route.Name, "doLivenessGet")) {
-			handler = s.Logger(handler, route.Name)
+func (s *SmD) NewRouter(publicRoutes []Route, protectedRoutes []Route) *chi.Mux {
+	// Setup logger
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	logger := zlog.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+
+	// create router and use recommended middleware
+	router := chi.NewRouter()
+	router.Use(middleware.RequestID)
+	router.Use(middleware.RealIP)
+	router.Use(middleware.Logger)
+	router.Use(middleware.Recoverer)
+	router.Use(middleware.StripSlashes)
+	router.Use(openchami_logger.OpenCHAMILogger(logger))
+	router.NotFound(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s.Logger(http.NotFoundHandler(), "NotFoundHandler")
+	}))
+
+	router.Use(middleware.Timeout(60 * time.Second))
+	if s.jwksURL != "" {
+		router.Group(func(r chi.Router) {
+			r.Use(
+				jwtauth.Verifier(s.tokenAuth),
+				openchami_authenticator.AuthenticatorWithRequiredClaims(s.tokenAuth, []string{"sub", "iss", "aud"}),
+			)
+
+			// Register protected routes
+			for _, route := range protectedRoutes {
+				var handler http.Handler = route.HandlerFunc
+				if s.lgLvl >= LOG_DEBUG ||
+					(!strings.Contains(route.Name, "doReadyGet") &&
+						!strings.Contains(route.Name, "doLivenessGet")) {
+					handler = handlers.CombinedLoggingHandler(os.Stdout, handler)
+					handler = s.Logger(handler, route.Name)
+				}
+				r.Method(
+					route.Method,
+					route.Pattern,
+					handler,
+				)
+			}
+		})
+
+		// Register public routes
+		for _, route := range publicRoutes {
+			var handler http.Handler
+			handler = route.HandlerFunc
+			if s.lgLvl >= LOG_DEBUG ||
+				(!strings.Contains(route.Name, "doReadyGet") &&
+					!strings.Contains(route.Name, "doLivenessGet")) {
+				handler = handlers.CombinedLoggingHandler(os.Stdout, handler)
+			}
+			router.Method(
+				route.Method,
+				route.Pattern,
+				handler,
+			)
 		}
 
-		router.
-			Methods(route.Method).
-			Path(route.Pattern).
-			Name(route.Name).
-			Handler(handler)
+	} else {
+		routes := append(publicRoutes, protectedRoutes...)
+		for _, route := range routes {
+			var handler http.Handler
+			handler = route.HandlerFunc
+			if s.lgLvl >= LOG_DEBUG ||
+				(!strings.Contains(route.Name, "doReadyGet") &&
+					!strings.Contains(route.Name, "doLivenessGet")) {
+				handler = handlers.CombinedLoggingHandler(os.Stdout, handler)
+			}
+			router.Method(
+				route.Method,
+				route.Pattern,
+				handler,
+			)
+		}
 	}
 
-	router.MethodNotAllowedHandler = http.HandlerFunc(s.doMethodNotAllowedHandler)
+	router.MethodNotAllowed(http.HandlerFunc(s.doMethodNotAllowedHandler))
 	s.router = router
 
 	return router
@@ -66,15 +133,8 @@ func (s *SmD) getAllMethodsForRequest(req *http.Request) []string {
 	var allMethods []string
 	smdRoutes := s.generateRoutes()
 	for _, smdRoute := range smdRoutes {
-		route := s.router.Get(smdRoute.Name)
-		if route != nil {
-			var match mux.RouteMatch
-			if route.Match(req, &match) || match.MatchErr == mux.ErrMethodMismatch {
-				methods, err := route.GetMethods()
-				if err == nil {
-					allMethods = append(allMethods, methods...)
-				}
-			}
+		if s.router.Match(chi.NewRouteContext(), smdRoute.Method, smdRoute.Pattern) {
+			return []string{smdRoute.Method}
 		}
 	}
 	return allMethods
@@ -93,9 +153,8 @@ func (s *SmD) doMethodNotAllowedHandler(w http.ResponseWriter, r *http.Request) 
 	sendJsonError(w, http.StatusMethodNotAllowed, "allow "+allowString)
 }
 
-func (s *SmD) generateRoutes() Routes {
+func (s *SmD) generatePublicRoutes() Routes {
 	return Routes{
-
 		///////////////////////////////////////////////////////////////////////
 		// v2 API routes
 		///////////////////////////////////////////////////////////////////////
@@ -167,6 +226,24 @@ func (s *SmD) generateRoutes() Routes {
 			s.valuesBaseV2 + "/type",
 			s.doTypeValuesGet,
 		},
+		// other
+		Route{
+			"doComponentsGetV2",
+			strings.ToUpper("Get"),
+			s.componentsBaseV2,
+			s.doComponentsGet,
+		},
+		Route{
+			"doCompEthInterfacesGetV2",
+			strings.ToUpper("Get"),
+			s.compEthIntBaseV2,
+			s.doCompEthInterfacesGetV2,
+		},
+	}
+}
+
+func (s *SmD) generateProtectedRoutes() Routes {
+	return Routes{
 		// Components
 		Route{
 			"doComponentGetV2",
@@ -185,12 +262,6 @@ func (s *SmD) generateRoutes() Routes {
 			strings.ToUpper("Delete"),
 			s.componentsBaseV2 + "/{xname}",
 			s.doComponentDelete,
-		},
-		Route{
-			"doComponentsGetV2",
-			strings.ToUpper("Get"),
-			s.componentsBaseV2,
-			s.doComponentsGet,
 		},
 		Route{
 			"doComponentsPostV2",
@@ -325,16 +396,7 @@ func (s *SmD) generateRoutes() Routes {
 			strings.ToUpper("Delete"),
 			s.compEPBaseV2,
 			s.doComponentEndpointsDeleteAll,
-		},
-		//Route{
-		//	"doComponentEndpointQueryGetV2",
-		//	strings.ToUpper("Get"),
-		//	s.compEPBaseV2 + "/Query/{xname}",
-		//	s.doComponentEndpointQueryGet,
-		//},
-
-		// ServiceEndpoints
-		Route{
+		}, Route{
 			"doServiceEndpointGetV2", // Individual entry
 			strings.ToUpper("Get"),
 			s.serviceEPBaseV2 + "/{service}/RedfishEndpoints/{xname}",
@@ -366,12 +428,6 @@ func (s *SmD) generateRoutes() Routes {
 		},
 
 		// Component Ethernet Interfaces - V2
-		Route{
-			"doCompEthInterfacesGetV2",
-			strings.ToUpper("Get"),
-			s.compEthIntBaseV2,
-			s.doCompEthInterfacesGetV2,
-		},
 		Route{
 			"doCompEthInterfacePostV2",
 			strings.ToUpper("Post"),
@@ -934,4 +990,8 @@ func (s *SmD) generateRoutes() Routes {
 			s.doPowerMapsDeleteAll,
 		},
 	}
+}
+
+func (s *SmD) generateRoutes() Routes {
+	return append(s.generatePublicRoutes(), s.generateProtectedRoutes()...)
 }
