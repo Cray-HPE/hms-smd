@@ -33,7 +33,7 @@ import (
 	"time"
 
 	base "github.com/Cray-HPE/hms-base"
-	"github.com/OpenCHAMI/smd/v2/pkg/sm"
+	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"

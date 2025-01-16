@@ -34,9 +34,9 @@ import (
 
 	base "github.com/Cray-HPE/hms-base"
 	compcreds "github.com/Cray-HPE/hms-compcredentials"
-	"github.com/OpenCHAMI/smd/v2/internal/hmsds"
-	"github.com/OpenCHAMI/smd/v2/pkg/rf"
-	"github.com/OpenCHAMI/smd/v2/pkg/sm"
+	"github.com/Cray-HPE/hms-smd/v2/internal/hmsds"
+	"github.com/Cray-HPE/hms-smd/v2/pkg/rf"
+	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
 	"github.com/go-chi/chi/v5"
 	"github.com/openchami/schemas/schemas"
 	redfish "github.com/openchami/schemas/schemas/csm"
@@ -2696,7 +2696,7 @@ func (s *SmD) parseRedfishPostDataV2(w http.ResponseWriter, data []byte) error {
 	ceNum := 0
 	for _, system := range root.Systems {
 		var nid json.Number
-		nidJNum, err := json.Marshal(ceNum+1)
+		nidJNum, err := json.Marshal(ceNum + 1)
 		if err != nil {
 			s.Log(LOG_NOTICE, "failed to marshal NID %d into json: %v", ceNum+1, err)
 		} else {

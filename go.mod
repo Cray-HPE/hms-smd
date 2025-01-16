@@ -1,4 +1,4 @@
-module github.com/OpenCHAMI/smd/v2
+module github.com/Cray-HPE/hms-smd/v2
 
 go 1.21
 

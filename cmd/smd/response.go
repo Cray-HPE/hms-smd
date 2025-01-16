@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	base "github.com/Cray-HPE/hms-base"
-	"github.com/OpenCHAMI/smd/v2/pkg/sm"
+	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
 )
 
 type Response struct {
@@ -59,7 +59,6 @@ func sendResource(w http.ResponseWriter, code int, uri *sm.ResourceURI) {
 	}
 	sendJSON(w, code, uri)
 }
-
 
 func sendJsonNewResourceIDArray(w http.ResponseWriter, collectionURI string, uris []*sm.ResourceURI) {
 	if len(uris) == 0 {

@@ -27,7 +27,7 @@ import (
 	"strings"
 
 	base "github.com/Cray-HPE/hms-base"
-	"github.com/OpenCHAMI/smd/v2/pkg/sm"
+	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
 )
 
 // Matches generic query sources in external API, but with real table names,

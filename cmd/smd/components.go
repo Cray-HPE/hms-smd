@@ -28,8 +28,8 @@ import (
 	"strconv"
 
 	base "github.com/Cray-HPE/hms-base"
-	"github.com/OpenCHAMI/smd/v2/internal/hmsds"
-	"github.com/OpenCHAMI/smd/v2/pkg/rf"
+	"github.com/Cray-HPE/hms-smd/v2/internal/hmsds"
+	"github.com/Cray-HPE/hms-smd/v2/pkg/rf"
 )
 
 ////////////////////////////////////////////////////////////////////////////

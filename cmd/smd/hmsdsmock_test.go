@@ -26,8 +26,8 @@ import (
 	"log"
 
 	base "github.com/Cray-HPE/hms-base"
-	"github.com/OpenCHAMI/smd/v2/internal/hmsds"
-	"github.com/OpenCHAMI/smd/v2/pkg/sm"
+	"github.com/Cray-HPE/hms-smd/v2/internal/hmsds"
+	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
 )
 
 type TestResults struct {
