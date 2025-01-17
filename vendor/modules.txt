@@ -1,8 +1,8 @@
 # github.com/Cray-HPE/hms-base v1.15.0
 ## explicit; go 1.16
 github.com/Cray-HPE/hms-base
-# github.com/Cray-HPE/hms-base/v2 v2.0.1
-## explicit; go 1.16
+# github.com/Cray-HPE/hms-base/v2 v2.2.0
+## explicit; go 1.23
 github.com/Cray-HPE/hms-base/v2
 # github.com/Cray-HPE/hms-certs v1.3.2
 ## explicit; go 1.16
@@ -19,8 +19,8 @@ github.com/Cray-HPE/hms-msgbus
 # github.com/Cray-HPE/hms-securestorage v1.12.2
 ## explicit; go 1.16
 github.com/Cray-HPE/hms-securestorage
-# github.com/Cray-HPE/hms-xname v1.3.0
-## explicit; go 1.20
+# github.com/Cray-HPE/hms-xname v1.4.0
+## explicit; go 1.23
 github.com/Cray-HPE/hms-xname/xnametypes
 # github.com/DATA-DOG/go-sqlmock v1.3.3
 ## explicit
@@ -34,9 +34,10 @@ github.com/confluentinc/confluent-kafka-go/kafka
 github.com/confluentinc/confluent-kafka-go/kafka/librdkafka_vendor
 # github.com/frankban/quicktest v1.7.3
 ## explicit; go 1.13
-# github.com/fsnotify/fsnotify v1.4.9
-## explicit; go 1.13
+# github.com/fsnotify/fsnotify v1.8.0
+## explicit; go 1.17
 github.com/fsnotify/fsnotify
+github.com/fsnotify/fsnotify/internal
 # github.com/golang-migrate/migrate/v4 v4.11.0
 ## explicit; go 1.13
 github.com/golang-migrate/migrate/v4
@@ -139,7 +140,7 @@ golang.org/x/net/http/httpguts
 golang.org/x/net/http2
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
-# golang.org/x/sys v0.20.0
+# golang.org/x/sys v0.29.0
 ## explicit; go 1.18
 golang.org/x/sys/unix
 golang.org/x/sys/windows
