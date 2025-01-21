@@ -105,33 +105,7 @@ stages:
       verify: !bool "{verify}"
       json: {"fake":"payload"}
     response:
-      status_code: 405
-      verify_response_with:
-        function: tavern.testutils.helpers:validate_pykwalify
-        extra_kwargs:
-          schema:
-            type: map
-            mapping:
-              type:
-                type: str
-                required: True
-                enum:
-                  - "about:blank"
-              title:
-                type: str
-                required: True
-                enum:
-                  - "Method Not Allowed"
-              detail:
-                type: str
-                required: True
-                enum:
-                  - "allow GET"
-              status:
-                type: int
-                required: True
-                enum:
-                  - 405
+      status_code: 404
 
   # PATCH /service/liveness API response code
   # PATCH /service/liveness API response body
@@ -142,33 +116,7 @@ stages:
       verify: !bool "{verify}"
       json: {"fake":"payload"}
     response:
-      status_code: 405
-      verify_response_with:
-        function: tavern.testutils.helpers:validate_pykwalify
-        extra_kwargs:
-          schema:
-            type: map
-            mapping:
-              type:
-                type: str
-                required: True
-                enum:
-                  - "about:blank"
-              title:
-                type: str
-                required: True
-                enum:
-                  - "Method Not Allowed"
-              detail:
-                type: str
-                required: True
-                enum:
-                  - "allow GET"
-              status:
-                type: int
-                required: True
-                enum:
-                  - 405
+      status_code: 404
 
   # PUT /service/liveness API response code
   # PUT /service/liveness API response body
@@ -179,33 +127,7 @@ stages:
       verify: !bool "{verify}"
       json: {"fake":"payload"}
     response:
-      status_code: 405
-      verify_response_with:
-        function: tavern.testutils.helpers:validate_pykwalify
-        extra_kwargs:
-          schema:
-            type: map
-            mapping:
-              type:
-                type: str
-                required: True
-                enum:
-                  - "about:blank"
-              title:
-                type: str
-                required: True
-                enum:
-                  - "Method Not Allowed"
-              detail:
-                type: str
-                required: True
-                enum:
-                  - "allow GET"
-              status:
-                type: int
-                required: True
-                enum:
-                  - 405
+      status_code: 404
 
   # DELETE /service/liveness API response code
   # DELETE /service/liveness API response body
@@ -215,33 +137,7 @@ stages:
       method: DELETE
       verify: !bool "{verify}"
     response:
-      status_code: 405
-      verify_response_with:
-        function: tavern.testutils.helpers:validate_pykwalify
-        extra_kwargs:
-          schema:
-            type: map
-            mapping:
-              type:
-                type: str
-                required: True
-                enum:
-                  - "about:blank"
-              title:
-                type: str
-                required: True
-                enum:
-                  - "Method Not Allowed"
-              detail:
-                type: str
-                required: True
-                enum:
-                  - "allow GET"
-              status:
-                type: int
-                required: True
-                enum:
-                  - 405
+      status_code: 404
 
   # POST /service/values API response code
   # POST /service/values API response body
@@ -252,33 +148,7 @@ stages:
       verify: !bool "{verify}"
       json: {"fake":"payload"}
     response:
-      status_code: 405
-      verify_response_with:
-        function: tavern.testutils.helpers:validate_pykwalify
-        extra_kwargs:
-          schema:
-            type: map
-            mapping:
-              type:
-                type: str
-                required: True
-                enum:
-                  - "about:blank"
-              title:
-                type: str
-                required: True
-                enum:
-                  - "Method Not Allowed"
-              detail:
-                type: str
-                required: True
-                enum:
-                  - "allow GET"
-              status:
-                type: int
-                required: True
-                enum:
-                  - 405
+      status_code: 404
 
   # PATCH /service/values API response code
   # PATCH /service/values API response body
@@ -289,33 +159,7 @@ stages:
       verify: !bool "{verify}"
       json: {"fake":"payload"}
     response:
-      status_code: 405
-      verify_response_with:
-        function: tavern.testutils.helpers:validate_pykwalify
-        extra_kwargs:
-          schema:
-            type: map
-            mapping:
-              type:
-                type: str
-                required: True
-                enum:
-                  - "about:blank"
-              title:
-                type: str
-                required: True
-                enum:
-                  - "Method Not Allowed"
-              detail:
-                type: str
-                required: True
-                enum:
-                  - "allow GET"
-              status:
-                type: int
-                required: True
-                enum:
-                  - 405
+      status_code: 404
 
   # PUT /service/values API response code
   # PUT /service/values API response body
@@ -326,33 +170,7 @@ stages:
       verify: !bool "{verify}"
       json: {"fake":"payload"}
     response:
-      status_code: 405
-      verify_response_with:
-        function: tavern.testutils.helpers:validate_pykwalify
-        extra_kwargs:
-          schema:
-            type: map
-            mapping:
-              type:
-                type: str
-                required: True
-                enum:
-                  - "about:blank"
-              title:
-                type: str
-                required: True
-                enum:
-                  - "Method Not Allowed"
-              detail:
-                type: str
-                required: True
-                enum:
-                  - "allow GET"
-              status:
-                type: int
-                required: True
-                enum:
-                  - 405
+      status_code: 404
 
   # DELETE /service/values API response code
   # DELETE /service/values API response body
@@ -362,30 +180,4 @@ stages:
       method: DELETE
       verify: !bool "{verify}"
     response:
-      status_code: 405
-      verify_response_with:
-        function: tavern.testutils.helpers:validate_pykwalify
-        extra_kwargs:
-          schema:
-            type: map
-            mapping:
-              type:
-                type: str
-                required: True
-                enum:
-                  - "about:blank"
-              title:
-                type: str
-                required: True
-                enum:
-                  - "Method Not Allowed"
-              detail:
-                type: str
-                required: True
-                enum:
-                  - "allow GET"
-              status:
-                type: int
-                required: True
-                enum:
-                  - 405
+      status_code: 404
