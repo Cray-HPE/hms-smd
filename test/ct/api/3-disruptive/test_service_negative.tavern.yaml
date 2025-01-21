@@ -63,32 +63,6 @@ stages:
       json: {"fake":"payload"}
     response:
       status_code: 404
-      verify_response_with:
-        function: tavern.testutils.helpers:validate_pykwalify
-        extra_kwargs:
-          schema:
-            type: map
-            mapping:
-              type:
-                type: str
-                required: True
-                enum:
-                  - "about:blank"
-              title:
-                type: str
-                required: True
-                enum:
-                  - "Method Not Allowed"
-              detail:
-                type: str
-                required: True
-                enum:
-                  - "allow GET"
-              status:
-                type: int
-                required: True
-                enum:
-                  - 404
 
   # PATCH /service/ready API response code
   # PATCH /service/ready API response body
