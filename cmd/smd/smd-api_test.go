@@ -1142,7 +1142,7 @@ func TestDoComponentsGet(t *testing.T) {
 			Type: []string{"node"},
 		},
 		hmsds.FLTR_DEFAULT,
-		json.RawMessage(`{}
+		json.RawMessage(`404 page not found
 `),
 	}, {
 		"GET",
