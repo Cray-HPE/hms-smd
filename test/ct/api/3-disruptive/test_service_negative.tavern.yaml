@@ -63,6 +63,27 @@ stages:
       json: {"fake":"payload"}
     response:
       status_code: 404
+      verify_response_with:
+        function: tavern.testutils.helpers:validate_pykwalify
+        extra_kwargs:
+          schema:
+            type: map
+            mapping:
+              type:
+                type: str
+                required: True
+                enum:
+                  - "about:blank"
+              detail:
+                type: str
+                required: True
+                enum:
+                  - "allow GET"
+              status:
+                type: int
+                required: True
+                enum:
+                  - 404
 
   # PATCH /service/ready API response code
   # PATCH /service/ready API response body
@@ -73,7 +94,7 @@ stages:
       verify: !bool "{verify}"
       json: {"fake":"payload"}
     response:
-      status_code: 405
+      status_code: 404
       verify_response_with:
         function: tavern.testutils.helpers:validate_pykwalify
         extra_kwargs:
@@ -85,11 +106,6 @@ stages:
                 required: True
                 enum:
                   - "about:blank"
-              title:
-                type: str
-                required: True
-                enum:
-                  - "Method Not Allowed"
               detail:
                 type: str
                 required: True
@@ -99,7 +115,7 @@ stages:
                 type: int
                 required: True
                 enum:
-                  - 405
+                  - 404
 
   # PUT /service/ready API response code
   # PUT /service/ready API response body
@@ -110,7 +126,7 @@ stages:
       verify: !bool "{verify}"
       json: {"fake":"payload"}
     response:
-      status_code: 405
+      status_code: 404
       verify_response_with:
         function: tavern.testutils.helpers:validate_pykwalify
         extra_kwargs:
@@ -122,11 +138,6 @@ stages:
                 required: True
                 enum:
                   - "about:blank"
-              title:
-                type: str
-                required: True
-                enum:
-                  - "Method Not Allowed"
               detail:
                 type: str
                 required: True
@@ -136,7 +147,7 @@ stages:
                 type: int
                 required: True
                 enum:
-                  - 405
+                  - 404
 
   # DELETE /service/ready API response code
   # DELETE /service/ready API response body
@@ -146,7 +157,7 @@ stages:
       method: DELETE
       verify: !bool "{verify}"
     response:
-      status_code: 405
+      status_code: 404
       verify_response_with:
         function: tavern.testutils.helpers:validate_pykwalify
         extra_kwargs:
@@ -158,11 +169,6 @@ stages:
                 required: True
                 enum:
                   - "about:blank"
-              title:
-                type: str
-                required: True
-                enum:
-                  - "Method Not Allowed"
               detail:
                 type: str
                 required: True
@@ -172,7 +178,7 @@ stages:
                 type: int
                 required: True
                 enum:
-                  - 405
+                  - 404
 
   # POST /service/liveness API response code
   # POST /service/liveness API response body

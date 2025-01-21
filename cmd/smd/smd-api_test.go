@@ -1142,7 +1142,7 @@ func TestDoComponentsGet(t *testing.T) {
 			Type: []string{"node"},
 		},
 		hmsds.FLTR_DEFAULT,
-		json.RawMessage(`{"type":"about:blank","title":"Method Not Allowed","detail":"allow GET,POST,DELETE","status":404}
+		json.RawMessage(`{"type":"about:blank","title":"","detail":"allow GET,POST,DELETE","status":404}
 `),
 	}, {
 		"GET",
