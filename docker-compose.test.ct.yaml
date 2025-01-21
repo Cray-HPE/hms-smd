@@ -33,7 +33,7 @@ services:
     networks:
       - smd
   etcd:
-    image: artifactory.algol60.net/quay.io/coreos/etcd:v3.4.7
+    image: artifactory.algol60.net/quay.io/coreos/etcd:v3.5.7
     environment:
       - ALLOW_NONE_AUTHENTICATION=yes
       - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
@@ -76,7 +76,7 @@ services:
     networks:
       - smd
   cray-sls-init:
-    image: artifactory.algol60.net/csm-docker/stable/cray-sls:2.3.0
+    image: artifactory.algol60.net/csm-docker/stable/cray-sls:2.7.0
     command: ["sls-init"]
     environment:
       - POSTGRES_HOST=sls-postgres
@@ -87,7 +87,7 @@ services:
     networks:
       - smd
   cray-sls:
-    image: artifactory.algol60.net/csm-docker/stable/cray-sls:2.3.0
+    image: artifactory.algol60.net/csm-docker/stable/cray-sls:2.7.0
     environment:
       - POSTGRES_HOST=cray-sls-postgres
       - DBOPTS=sslmode=disable
@@ -180,7 +180,7 @@ services:
     networks:
       - smd
   cray-hms-hmcollector:
-    image: artifactory.algol60.net/csm-docker/stable/hms-hmcollector:2.20.0
+    image: artifactory.algol60.net/csm-docker/stable/hms-hmcollector:2.35.0
     environment:
       - LOG_LEVEL=TRACE
       - SM_URL=http://cray-smd:27779
@@ -202,7 +202,7 @@ services:
       - kafka
   cray-hmnfd:
     hostname: cray-hmnfd
-    image: artifactory.algol60.net/csm-docker/stable/cray-hmnfd:1.17.0
+    image: artifactory.algol60.net/csm-docker/stable/cray-hmnfd:1.23.0
     environment:
       - DEBUG=0
       - SM_URL=http://cray-smd:27779/hsm/v2
@@ -257,7 +257,7 @@ services:
       - smd
   rfemulator0:
     hostname: x0c0s1b0
-    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.3.0
+    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.6.0
     environment:
       - MOCKUPFOLDER=EX235a
       - MAC_SCHEMA=Mountain
@@ -269,7 +269,7 @@ services:
           - x0c0s1b0
   rfemulator1:
     hostname: x0c0s2b0
-    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.3.0
+    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.6.0
     environment:
       - MOCKUPFOLDER=EX235a
       - MAC_SCHEMA=Mountain
@@ -281,7 +281,7 @@ services:
           - x0c0s2b0
   rfemulator2:
     hostname: x0c0s3b0
-    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.3.0
+    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.6.0
     environment:
       - MOCKUPFOLDER=EX235a
       - MAC_SCHEMA=Mountain
@@ -293,7 +293,7 @@ services:
           - x0c0s3b0
   rfemulator3:
     hostname: x0c0s4b0
-    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.3.0
+    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.6.0
     environment:
       - MOCKUPFOLDER=EX235a
       - MAC_SCHEMA=Mountain
