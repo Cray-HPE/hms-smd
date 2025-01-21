@@ -45,15 +45,16 @@ github.com/go-jose/go-jose/v4
 github.com/go-jose/go-jose/v4/cipher
 github.com/go-jose/go-jose/v4/json
 github.com/go-jose/go-jose/v4/jwt
-# github.com/golang-migrate/migrate/v4 v4.11.0
-## explicit; go 1.13
+# github.com/golang-migrate/migrate/v4 v4.18.1
+## explicit; go 1.22.0
 github.com/golang-migrate/migrate/v4
 github.com/golang-migrate/migrate/v4/database
+github.com/golang-migrate/migrate/v4/database/multistmt
 github.com/golang-migrate/migrate/v4/database/postgres
 github.com/golang-migrate/migrate/v4/internal/url
 github.com/golang-migrate/migrate/v4/source
 github.com/golang-migrate/migrate/v4/source/file
-github.com/golang-migrate/migrate/v4/source/httpfs
+github.com/golang-migrate/migrate/v4/source/iofs
 # github.com/google/uuid v1.6.0
 ## explicit
 github.com/google/uuid
@@ -104,8 +105,8 @@ github.com/lann/builder
 # github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0
 ## explicit
 github.com/lann/ps
-# github.com/lib/pq v1.3.0
-## explicit
+# github.com/lib/pq v1.10.9
+## explicit; go 1.13
 github.com/lib/pq
 github.com/lib/pq/oid
 github.com/lib/pq/scram
@@ -115,12 +116,17 @@ github.com/mitchellh/go-homedir
 # github.com/mitchellh/mapstructure v1.5.0
 ## explicit; go 1.14
 github.com/mitchellh/mapstructure
+# github.com/moby/sys/userns v0.1.0
+## explicit; go 1.21
 # github.com/ryanuber/go-glob v1.0.0
 ## explicit
 github.com/ryanuber/go-glob
 # github.com/sirupsen/logrus v1.9.3
 ## explicit; go 1.13
 github.com/sirupsen/logrus
+# go.uber.org/atomic v1.11.0
+## explicit; go 1.18
+go.uber.org/atomic
 # golang.org/x/crypto v0.27.0
 ## explicit; go 1.20
 golang.org/x/crypto/pbkdf2

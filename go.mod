@@ -12,11 +12,11 @@ require (
 	github.com/Cray-HPE/hms-xname v1.4.0
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/Masterminds/squirrel v1.5.4
-	github.com/golang-migrate/migrate/v4 v4.11.0
+	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/go-retryablehttp v0.7.7
-	github.com/lib/pq v1.3.0
+	github.com/lib/pq v1.10.9
 	github.com/sirupsen/logrus v1.9.3
 )
 
@@ -39,7 +39,9 @@ require (
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/moby/sys/userns v0.1.0 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
+	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/crypto v0.27.0 // indirect
 	golang.org/x/net v0.29.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
