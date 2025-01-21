@@ -10,7 +10,7 @@ require (
 	github.com/Cray-HPE/hms-msgbus v1.12.1-0.20250117223844-e38add0222c4
 	github.com/Cray-HPE/hms-securestorage v1.12.2
 	github.com/Cray-HPE/hms-xname v1.4.0
-	github.com/DATA-DOG/go-sqlmock v1.3.3
+	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/Masterminds/squirrel v1.4.0
 	github.com/golang-migrate/migrate/v4 v4.11.0
 	github.com/google/uuid v1.6.0

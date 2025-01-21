@@ -22,8 +22,8 @@ github.com/Cray-HPE/hms-securestorage
 # github.com/Cray-HPE/hms-xname v1.4.0
 ## explicit; go 1.23
 github.com/Cray-HPE/hms-xname/xnametypes
-# github.com/DATA-DOG/go-sqlmock v1.3.3
-## explicit
+# github.com/DATA-DOG/go-sqlmock v1.5.2
+## explicit; go 1.15
 github.com/DATA-DOG/go-sqlmock
 # github.com/Masterminds/squirrel v1.4.0
 ## explicit

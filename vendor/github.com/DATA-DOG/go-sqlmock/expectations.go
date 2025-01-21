@@ -134,8 +134,24 @@ type ExpectedQuery struct {
 // WithArgs will match given expected args to actual database query arguments.
 // if at least one argument does not match, it will return an error. For specific
 // arguments an sqlmock.Argument interface can be used to match an argument.
+// Must not be used together with WithoutArgs()
 func (e *ExpectedQuery) WithArgs(args ...driver.Value) *ExpectedQuery {
+	if e.noArgs {
+		panic("WithArgs() and WithoutArgs() must not be used together")
+	}
 	e.args = args
+	return e
+}
+
+// WithoutArgs will ensure that no arguments are passed for this query.
+// if at least one argument is passed, it will return an error. This allows
+// for stricter validation of the query arguments.
+// Must no be used together with WithArgs()
+func (e *ExpectedQuery) WithoutArgs() *ExpectedQuery {
+	if len(e.args) > 0 {
+		panic("WithoutArgs() and WithArgs() must not be used together")
+	}
+	e.noArgs = true
 	return e
 }
 
@@ -195,8 +211,24 @@ type ExpectedExec struct {
 // WithArgs will match given expected args to actual database exec operation arguments.
 // if at least one argument does not match, it will return an error. For specific
 // arguments an sqlmock.Argument interface can be used to match an argument.
+// Must not be used together with WithoutArgs()
 func (e *ExpectedExec) WithArgs(args ...driver.Value) *ExpectedExec {
+	if len(e.args) > 0 {
+		panic("WithArgs() and WithoutArgs() must not be used together")
+	}
 	e.args = args
+	return e
+}
+
+// WithoutArgs will ensure that no args are passed for this expected database exec action.
+// if at least one argument is passed, it will return an error. This allows for stricter
+// validation of the query arguments.
+// Must not be used together with WithArgs()
+func (e *ExpectedExec) WithoutArgs() *ExpectedExec {
+	if len(e.args) > 0 {
+		panic("WithoutArgs() and WithArgs() must not be used together")
+	}
+	e.noArgs = true
 	return e
 }
 
@@ -230,12 +262,13 @@ func (e *ExpectedExec) String() string {
 	}
 
 	if e.result != nil {
-		res, _ := e.result.(*result)
-		msg += "\n  - should return Result having:"
-		msg += fmt.Sprintf("\n      LastInsertId: %d", res.insertID)
-		msg += fmt.Sprintf("\n      RowsAffected: %d", res.rowsAffected)
-		if res.err != nil {
-			msg += fmt.Sprintf("\n      Error: %s", res.err)
+		if res, ok := e.result.(*result); ok {
+			msg += "\n  - should return Result having:"
+			msg += fmt.Sprintf("\n      LastInsertId: %d", res.insertID)
+			msg += fmt.Sprintf("\n      RowsAffected: %d", res.rowsAffected)
+			if res.err != nil {
+				msg += fmt.Sprintf("\n      Error: %s", res.err)
+			}
 		}
 	}
 
@@ -337,19 +370,34 @@ type queryBasedExpectation struct {
 	expectSQL string
 	converter driver.ValueConverter
 	args      []driver.Value
+	noArgs    bool // ensure no args are passed
 }
 
-func (e *queryBasedExpectation) attemptArgMatch(args []namedValue) (err error) {
-	// catch panic
-	defer func() {
-		if e := recover(); e != nil {
-			_, ok := e.(error)
-			if !ok {
-				err = fmt.Errorf(e.(string))
-			}
-		}
-	}()
+// ExpectedPing is used to manage *sql.DB.Ping expectations.
+// Returned by *Sqlmock.ExpectPing.
+type ExpectedPing struct {
+	commonExpectation
+	delay time.Duration
+}
 
-	err = e.argsMatches(args)
-	return
+// WillDelayFor allows to specify duration for which it will delay result. May
+// be used together with Context.
+func (e *ExpectedPing) WillDelayFor(duration time.Duration) *ExpectedPing {
+	e.delay = duration
+	return e
+}
+
+// WillReturnError allows to set an error for expected database ping
+func (e *ExpectedPing) WillReturnError(err error) *ExpectedPing {
+	e.err = err
+	return e
+}
+
+// String returns string representation
+func (e *ExpectedPing) String() string {
+	msg := "ExpectedPing => expecting database Ping"
+	if e.err != nil {
+		msg += fmt.Sprintf(", which should return error: %s", e.err)
+	}
+	return msg
 }
