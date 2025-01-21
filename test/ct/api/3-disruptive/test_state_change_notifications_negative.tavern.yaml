@@ -129,11 +129,16 @@ stages:
                 required: True
                 enum:
                   - "about:blank"
+              title:
+                type: str
+                required: True
+                enum:
+                  - "Not Found"
               detail:
                 type: str
                 required: True
                 enum:
-                  - "allow POST,DELETE"
+                  - "Resource not found"
               status:
                 type: int
                 required: True

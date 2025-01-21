@@ -74,11 +74,16 @@ stages:
                 required: True
                 enum:
                   - "about:blank"
+              title:
+                type: str
+                required: True
+                enum:
+                  - "Not Found"
               detail:
                 type: str
                 required: True
                 enum:
-                  - "allow GET"
+                  - "Resource not found"
               status:
                 type: int
                 required: True
@@ -106,11 +111,16 @@ stages:
                 required: True
                 enum:
                   - "about:blank"
+              title:
+                type: str
+                required: True
+                enum:
+                  - "Not Found"
               detail:
                 type: str
                 required: True
                 enum:
-                  - "allow GET"
+                  - "Resource not found"
               status:
                 type: int
                 required: True
@@ -138,11 +148,16 @@ stages:
                 required: True
                 enum:
                   - "about:blank"
+              title:
+                type: str
+                required: True
+                enum:
+                  - "Not Found"
               detail:
                 type: str
                 required: True
                 enum:
-                  - "allow GET"
+                  - "Resource not found"
               status:
                 type: int
                 required: True
@@ -169,11 +184,16 @@ stages:
                 required: True
                 enum:
                   - "about:blank"
+              title:
+                type: str
+                required: True
+                enum:
+                  - "Not Found"
               detail:
                 type: str
                 required: True
                 enum:
-                  - "allow GET"
+                  - "Resource not found"
               status:
                 type: int
                 required: True
