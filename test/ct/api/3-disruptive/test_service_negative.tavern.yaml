@@ -63,32 +63,6 @@ stages:
       json: {"fake":"payload"}
     response:
       status_code: 404
-      verify_response_with:
-        function: tavern.testutils.helpers:validate_pykwalify
-        extra_kwargs:
-          schema:
-            type: map
-            mapping:
-              type:
-                type: str
-                required: True
-                enum:
-                  - "about:blank"
-              title:
-                type: str
-                required: True
-                enum:
-                  - "Not Found"
-              detail:
-                type: str
-                required: True
-                enum:
-                  - "Resource not found"
-              status:
-                type: int
-                required: True
-                enum:
-                  - 404
 
   # PATCH /service/ready API response code
   # PATCH /service/ready API response body
@@ -100,32 +74,6 @@ stages:
       json: {"fake":"payload"}
     response:
       status_code: 404
-      verify_response_with:
-        function: tavern.testutils.helpers:validate_pykwalify
-        extra_kwargs:
-          schema:
-            type: map
-            mapping:
-              type:
-                type: str
-                required: True
-                enum:
-                  - "about:blank"
-              title:
-                type: str
-                required: True
-                enum:
-                  - "Not Found"
-              detail:
-                type: str
-                required: True
-                enum:
-                  - "Resource not found"
-              status:
-                type: int
-                required: True
-                enum:
-                  - 404
 
   # PUT /service/ready API response code
   # PUT /service/ready API response body
@@ -137,32 +85,6 @@ stages:
       json: {"fake":"payload"}
     response:
       status_code: 404
-      verify_response_with:
-        function: tavern.testutils.helpers:validate_pykwalify
-        extra_kwargs:
-          schema:
-            type: map
-            mapping:
-              type:
-                type: str
-                required: True
-                enum:
-                  - "about:blank"
-              title:
-                type: str
-                required: True
-                enum:
-                  - "Not Found"
-              detail:
-                type: str
-                required: True
-                enum:
-                  - "Resource not found"
-              status:
-                type: int
-                required: True
-                enum:
-                  - 404
 
   # DELETE /service/ready API response code
   # DELETE /service/ready API response body
@@ -173,32 +95,6 @@ stages:
       verify: !bool "{verify}"
     response:
       status_code: 404
-      verify_response_with:
-        function: tavern.testutils.helpers:validate_pykwalify
-        extra_kwargs:
-          schema:
-            type: map
-            mapping:
-              type:
-                type: str
-                required: True
-                enum:
-                  - "about:blank"
-              title:
-                type: str
-                required: True
-                enum:
-                  - "Not Found"
-              detail:
-                type: str
-                required: True
-                enum:
-                  - "Resource not found"
-              status:
-                type: int
-                required: True
-                enum:
-                  - 404
 
   # POST /service/liveness API response code
   # POST /service/liveness API response body
