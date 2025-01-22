@@ -2492,14 +2492,14 @@ func (s *SmD) doRedfishEndpointsPost(w http.ResponseWriter, r *http.Request) {
 		err = s.parseRedfishPostData(w, eps, body)
 		if err != nil {
 			sendJsonError(w, http.StatusInternalServerError,
-				fmt.Sprintf("failed parsing post data: %w", err))
+				fmt.Sprintf("failed parsing post data: %v", err))
 		}
 	} else {
 		// parse data using the new inventory data format (will conform to schema)
 		err = s.parseRedfishPostDataV2(w, body)
 		if err != nil {
 			sendJsonError(w, http.StatusInternalServerError,
-				fmt.Sprintf("failed parsing post data (V2): %w", err))
+				fmt.Sprintf("failed parsing post data (V2): %v", err))
 		}
 	}
 
@@ -2629,8 +2629,8 @@ func (s *SmD) parseRedfishPostDataV2(w http.ResponseWriter, data []byte) error {
 	err = json.Unmarshal(data, &root)
 	if err != nil {
 		sendJsonError(w, http.StatusInternalServerError,
-			fmt.Sprintf("failed to unmarshal Redfish data: %w", err))
-		return fmt.Errorf("failed to unmarshal Redfish data: %w", err)
+			fmt.Sprintf("failed to unmarshal Redfish data: %v", err))
+		return fmt.Errorf("failed to unmarshal Redfish data: %v", err)
 	}
 
 	var addEthernetInterfacesToNICInfo = func(eths []schemas.EthernetInterface, enabled bool) []*rf.EthernetNICInfo {
@@ -2663,8 +2663,8 @@ func (s *SmD) parseRedfishPostDataV2(w http.ResponseWriter, data []byte) error {
 		rowsAffected, err := s.db.InsertComponent(&component)
 		if err != nil {
 			sendJsonError(w, http.StatusInternalServerError,
-				fmt.Sprintf("failed to insert %d component(s): %w", rowsAffected, err))
-			return fmt.Errorf("failed to insert %d component(s): %w", rowsAffected, err)
+				fmt.Sprintf("failed to insert %d component(s): %v", rowsAffected, err))
+			return fmt.Errorf("failed to insert %d component(s): %v", rowsAffected, err)
 		}
 
 		// create a new ethernet interface with reference to the component above
@@ -2742,16 +2742,16 @@ func (s *SmD) parseRedfishPostDataV2(w http.ResponseWriter, data []byte) error {
 			rowsAffected, err := s.db.InsertComponent(&component)
 			if err != nil {
 				sendJsonError(w, http.StatusInternalServerError,
-					fmt.Sprintf("failed to insert %d component(s): %w", rowsAffected, err))
-				return fmt.Errorf("failed to insert %d component(s): %w", rowsAffected, err)
+					fmt.Sprintf("failed to insert %d component(s): %v", rowsAffected, err))
+				return fmt.Errorf("failed to insert %d component(s): %v", rowsAffected, err)
 			}
 
 			// component endpoints
 			err = s.db.UpsertCompEndpoint(&componentEndpoint)
 			if err != nil {
 				sendJsonError(w, http.StatusInternalServerError,
-					fmt.Sprintf("failed to upsert component endpoint: %w", err))
-				return fmt.Errorf("failed to upsert component endpoint: %w", err)
+					fmt.Sprintf("failed to upsert component endpoint: %v", err))
+				return fmt.Errorf("failed to upsert component endpoint: %v", err)
 			}
 		}
 	}
@@ -2772,7 +2772,7 @@ func (s *SmD) getSchemaVersion(w http.ResponseWriter, data []byte) int {
 	err = json.Unmarshal(data, &root)
 	if err != nil {
 		sendJsonError(w, http.StatusInternalServerError,
-			fmt.Sprintf("failed to unmarshal data: %w", err))
+			fmt.Sprintf("failed to unmarshal data: %v", err))
 	}
 
 	// try and extract schema version and set if valid

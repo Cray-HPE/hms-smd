@@ -42,13 +42,12 @@ import (
 	"github.com/Cray-HPE/hms-smd/v2/pkg/rf"
 	stest "github.com/Cray-HPE/hms-smd/v2/pkg/sharedtest"
 	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
-
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi/v5"
 )
 
 var s *SmD
 var results *TestResults
-var router *mux.Router
+var router *chi.Mux
 
 var ffStringMap = map[hmsds.FieldFilter]string{
 	hmsds.FLTR_DEFAULT:   "FLTR_DEFAULT",
@@ -627,7 +626,8 @@ func TestMain(m *testing.M) {
 	s.wp = new(base.WorkerPool)
 
 	routes := s.generateRoutes()
-	router = s.NewRouter(routes)
+	protectedRoutes := s.generateProtectedRoutes()
+	router = s.NewRouter(routes, protectedRoutes)
 
 	excode := 1
 	excode = m.Run()
