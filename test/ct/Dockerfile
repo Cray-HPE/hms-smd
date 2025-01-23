@@ -29,7 +29,7 @@ COPY hsm_test_utils.py /src/libs/hsm_test_utils.py
 
 ENV PATH="/src/libs:${PATH}"
 ENV PATH="/src/app:${PATH}"
-ENV PYTHONPATH=$PYTHONPATH:/src/libs
+ENV PYTHONPATH=/src/libs
 
 USER root
 RUN chown -R 65534:65534 /src

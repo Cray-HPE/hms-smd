@@ -84,12 +84,12 @@ ENV VAULT_SKIP_VERIFY="true"
 ENV SMD_RVAULT="true"
 ENV SMD_WVAULT="true"
 
-ENV RF_MSG_HOST "cray-shared-kafka-kafka-bootstrap.services.svc.cluster.local:9092:cray-dmtf-resource-event"
-ENV LOGLEVEL 2
+ENV RF_MSG_HOST="cray-shared-kafka-kafka-bootstrap.services.svc.cluster.local:9092:cray-dmtf-resource-event"
+ENV LOGLEVEL=2
 
-ENV SMD_SLS_HOST "http://cray-sls/v1"
+ENV SMD_SLS_HOST="http://cray-sls/v1"
 
-ENV SMD_HBTD_HOST "http://cray-hbtd/hmi/v1"
+ENV SMD_HBTD_HOST="http://cray-hbtd/hmi/v1"
 
 ENV SMD_HWINVHIST_AGE_MAX_DAYS=365
 

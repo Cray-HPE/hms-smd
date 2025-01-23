@@ -3,7 +3,7 @@
 #
 # MIT License
 #
-# (C) Copyright [2022,2024] Hewlett Packard Enterprise Development LP
+# (C) Copyright [2022,2024-2025] Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -46,16 +46,15 @@ function cleanup() {
 echo "Starting containers..."
 docker compose build --no-cache
 docker compose up --exit-code-from wait-for-smd wait-for-smd
-docker compose up --exit-code-from smoke-tests smoke-tests
-test_result=$?
-if [[ $test_result -ne 0 ]]; then
+
+# execute the CT smoke tests
+if ! docker compose up --exit-code-from smoke-tests smoke-tests; then
   echo "CT smoke tests FAILED!"
   cleanup 1
 fi
 
-docker compose up --exit-code-from tavern-tests tavern-tests
-test_result=$?
-if [[ $test_result -ne 0 ]]; then
+# execute the CT Tavern tests
+if ! docker compose up --exit-code-from tavern-tests tavern-tests; then
   echo "CT tavern tests FAILED!"
   cleanup 1
 fi
