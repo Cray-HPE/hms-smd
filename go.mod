@@ -7,7 +7,7 @@ require (
 	github.com/Cray-HPE/hms-certs v1.3.2
 	github.com/Cray-HPE/hms-compcredentials v1.11.2
 	github.com/Cray-HPE/hms-go-http-lib v1.5.3
-	github.com/Cray-HPE/hms-msgbus v1.12.1-0.20250117223844-e38add0222c4
+	github.com/Cray-HPE/hms-msgbus v1.13.0
 	github.com/Cray-HPE/hms-securestorage v1.12.2
 	github.com/Cray-HPE/hms-xname v1.4.0
 	github.com/DATA-DOG/go-sqlmock v1.5.2

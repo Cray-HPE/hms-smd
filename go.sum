@@ -18,8 +18,8 @@ github.com/Cray-HPE/hms-compcredentials v1.11.2 h1:Ug7e7vMSx1STHKkniWY27ddD1X49p
 github.com/Cray-HPE/hms-compcredentials v1.11.2/go.mod h1:tmurR+zsOtB61n6j3GlEfsl7wmNIAGJqErFymOUb0Hw=
 github.com/Cray-HPE/hms-go-http-lib v1.5.3 h1:lETXONiFQzZ8KwHOY+yGzkLjkTlYT9PfKgHxdiC+S/o=
 github.com/Cray-HPE/hms-go-http-lib v1.5.3/go.mod h1:BKlB4HKAGW5GgS3x01y7zxxYFLaJM2byACUunmes2z8=
-github.com/Cray-HPE/hms-msgbus v1.12.1-0.20250117223844-e38add0222c4 h1:/yxjW5BOrQyYopiJBGlTcE1R+DwwFc3C1+loSr3zVKw=
-github.com/Cray-HPE/hms-msgbus v1.12.1-0.20250117223844-e38add0222c4/go.mod h1:sJXKYVhS6fzqI4hPHuM8zwT9tkXpvXDRMDj1Qu0Io/Q=
+github.com/Cray-HPE/hms-msgbus v1.13.0 h1:oFAMTEf2wVSunon5ugJErLGpUpnoR8zMdN+pal28u8g=
+github.com/Cray-HPE/hms-msgbus v1.13.0/go.mod h1:sJXKYVhS6fzqI4hPHuM8zwT9tkXpvXDRMDj1Qu0Io/Q=
 github.com/Cray-HPE/hms-securestorage v1.12.2 h1:H5n0i6ldzewd5p7PI2Hktr/+9cYfSCui+0367p2L6n8=
 github.com/Cray-HPE/hms-securestorage v1.12.2/go.mod h1:P4CMKqQVlx/lv+AdyEjNQubZw2FKNyo/IAtFNgQ3VuI=
 github.com/Cray-HPE/hms-xname v1.4.0 h1:i47YmE8rbSfJ64simKCCC6ZVcGid3rDIX6/jfVbISAM=
