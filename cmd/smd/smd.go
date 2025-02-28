@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright [2018-2023] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2018-2023,2025] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -27,27 +27,28 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/hashicorp/go-retryablehttp"
-	"github.com/sirupsen/logrus"
 	"log"
 	"net/http"
 	"os"
 	"runtime"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	base "github.com/Cray-HPE/hms-base/v2"
+	"github.com/Cray-HPE/hms-certs/pkg/hms_certs"
 	compcreds "github.com/Cray-HPE/hms-compcredentials"
 	msgbus "github.com/Cray-HPE/hms-msgbus"
 	sstorage "github.com/Cray-HPE/hms-securestorage"
 	"github.com/Cray-HPE/hms-smd/v2/internal/hbtdapi"
 	"github.com/Cray-HPE/hms-smd/v2/internal/hmsds"
 	"github.com/Cray-HPE/hms-smd/v2/internal/slsapi"
-	"github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
+	rf "github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
 	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
-	"github.com/Cray-HPE/hms-certs/pkg/hms_certs"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
+	"github.com/gorilla/mux"
+	"github.com/hashicorp/go-retryablehttp"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -853,29 +854,34 @@ func main() {
 	//Cert mgmt support
 
 	hms_certs.InitInstance(nil,serviceName)
-	vurl := os.Getenv("SMD_VAULT_CA_URL")
-	if (vurl != "") {
-		s.LogAlways("Replacing default Vault CA URL with: '%s'",vurl)
-		hms_certs.ConfigParams.VaultCAUrl = vurl
+	envData := os.Getenv("SMD_VAULT_CA_CHAIN_PATH")
+	if (envData != "") {
+		s.LogAlways("Replacing default Vault CA Chain with: '%s'",envData)
+		hms_certs.ConfigParams.CAChainPath = envData
 	}
-	vurl = os.Getenv("SMD_VAULT_PKI_URL")
-	if (vurl != "") {
-		s.LogAlways("Replacing default Vault PKI URL with: '%s'",vurl)
-		hms_certs.ConfigParams.VaultPKIUrl = vurl
+	envData = os.Getenv("SMD_VAULT_PKI_BASE")
+	if (envData != "") {
+		s.LogAlways("Replacing default Vault PKI Base with: '%s'",envData)
+		hms_certs.ConfigParams.VaultPKIBase = envData
 	}
-	vurl = os.Getenv("SMD_LOG_INSECURE_FAILOVER")
-	if (vurl != "") {
-		yn,_ := strconv.ParseBool(vurl)
+	envData = os.Getenv("SMD_VAULT_PKI_PATH")
+	if (envData != "") {
+		s.LogAlways("Replacing default Vault PKI Path with: '%s'",envData)
+		hms_certs.ConfigParams.PKIPath = envData
+	}
+	envData = os.Getenv("SMD_LOG_INSECURE_FAILOVER")
+	if (envData != "") {
+		yn,_ := strconv.ParseBool(envData)
 		if (yn == false) {
 			//Defaults to true
 			hms_certs.ConfigParams.LogInsecureFailover = false
 		}
 	}
-	vurl = os.Getenv("SMD_CA_URI")
-	if (vurl == "") {
+	envData = os.Getenv("SMD_CA_URI")
+	if (envData == "") {
 		s.LogAlways("CA_URI: Not specified.")
 	} else {
-		s.LogAlways("CA_URI: '%s'.",vurl)
+		s.LogAlways("CA_URI: '%s'.",envData)
 	}
 
 	//Initialize the SCN subscription list and map
