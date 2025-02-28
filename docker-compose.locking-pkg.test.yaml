@@ -60,7 +60,7 @@ services:
 #      - rez
   vault:
     hostname: vault
-    image: artifactory.algol60.net/docker.io/library/vault:1.5.5
+    image: artifactory.algol60.net/docker.io/library/vault:1.6.1
     environment:
       - VAULT_DEV_ROOT_TOKEN_ID=hms
       - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
@@ -72,7 +72,7 @@ services:
     networks:
       - rez
   vault-kv-enabler:
-    image: artifactory.algol60.net/csm-docker/stable/vault-kv-enabler:1.13.4
+    image: artifactory.algol60.net/csm-docker/stable/vault-kv-enabler:1.25.0
     environment:
       - VAULT_ADDR=http://vault:8200
       - VAULT_TOKEN=hms
@@ -165,7 +165,7 @@ services:
     networks:
       - rez
   cray-hms-hmcollector:
-    image: artifactory.algol60.net/csm-docker/stable/hms-hmcollector:2.35.0
+    image: artifactory.algol60.net/csm-docker/stable/hms-hmcollector:2.36.0
     environment:
       - LOG_LEVEL=TRACE
       - SM_URL=http://cray-smd:27779
