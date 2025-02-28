@@ -42,7 +42,7 @@ github.com/go-jose/go-jose/v4
 github.com/go-jose/go-jose/v4/cipher
 github.com/go-jose/go-jose/v4/json
 github.com/go-jose/go-jose/v4/jwt
-# github.com/golang-migrate/migrate/v4 v4.18.1
+# github.com/golang-migrate/migrate/v4 v4.18.2
 ## explicit; go 1.22.0
 github.com/golang-migrate/migrate/v4
 github.com/golang-migrate/migrate/v4/database
