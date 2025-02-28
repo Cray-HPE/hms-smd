@@ -8,7 +8,7 @@ require (
 	github.com/Cray-HPE/hms-base/v2 v2.2.0
 	github.com/Cray-HPE/hms-certs v1.5.1-0.20250228182557-e3147fe9bcec
 	github.com/Cray-HPE/hms-compcredentials v1.13.1-0.20250228211022-7e6835df060c
-	github.com/Cray-HPE/hms-go-http-lib v1.5.3
+	github.com/Cray-HPE/hms-go-http-lib v1.6.1-0.20250228211856-9b315c73996d
 	github.com/Cray-HPE/hms-msgbus v1.13.0
 	github.com/Cray-HPE/hms-securestorage v1.15.1-0.20250228182205-e1438108d43c
 	github.com/Cray-HPE/hms-xname v1.4.0
