@@ -6,11 +6,11 @@ toolchain go1.23.5
 
 require (
 	github.com/Cray-HPE/hms-base/v2 v2.2.0
-	github.com/Cray-HPE/hms-certs v1.5.1-0.20250228182557-e3147fe9bcec
-	github.com/Cray-HPE/hms-compcredentials v1.13.1-0.20250228211022-7e6835df060c
-	github.com/Cray-HPE/hms-go-http-lib v1.6.1-0.20250228211856-9b315c73996d
+	github.com/Cray-HPE/hms-certs v1.6.0
+	github.com/Cray-HPE/hms-compcredentials v1.14.0
+	github.com/Cray-HPE/hms-go-http-lib v1.6.1
 	github.com/Cray-HPE/hms-msgbus v1.13.0
-	github.com/Cray-HPE/hms-securestorage v1.15.1-0.20250228182205-e1438108d43c
+	github.com/Cray-HPE/hms-securestorage v1.16.0
 	github.com/Cray-HPE/hms-xname v1.4.0
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/Masterminds/squirrel v1.5.4
@@ -44,7 +44,7 @@ require (
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/crypto v0.35.0 // indirect
-	golang.org/x/net v0.35.0 // indirect
+	golang.org/x/net v0.36.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/time v0.10.0 // indirect
