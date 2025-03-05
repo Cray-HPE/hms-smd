@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright [2018-2024] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2018-2025] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -297,8 +297,8 @@ func compGetLockFltrToCompLockV2Filter(cglf CompGetLockFltr) (clf sm.CompLockV2F
 
 func DrainAndCloseRequestBody(req *http.Request) {
 	if req != nil && req.Body != nil {
-			_, _ = io.Copy(io.Discard, req.Body) // ok even if already drained
-			req.Body.Close()                     // ok even if already closed
+		_, _ = io.Copy(io.Discard, req.Body) // ok even if already drained
+		req.Body.Close()                     // ok even if already closed
 	}
 }
 
@@ -4244,7 +4244,7 @@ func (s *SmD) doGroupsPost(w http.ResponseWriter, r *http.Request) {
 		s.lg.Printf("doGroupsPost(): %s %s Err: %s", r.RemoteAddr, string(body), err)
 		if err == hmsds.ErrHMSDSDuplicateKey {
 			sendJsonError(w, http.StatusConflict, "operation would conflict "+
-				"with an existing group that has the same label.")
+				"with an existing group that has the same label or duplicate ids found in request.")
 		} else if err == hmsds.ErrHMSDSExclusiveGroup {
 			sendJsonError(w, http.StatusConflict, "operation would conflict "+
 				"with an existing member in another exclusive group.")
