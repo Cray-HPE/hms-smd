@@ -67,24 +67,6 @@ func (s *SmD) NewRouter(publicRoutes []Route, protectedRoutes []Route) *chi.Mux 
 
 	router.Use(middleware.Timeout(60 * time.Second))
 
-	if s.ochami {
-		routes := append(publicRoutes, protectedRoutes...)
-		for _, route := range routes {
-			var handler http.Handler
-			handler = route.HandlerFunc
-			if s.lgLvl >= LOG_DEBUG ||
-				(!strings.Contains(route.Name, "doReadyGet") &&
-					!strings.Contains(route.Name, "doLivenessGet")) {
-				handler = handlers.CombinedLoggingHandler(os.Stdout, handler)
-			}
-			router.Method(
-				route.Method,
-				route.Pattern,
-				handler,
-			)
-		}
-	}
-
 	if s.jwksURL != "" {
 		router.Group(func(r chi.Router) {
 			r.Use(
@@ -421,12 +403,6 @@ func (s *SmD) generateProtectedRoutes() Routes {
 			s.compEPBaseV2,
 			s.doComponentEndpointsDeleteAll,
 		},
-		//Route{
-		//	"doComponentEndpointQueryGetV2",
-		//	strings.ToUpper("Get"),
-		//	s.compEPBaseV2 + "/Query/{xname}",
-		//	s.doComponentEndpointQueryGet,
-		//},
 
 		// ServiceEndpoints
 		Route{
