@@ -30,7 +30,7 @@ import (
 
 	base "github.com/Cray-HPE/hms-base"
 	"github.com/Cray-HPE/hms-smd/v2/internal/hmsds"
-	rf "github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
+	"github.com/Cray-HPE/hms-smd/v2/pkg/rf"
 	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
 )
 
@@ -132,7 +132,6 @@ func (s *SmD) doHandleRFEvent(eventRaw string) error {
 // This normalizes the implementation differences of individual events and
 // processes them into a form that allows State Manager to treat all events
 // the same basic way.
-//
 func (s *SmD) processRFEvent(e *rf.Event) ([]*processedRFEvent, error) {
 	pes := make([]*processedRFEvent, 0, 1) // Returned array
 	if e == nil {
@@ -217,7 +216,7 @@ func EventContextDecode(
 	fields := strings.Split(context, ":")
 	for i, field := range fields {
 		setID := false
-		if i == 0 || (xnameID == "" && anyXName == true) {
+		if i == 0 || (xnameID == "" && anyXName) {
 			normField := base.NormalizeHMSCompID(field)
 			if base.IsHMSTypeController(base.GetHMSType(normField)) {
 				xnameID = normField
@@ -225,7 +224,7 @@ func EventContextDecode(
 			}
 		}
 		// If not xname ID, add to generic list
-		if setID == false {
+		if !setID {
 			subLabels = append(subLabels, field)
 		}
 	}
@@ -290,10 +289,12 @@ type EventActionParser func(*SmD, *processedRFEvent) (*CompUpdate, error)
 // Level 0: Just MessageId, no version or Registry.
 // Level 1: if just messageId nil, try again with MessageId:Registry
 // Level 2: If messageId + reg also nil, try again with MessageId:Registry:vers
-//          where vers is :1 for 1.0 or 1.0.1
-// Level 3: Version is still not specific enough.  They again with
-//          MessageId:Registry:vers, but this time include maj version, i.e. 1.1
 //
+//	where vers is :1 for 1.0 or 1.0.1
+//
+// Level 3: Version is still not specific enough.  They again with
+//
+//	MessageId:Registry:vers, but this time include maj version, i.e. 1.1
 var eventActionParserLookup = map[string]EventActionParser{
 	"resourcepowerstatechanged":               nil,
 	"resourcepowerstatechanged:resourceevent": ResourcePowerStateChangedParser,
@@ -317,7 +318,7 @@ func (s *SmD) GetEventActionParser(pe *processedRFEvent) EventActionParser {
 	// more compact.
 	for level := 1; level <= 3; level++ {
 		action, ok := eventActionParserLookup[strings.ToLower(lookup)]
-		if ok != true {
+		if !ok {
 			// No match at all, not even a nil pointer to keep trying.
 			// No action for event.
 			return nil
@@ -362,8 +363,9 @@ const (
 )
 
 // EventActionParser - ResourcePowerStateChanged - Cray addition to standard
-//                     ResourceEvent registry.  Need to look at payload to see
-//                     new state and component type.
+//
+//	ResourceEvent registry.  Need to look at payload to see
+//	new state and component type.
 func ResourcePowerStateChangedParser(s *SmD, pe *processedRFEvent) (*CompUpdate, error) {
 	// Parse the arguments.  Arg1 should be the URI for the component,
 	// and Arg2 the state.  But take them in either order.  And if there
@@ -371,7 +373,7 @@ func ResourcePowerStateChangedParser(s *SmD, pe *processedRFEvent) (*CompUpdate,
 	uri := pe.Origin
 	op := ResourceUnknown
 	for _, arg := range pe.MessageArgs {
-		if strings.HasPrefix(arg, "/") == true {
+		if strings.HasPrefix(arg, "/") {
 			uri = arg
 		} else {
 			switch strings.ToLower(strings.TrimSpace(arg)) {
@@ -594,8 +596,9 @@ func generateRcChildIDs(s *SmD, xname string, op ResourceOp) []string {
 /////////////////////////////////////////////////////////////////////////////
 
 // EventActionParser - Alert, presumably from Intel BMC, that indicates
-//                     System (i.e. node) powered ON.
-//                     Id in OriginOfCondition (though likely single node).
+//
+//	System (i.e. node) powered ON.
+//	Id in OriginOfCondition (though likely single node).
 func AlertSystemPowerOnParser(s *SmD, pe *processedRFEvent) (*CompUpdate, error) {
 	u := new(CompUpdate)
 	xname, err := s.getIDForURI(pe.RfEndppointID, pe.Origin)
@@ -618,8 +621,9 @@ func AlertSystemPowerOnParser(s *SmD, pe *processedRFEvent) (*CompUpdate, error)
 }
 
 // EventActionParser - Alert, presumably from Intel BMC, that indicates
-//                     System (i.e. node) powered OFF.
-//                     Id in OriginOfCondition (though likely single node).
+//
+//	System (i.e. node) powered OFF.
+//	Id in OriginOfCondition (though likely single node).
 func AlertSystemPowerOffParser(s *SmD, pe *processedRFEvent) (*CompUpdate, error) {
 	u := new(CompUpdate)
 	xname, err := s.getIDForURI(pe.RfEndppointID, pe.Origin)
@@ -639,8 +643,9 @@ func AlertSystemPowerOffParser(s *SmD, pe *processedRFEvent) (*CompUpdate, error
 /////////////////////////////////////////////////////////////////////////////
 
 // AlertSystemPowerParser - Alert, presumably from Gigabyte BMC, that indicates
-//                          System (i.e. node) powered ON or OFF.
-//                          Id in OriginOfCondition (though likely single node).
+//
+//	System (i.e. node) powered ON or OFF.
+//	Id in OriginOfCondition (though likely single node).
 func AlertSystemPowerParser(s *SmD, pe *processedRFEvent) (*CompUpdate, error) {
 	var (
 		cep *sm.ComponentEndpoint
@@ -654,7 +659,7 @@ func AlertSystemPowerParser(s *SmD, pe *processedRFEvent) (*CompUpdate, error) {
 	uri := pe.Origin
 	op := ResourceUnknown
 	for _, arg := range pe.MessageArgs {
-		if strings.HasPrefix(arg, "/") == true {
+		if strings.HasPrefix(arg, "/") {
 			uri = arg
 		} else {
 			switch strings.ToLower(strings.TrimSpace(arg)) {
@@ -724,9 +729,9 @@ func AlertSystemPowerParser(s *SmD, pe *processedRFEvent) (*CompUpdate, error) {
 }
 
 // getCompEPInfo - This gathers the existing ComponentEndpoint and credentials
-//                 present in either the secure store or the database (if
-//                 secure store is not enabled) for the xname.
 //
+//	present in either the secure store or the database (if
+//	secure store is not enabled) for the xname.
 func (s *SmD) getCompEPInfo(xname string) (*sm.ComponentEndpoint, *rf.RedfishEP, error) {
 	var (
 		user string
@@ -786,9 +791,10 @@ func (s *SmD) getCompEPInfo(xname string) (*sm.ComponentEndpoint, *rf.RedfishEP,
 }
 
 // getCompEPState - Get the redfish powerstate of a component, presumably a
-//                  Node. This uses the existing ComponentEndpoint and
-//                  credentials as gathered by getCompEPInfo() for the xname to
-//                  check the power state of the component via redfish.
+//
+//	Node. This uses the existing ComponentEndpoint and
+//	credentials as gathered by getCompEPInfo() for the xname to
+//	check the power state of the component via redfish.
 func (s *SmD) getCompEPState(cep *sm.ComponentEndpoint, ep *rf.RedfishEP) (string, error) {
 	if cep == nil || ep == nil {
 		return "", ErrSmMsgNoEP
@@ -818,10 +824,11 @@ func (s *SmD) getCompEPState(cep *sm.ComponentEndpoint, ep *rf.RedfishEP) (strin
 }
 
 // doUpdateCompHWInv - Update the hwinv for a component, presumably a Node.
-//                     This uses the existing ComponentEndpoint and credentials
-//                     as gathered by getCompEPInfo() for the xname to update
-//                     the HW Inventory data for the Component with info
-//                     gathered.
+//
+//	This uses the existing ComponentEndpoint and credentials
+//	as gathered by getCompEPInfo() for the xname to update
+//	the HW Inventory data for the Component with info
+//	gathered.
 func (s *SmD) doUpdateCompHWInv(cep *sm.ComponentEndpoint, ep *rf.RedfishEP) error {
 	if cep == nil || ep == nil {
 		return ErrSmMsgNoEP
@@ -1036,7 +1043,7 @@ func (s *SmD) getIDForURI(epID, URI string) (string, error) {
 	for i := 0; i < 2; i++ {
 		if id == "" {
 			// Not found, try looking up directly in database
-			if didUpdate == false {
+			if !didUpdate {
 				// If found, make sure a sync occurs so it will be in the
 				// cache.
 				found, didUpdate, err = s.checkSyncCompEP(epID, snum)
@@ -1044,7 +1051,7 @@ func (s *SmD) getIDForURI(epID, URI string) (string, error) {
 					return "", err
 				}
 				// Not in DB
-				if found == false {
+				if !found {
 					return "", nil
 				}
 				// Found in DB, try the lookup from the cache again.
@@ -1074,7 +1081,7 @@ func (s *SmD) getCompEPbyID(epID string) (*sm.ComponentEndpoint, error) {
 	for i := 0; i < 2; i++ {
 		if cepi == nil {
 			// Not found, try looking up directly in database
-			if didUpdate == false {
+			if !didUpdate {
 				// If found, make sure a sync occurs so it will be in the
 				// cache.
 				found, didUpdate, err = s.checkSyncCompEP(epID, snum)
@@ -1082,7 +1089,7 @@ func (s *SmD) getCompEPbyID(epID string) (*sm.ComponentEndpoint, error) {
 					return nil, err
 				}
 				// Not in DB
-				if found == false {
+				if !found {
 					return nil, nil
 				}
 				// Found in DB, try the lookup from the cache again
@@ -1130,7 +1137,7 @@ func (s *SmD) getChildIDsForRfEP(epID string) ([]string, error) {
 	for i := 0; i < 2; i++ {
 		if idsStr == "" {
 			// Not found, try looking up directly in database
-			if didUpdate == false {
+			if !didUpdate {
 				// If found, make sure a sync occurs so it will be in the
 				// cache.
 				found, didUpdate, err = s.checkSyncCompEP(epID, snum)
@@ -1138,7 +1145,7 @@ func (s *SmD) getChildIDsForRfEP(epID string) ([]string, error) {
 					return []string{}, err
 				}
 				// Not in DB
-				if found == false {
+				if !found {
 					return []string{}, nil
 				}
 				// Found in DB, try the lookup from the cache again
@@ -1183,7 +1190,7 @@ func (s *SmD) getChildIDsForRfEP(epID string) ([]string, error) {
 func (s *SmD) checkSyncCompEP(xname string, snum int) (found, didUpdate bool, err error) {
 	found = false
 	didUpdate = false
-	ids := []string{}
+	var ids []string
 
 	for i := 0; i < CompEPSyncRetries; i++ {
 		if base.GetHMSType(xname) == base.CabinetPDUController {
