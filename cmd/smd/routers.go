@@ -55,7 +55,7 @@ func (s *SmD) NewRouter(publicRoutes []Route, protectedRoutes []Route) *chi.Mux 
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.StripSlashes)
-	if s.ochami {
+	if s.zerolog {
 		zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 		logger := zlog.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 

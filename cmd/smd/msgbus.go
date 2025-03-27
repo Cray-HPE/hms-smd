@@ -1,6 +1,11 @@
+// This build flag is used to enable the message bus.
+// CSM uses the message bus and OpenCHAMI does not.
+//
+//go:build !openchami
+
 // MIT License
 //
-// (C) Copyright [2019-2021] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2019-2021,2025] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -23,11 +28,22 @@
 package main
 
 import (
-	base "github.com/Cray-HPE/hms-base"
-	msgbus "github.com/Cray-HPE/hms-msgbus"
 	"strconv"
 	"strings"
+
+	base "github.com/Cray-HPE/hms-base"
+	msgbus "github.com/Cray-HPE/hms-msgbus"
 )
+
+const MSG_BUS_BUILD = true
+
+type MsgBusConfigWrapper struct {
+	Config msgbus.MsgBusConfig
+}
+
+type MsgbusHandleWrapper struct {
+	Handle msgbus.MsgBusIO
+}
 
 var MsgBusAlreadyConnected = base.NewHMSError("sm_msg",
 	"operation not allowed when connection is active")
@@ -75,17 +91,17 @@ func (s *SmD) getTelemetryHost(hspec string) (string, int, string, error) {
 // hspec(in): Host:port specification.
 // Error code on invalid input, or nil
 func (s *SmD) MsgBusConfig(hspec string) error {
-	if s.msgbusHandle != nil {
+	if s.msgbusHandle.Handle != nil {
 		return MsgBusAlreadyConnected
 	}
-	s.msgbusConfig = msgbusConfigDefaults
+	s.msgbusConfig.Config = msgbusConfigDefaults
 	host, port, topic, err := s.getTelemetryHost(hspec)
 	if err != nil {
 		return err
 	}
-	s.msgbusConfig.Host = host
-	s.msgbusConfig.Port = port
-	s.msgbusConfig.Topic = topic
+	s.msgbusConfig.Config.Host = host
+	s.msgbusConfig.Config.Port = port
+	s.msgbusConfig.Config.Topic = topic
 	return nil
 }
 
@@ -94,18 +110,18 @@ func (s *SmD) MsgBusConfig(hspec string) error {
 // already active on this SmD object.
 func (s *SmD) MsgBusConnect() error {
 	var err error
-	if s.msgbusHandle != nil {
+	if s.msgbusHandle.Handle != nil {
 		return MsgBusAlreadyConnected
 	}
-	if s.msgbusConfig.Host == "" ||
-		s.msgbusConfig.Port == 0 ||
-		s.msgbusConfig.Topic == "" {
+	if s.msgbusConfig.Config.Host == "" ||
+		s.msgbusConfig.Config.Port == 0 ||
+		s.msgbusConfig.Config.Topic == "" {
 
 		return MsgBusMissingHostSpec
 	}
-	s.msgbusHandle, err = msgbus.Connect(s.msgbusConfig)
+	s.msgbusHandle.Handle, err = msgbus.Connect(s.msgbusConfig.Config)
 	if err != nil {
-		s.msgbusHandle = nil
+		s.msgbusHandle.Handle = nil
 	}
 	return err
 }
@@ -116,11 +132,11 @@ func (s *SmD) MsgBusConnect() error {
 // than forcing us to try again and hoping that the disconnect will not return
 // an error on a subsequent attempt, something that may never happen.
 func (s *SmD) MsgBusDisconnect() error {
-	if s.msgbusHandle == nil {
+	if s.msgbusHandle.Handle == nil {
 		return nil
 	}
-	err := s.msgbusHandle.Disconnect()
-	s.msgbusHandle = nil
+	err := s.msgbusHandle.Handle.Disconnect()
+	s.msgbusHandle.Handle = nil
 	return err
 }
 
@@ -139,5 +155,5 @@ func (s *SmD) MsgBusReconnect() error {
 // By default this is a blocking call.  Typically messages should be read
 // serially by a single connection as that is the unit of parallelism.
 func (s *SmD) MsgBusReadNext() (string, error) {
-	return s.msgbusHandle.MessageRead()
+	return s.msgbusHandle.Handle.MessageRead()
 }

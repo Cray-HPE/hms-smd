@@ -1,6 +1,11 @@
+// This build flag is used to enable the message bus.
+// CSM uses the message bus and OpenCHAMI does not.
+//
+//go:build !openchami
+
 // MIT License
 //
-// (C) Copyright [2019-2021] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2019-2021,2025] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -26,6 +31,8 @@ import (
 	"time"
 )
 
+const RF_EVENT_MONITOR_BUILD = true
+
 // This is the main thread that monitors the event bus
 func (s *SmD) StartRFEventMonitor() {
 	if s.msgbusListen != "" {
@@ -43,7 +50,7 @@ func (s *SmD) StartRFEventMonitor() {
 					continue
 				}
 				s.LogAlways("Connected to message bus: %s:%d:%s",
-					s.msgbusConfig.Host, s.msgbusConfig.Port, s.msgbusConfig.Topic)
+					s.msgbusConfig.Config.Host, s.msgbusConfig.Config.Port, s.msgbusConfig.Config.Topic)
 
 				// Consume events from topic on message bus.  If an
 				// error occurs, report it and reconnect.

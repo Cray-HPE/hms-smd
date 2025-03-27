@@ -2551,7 +2551,7 @@ func (s *SmD) doRedfishEndpointsPost(w http.ResponseWriter, r *http.Request) {
 	// in JSON format.
 	//
 
-	if s.ochami {
+	if s.openchami {
 		// check for the data format sent via the schema version
 		schemaVersion := s.getSchemaVersion(w, body)
 		if schemaVersion <= 0 {
@@ -2578,7 +2578,7 @@ func (s *SmD) doRedfishEndpointsPost(w http.ResponseWriter, r *http.Request) {
 
 // Parse the incoming JSON data, extracts specific keys, and writes the data
 // to the database
-// Used for ochami where discovery is diabled
+// Used for openchami where discovery is diabled
 func (s *SmD) parseRedfishEndpointData(w http.ResponseWriter, eps *sm.RedfishEndpointArray, data []byte) error {
 	s.lg.Printf("parsing request data using default parsing method...")
 	var obj map[string]any
@@ -2668,7 +2668,7 @@ func (s *SmD) parseRedfishEndpointData(w http.ResponseWriter, eps *sm.RedfishEnd
 	return nil
 }
 
-// Used for ochami where discovery is diabled
+// Used for openchami where discovery is diabled
 func (s *SmD) parseRedfishEndpointDataV2(w http.ResponseWriter, data []byte, forceUpdate bool) error {
 	s.lg.Printf("parsing request data using V2 parsing method...")
 
@@ -2879,7 +2879,7 @@ func (s *SmD) parseRedfishEndpointDataV2(w http.ResponseWriter, data []byte, for
 }
 
 // getSchemaVersion() tries to extract the schema version from the JSON data.
-// Used for ochami where discovery is diabled
+// Used for openchami where discovery is diabled
 func (s *SmD) getSchemaVersion(w http.ResponseWriter, data []byte) int {
 	var (
 		schemaVersion int = 0 // default to 0
@@ -5140,9 +5140,9 @@ func (s *SmD) doPartitionMembersPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	normID := memberIn.ID
-	if !s.ochami {
+	if !s.openchami {
 		// CSM requires that the ID is an xname.
-		// OCHAMI allows for any string.
+		// OpenCHAMI allows for any string.
 		normID = base.NormalizeHMSCompID(memberIn.ID)
 		if !base.IsHMSCompIDValid(normID) {
 			s.lg.Printf("doPartitionMembersPost(): Invalid xname ID.")

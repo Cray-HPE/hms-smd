@@ -1,6 +1,11 @@
+// This build flag is used to enable the message bus.
+// CSM uses the message bus and OpenCHAMI does not.
+//
+//go:build !openchami
+
 // MIT License
 //
-// (C) Copyright [2019-2021] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2019-2021,2025] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -23,8 +28,9 @@
 package main
 
 import (
-	msgbus "github.com/Cray-HPE/hms-msgbus"
 	"testing"
+
+	msgbus "github.com/Cray-HPE/hms-msgbus"
 )
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -52,11 +58,11 @@ func TestMsgBusConfig(t *testing.T) {
 		true,
 	}}
 
-	s.msgbusHandle = &msgbus.MsgBusReader_Kafka{}
+	s.msgbusHandle.Handle = &msgbus.MsgBusReader_Kafka{}
 	if err := s.MsgBusConfig("10.23.33.22:9092:events"); err == nil {
 		t.Errorf("Test 0: FAIL: MsgBusConfig with non-nil connection: no err")
 	}
-	s.msgbusHandle = nil
+	s.msgbusHandle.Handle = nil
 
 	for i, targ := range testargs {
 		if err := s.MsgBusConfig(targ.arg); err != nil {
@@ -76,14 +82,14 @@ func TestMsgBusConfig(t *testing.T) {
 
 func TestMsgBusConnect(t *testing.T) {
 	t.Logf("Testing MsgBusConnect()...")
-	s.msgbusHandle = &msgbus.MsgBusReader_Kafka{}
+	s.msgbusHandle.Handle = &msgbus.MsgBusReader_Kafka{}
 	if err := s.MsgBusConnect(); err != error(MsgBusAlreadyConnected) {
 		t.Errorf("Test 0a: FAIL: MsgBusConnect with non-nil conn: wrong error")
 	} else {
 		t.Logf("Test 0a: Pass: MsgBusConnect()")
 	}
-	s.msgbusHandle = nil
-	s.msgbusConfig = msgbus.MsgBusConfig{}
+	s.msgbusHandle.Handle = nil
+	s.msgbusConfig.Config = msgbus.MsgBusConfig{}
 	if err := s.MsgBusConnect(); err != error(MsgBusMissingHostSpec) {
 		t.Errorf("Test 0b: FAIL: MsgBusConnect without config: wrong error")
 	} else {
@@ -92,13 +98,13 @@ func TestMsgBusConnect(t *testing.T) {
 }
 
 func TestMsgBusDisconnect(t *testing.T) {
-	s.msgbusHandle = nil
+	s.msgbusHandle.Handle = nil
 	if err := s.MsgBusDisconnect(); err != nil {
 		t.Errorf("Test 0a: FAIL: MsgBusDisconnect(): Got error: %s", err)
 	} else {
 		t.Logf("Test 0a: Pass: MsgBusDisconnect()")
 	}
-	if s.msgbusHandle != nil {
+	if s.msgbusHandle.Handle != nil {
 		t.Errorf("Test 0b: FAIL: MsgBusDisconnect(): Got handle != nil")
 	} else {
 		t.Logf("Test 0b: Pass: MsgBusDisconnect()")

@@ -42,6 +42,7 @@ import (
 	"github.com/Cray-HPE/hms-smd/v2/pkg/rf"
 	stest "github.com/Cray-HPE/hms-smd/v2/pkg/sharedtest"
 	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
+
 	"github.com/go-chi/chi/v5"
 )
 
@@ -617,8 +618,6 @@ func TestMain(m *testing.M) {
 	s.powerMapBaseV2 = s.sysInfoBaseV2 + "/powermaps"
 
 	s.smapCompEP = NewSyncMap(ComponentEndpointSMap(s))
-
-	s.msgbusHandle = nil
 
 	s.dbDSN = ""
 	s.lg = log.New(os.Stdout, "", log.Lshortfile|log.LstdFlags|log.Lmicroseconds)
