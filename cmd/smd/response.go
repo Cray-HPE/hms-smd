@@ -62,7 +62,11 @@ func sendJsonDBError(w http.ResponseWriter, prefix, internalErr string, err erro
 	if base.IsHMSError(err) {
 		sendJsonError(w, http.StatusBadRequest, prefix+err.Error())
 	} else {
-		sendJsonError(w, http.StatusInternalServerError, internalErr)
+		if internalErr != "" {
+			sendJsonError(w, http.StatusInternalServerError, internalErr)
+		} else {
+			sendJsonError(w, http.StatusInternalServerError, "failed to query DB.")
+		}
 	}
 }
 
