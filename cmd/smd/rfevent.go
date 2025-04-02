@@ -30,7 +30,7 @@ import (
 
 	base "github.com/Cray-HPE/hms-base"
 	"github.com/Cray-HPE/hms-smd/v2/internal/hmsds"
-	"github.com/Cray-HPE/hms-smd/v2/pkg/rf"
+	rf "github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
 	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
 )
 

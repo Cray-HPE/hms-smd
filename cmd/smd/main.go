@@ -45,7 +45,7 @@ import (
 	"github.com/Cray-HPE/hms-smd/v2/internal/hmsds"
 	"github.com/Cray-HPE/hms-smd/v2/internal/pgmigrate"
 	"github.com/Cray-HPE/hms-smd/v2/internal/slsapi"
-	"github.com/Cray-HPE/hms-smd/v2/pkg/rf"
+	rf "github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
 	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
 	jwtauth "github.com/OpenCHAMI/jwtauth/v5"
 	"github.com/go-chi/chi/v5"

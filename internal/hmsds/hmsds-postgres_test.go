@@ -34,7 +34,7 @@ import (
 	"time"
 
 	base "github.com/Cray-HPE/hms-base"
-	"github.com/Cray-HPE/hms-smd/v2/pkg/rf"
+	rf "github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
 	stest "github.com/Cray-HPE/hms-smd/v2/pkg/sharedtest"
 	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
 
