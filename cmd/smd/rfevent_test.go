@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright [2019-2024] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2019-2025] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -29,6 +29,7 @@ import (
 	"net/url"
 	"testing"
 
+	base "github.com/Cray-HPE/hms-base/v2"
 	compcreds "github.com/Cray-HPE/hms-compcredentials"
 	sstorage "github.com/Cray-HPE/hms-securestorage"
 	"github.com/Cray-HPE/hms-smd/v2/internal/hmsds"
@@ -742,7 +743,7 @@ func TestDoHandleRFEvent(t *testing.T) {
 
 func DummyHandler(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(404)
-	DrainAndCloseRequestBody(req)
+	base.DrainAndCloseRequestBody(req)
 	return
 }
 
@@ -751,7 +752,7 @@ func DummyHandler(w http.ResponseWriter, req *http.Request) {
 //////////////////////////////////////////////////////////////////////////////
 
 func GigabyteHandler(w http.ResponseWriter, req *http.Request) {
-	defer DrainAndCloseRequestBody(req)
+	defer base.DrainAndCloseRequestBody(req)
 
 	// Test request parameters
 	switch req.URL.RequestURI() {

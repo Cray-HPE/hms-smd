@@ -96,7 +96,7 @@ services:
 
   # Redfish Emulators
   emulator-loader:
-    image: artifactory.algol60.net/docker.io/library/golang:1.23-alpine
+    image: artifactory.algol60.net/docker.io/library/golang:1.24-alpine
     command: >
       sh -c "apk add curl && sleep 10 &&
       curl -X POST -d '{\"RedfishEndpoints\":[{
@@ -134,7 +134,7 @@ services:
       - smd
   rfemulator0:
     hostname: x0c0b0
-    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.6.0
+    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.7.0
     environment:
       - MOCKUPFOLDER=CMM
       - XNAME=x0c0b0
@@ -147,7 +147,7 @@ services:
           - x0c0b0
   rfemulator1:
     hostname: x0c0s1b0
-    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.6.0
+    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.7.0
     environment:
       - MOCKUPFOLDER=EX235a
       - MAC_SCHEMA=Mountain
@@ -161,7 +161,7 @@ services:
           - x0c0s1b0
   rfemulator2:
     hostname: x0c0r2b0
-    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.6.0
+    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.7.0
     environment:
       - MOCKUPFOLDER=Slingshot_Switch_Blade
       - XNAME=x0c0r2b0
@@ -174,7 +174,7 @@ services:
           - x0c0r2b0
   rfemulator3:
     hostname: x1c0s3b0
-    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.6.0
+    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.7.0
     environment:
       - MOCKUPFOLDER=XL675d_A40
       - XNAME=x1c0s3b0

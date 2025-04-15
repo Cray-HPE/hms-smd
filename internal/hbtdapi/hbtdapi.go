@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright [2020-2021,2024] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2020-2021,2024-2025] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -27,7 +27,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -59,16 +58,6 @@ type HBStatusPayload struct {
 }
 
 var serviceName string
-
-// Response bodies should always be drained and closed, else we leak resources
-// and fail to reuse network connections.
-// TODO: This should be moved into hms-base
-func DrainAndCloseResponseBody(resp *http.Response) {
-	if resp != nil && resp.Body != nil {
-			_, _ = io.Copy(io.Discard, resp.Body) // ok even if already drained
-			resp.Body.Close()                     // ok even if already closed
-	}
-}
 
 // Allocate and initialize new HBTD struct.
 func NewHBTD(hbtdUrl string, httpClient *retryablehttp.Client, svcName string) *HBTD {
@@ -157,7 +146,7 @@ func (hbtd *HBTD) doRequest(req *http.Request) ([]byte, error) {
 	newRequest.Header.Set("Content-Type", "application/json")
 
 	rsp, err := hbtd.Client.Do(newRequest)
-	defer DrainAndCloseResponseBody(rsp)
+	defer base.DrainAndCloseResponseBody(rsp)
 	if err != nil {
 		return nil, err
 	}
