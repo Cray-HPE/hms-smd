@@ -768,17 +768,17 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 	for i, sysId := range v.SystemIds {
 		if s, ok := e.Systems.OIDs[sysId]; ok == true {
 			if s.LastStatus != DiscoverOK {
-				return fmt.Errorf(sysId + ": bad LastStatus: " + s.LastStatus)
+				return fmt.Errorf(sysId + ": bad LastStatus: %s", s.LastStatus)
 			}
 			if s.Actions == nil {
 				if v.SystemActionCount != -1 {
-					return fmt.Errorf(sysId + ": nil Action struct")
+          return fmt.Errorf("%s: nil Action struct", sysId)
 				}
 			} else if len(s.Actions.ComputerSystemReset.AllowableValues) !=
 				v.SystemActionCount ||
 				s.Actions.ComputerSystemReset.Target !=
 					v.SystemActionTargets[i] {
-				return fmt.Errorf("SystemId: " + sysId + ": bad Target/AllowableValues")
+        return fmt.Errorf("SystemId: %s: bad Target/AllowableValues", sysId)
 			}
 			if v.SystemExpectPowerInfo {
 				if len(s.PowerCtl) != len(v.SystemPowerControl) {
@@ -846,25 +846,24 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 					sysId, s.Ordinal, i, s.ID)
 			}
 		} else {
-			return fmt.Errorf("systemId " + sysId + " did not exist")
+      return fmt.Errorf("systemId %s did not exist", sysId)
 		}
 
 	}
 	// Manager tests
 	if m, ok := e.Managers.OIDs[v.ManagerId]; ok == true {
 		if m.LastStatus != DiscoverOK {
-			return fmt.Errorf(v.ManagerId + ": bad LastStatus: " +
-				m.LastStatus)
+      return fmt.Errorf("%s: bad LastStatus: %s", v.ManagerId, m.LastStatus)
 		}
 		if m.Actions == nil {
 			if v.ManagerActionCount != -1 {
-				return fmt.Errorf(v.ManagerId + ": nil Action struct")
+        return fmt.Errorf("%s: nil Action struct", v.ManagerId)
 			}
 		} else if len(m.Actions.ManagerReset.AllowableValues) !=
 			v.ManagerActionCount ||
 			m.Actions.ManagerReset.Target !=
 				v.ManagerActionTarget {
-			return fmt.Errorf("ManagerId: " + v.ManagerId + ": bad Target/AllowableValues")
+      return fmt.Errorf("ManagerId: %s: bad Target/AllowableValues", v.ManagerId)
 		}
 		// Verify xname and type
 		mtype := xnametypes.GetHMSTypeString(m.ID)
@@ -873,23 +872,23 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 				m.ID, m.Type, v.ManagerId)
 		}
 	} else if v.ManagerId != "" {
-		return fmt.Errorf("ManagerId " + v.ManagerId + " did not exist")
+    return fmt.Errorf("ManagerId %s did not exist", v.ManagerId)
 	}
 	// Chassis tests
 	neId := v.NodeEnclosureId
 	if c, ok := e.Chassis.OIDs[neId]; ok == true {
 		if c.LastStatus != DiscoverOK {
-			return fmt.Errorf(neId + ": bad LastStatus: " + c.LastStatus)
+      return fmt.Errorf("%s: bad LastStatus: %s", neId, c.LastStatus)
 		}
 		if c.Actions == nil {
 			if v.NodeEnclosureActionCount != -1 {
-				return fmt.Errorf(neId + ": nil Action struct")
+        return fmt.Errorf("%s: nil Action struct", neId)
 			}
 		} else if len(c.Actions.ChassisReset.AllowableValues) !=
 			v.NodeEnclosureActionCount ||
 			c.Actions.ChassisReset.Target !=
 				v.NodeEnclosureActionTarget {
-			return fmt.Errorf("NodeEnclosureId: " + neId + ": bad Target/AllowableValues")
+      return fmt.Errorf("NodeEnclosureId: %s: bad Target/AllowableValues", neId)
 		}
 		// Verify xname and type
 		ctype := xnametypes.GetHMSType(c.ID)
@@ -898,22 +897,22 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 				c.ID, c.Type, neId)
 		}
 	} else if neId != "" {
-		return fmt.Errorf("NodeEnclosureId " + neId + " did not exist")
+    return fmt.Errorf("NodeEnclosureId %s did not exist", neId)
 	}
 	ceId := v.ChassisEnclosureId
 	if c, ok := e.Chassis.OIDs[ceId]; ok == true {
 		if c.LastStatus != DiscoverOK {
-			return fmt.Errorf(ceId + ": bad LastStatus: " + c.LastStatus)
+      return fmt.Errorf("%s: bad LastStatus: %s", ceId, c.LastStatus)
 		}
 		if c.Actions == nil {
 			if v.ChassisEnclosureActionCount != -1 {
-				return fmt.Errorf(ceId + ": nil Action struct")
+        return fmt.Errorf("%s: nil Action struct", ceId)
 			}
 		} else if len(c.Actions.ChassisReset.AllowableValues) !=
 			v.ChassisEnclosureActionCount ||
 			c.Actions.ChassisReset.Target !=
 				v.ChassisEnclosureActionTarget {
-			return fmt.Errorf("ChassisEnclosureId: " + ceId + ": bad Target/AllowableValues")
+      return fmt.Errorf("ChassisEnclosureId: %s: bad Target/AllowableValues", ceId)
 		}
 		// Verify xname and type
 		ctype := xnametypes.GetHMSType(c.ID)
@@ -922,22 +921,22 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 				c.ID, c.Type, ceId)
 		}
 	} else if ceId != "" {
-		return fmt.Errorf("ChassisEnclosureId " + ceId + " did not exist")
+    return fmt.Errorf("ChassisEnclosureId %s did not exist", ceId)
 	}
 	for i, cbId := range v.ComputeBladeIds {
 		if cb, ok := e.Chassis.OIDs[cbId]; ok == true {
 			if cb.LastStatus != DiscoverOK {
-				return fmt.Errorf(cbId + ": bad LastStatus: " + cb.LastStatus)
+        return fmt.Errorf("%s: bad LastStatus: %s", cbId, cb.LastStatus)
 			}
 			if cb.Actions == nil {
 				if v.ComputeBladeActionCount != -1 {
-					return fmt.Errorf(cbId + ": nil Action struct")
+          return fmt.Errorf("%s: nil Action struct", cbId)
 				}
 			} else if len(cb.Actions.ChassisReset.AllowableValues) !=
 				v.ComputeBladeActionCount ||
 				cb.Actions.ChassisReset.Target !=
 					v.ComputeBladeActionTargets[i] {
-				return fmt.Errorf("ComputeBladeId: " + cbId + ": bad Target/AllowableValues")
+        return fmt.Errorf("ComputeBladeId: %s: bad Target/AllowableValues", cbId)
 			}
 			// Verify xname and type
 			cbtype := xnametypes.GetHMSType(cb.ID)
@@ -950,23 +949,23 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 					cbId, cb.Ordinal, i, cb.ID)
 			}
 		} else if cbId != "" {
-			return fmt.Errorf("compBladeId " + cbId + " did not exist")
+      return fmt.Errorf("compBladeId %s did not exist", cbId)
 		}
 	}
 	for i, rbId := range v.RouterBladeIds {
 		if rb, ok := e.Chassis.OIDs[rbId]; ok == true {
 			if rb.LastStatus != DiscoverOK {
-				return fmt.Errorf(rbId + ": bad LastStatus: " + rb.LastStatus)
+        return fmt.Errorf("%s: bad LastStatus: %s", rbId, rb.LastStatus)
 			}
 			if rb.Actions == nil {
 				if v.RouterBladeActionCount != -1 {
-					return fmt.Errorf(rbId + ": nil Action struct")
+          return fmt.Errorf("%s: nil Action struct", rbId)
 				}
 			} else if len(rb.Actions.ChassisReset.AllowableValues) !=
 				v.RouterBladeActionCount ||
 				rb.Actions.ChassisReset.Target !=
 					v.RouterBladeActionTargets[i] {
-				return fmt.Errorf("RouterBladeId: " + rbId + ": bad Target/AllowableValues")
+        return fmt.Errorf("RouterBladeId: %s: bad Target/AllowableValues", rbId)
 			}
 			// Verify xname and type
 			rbtype := xnametypes.GetHMSType(rb.ID)
@@ -979,17 +978,17 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 					rbId, rb.Ordinal, i, rb.ID)
 			}
 		} else if rbId != "" {
-			return fmt.Errorf("routerBladeId " + rbId + " did not exist")
+      return fmt.Errorf("routerBladeId %s did not exist", rbId)
 		}
 	}
 	for i, pduId := range v.PDUIds {
 		if pdu, ok := e.RackPDUs.OIDs[pduId]; ok == true {
 			if pdu.LastStatus != DiscoverOK {
-				return fmt.Errorf(pduId + ": bad LastStatus: " + pdu.LastStatus)
+        return fmt.Errorf("%s: bad LastStatus: %s", pduId, pdu.LastStatus)
 			}
 			if pdu.Actions == nil {
 				if v.PDUActionCount != -1 {
-					return fmt.Errorf(pduId + ": nil Action struct")
+          return fmt.Errorf("%s: nil Action struct", pduId)
 				}
 			}
 			// No current actions to verify.
@@ -1005,35 +1004,35 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 					pduId, pdu.Ordinal, i, pdu.ID)
 			}
 		} else if pduId != "" {
-			return fmt.Errorf("PDU " + pduId + " did not exist")
+      return fmt.Errorf("PDU %s did not exist", pduId)
 		}
 
 	}
 	for i, outId := range v.OutletIds {
 		pdu, ok := e.RackPDUs.OIDs[v.OutletPDUIds[i]]
 		if !ok {
-			return fmt.Errorf("PDU " + v.OutletPDUIds[i] + " did not exist for outlet ")
+      return fmt.Errorf("PDU %s did not exist for outlet", v.OutletPDUIds[i])
 		}
 		if out, ok := pdu.Outlets.OIDs[outId]; ok == true {
 			if out.LastStatus != DiscoverOK {
-				return fmt.Errorf(outId + ": bad LastStatus: " + out.LastStatus)
+        return fmt.Errorf("%s: bad LastStatus: %s", outId, out.LastStatus)
 			}
 			if out.Actions == nil {
 				if v.OutletActionCountP > 0 || v.OutletActionCountR > 0 {
-					return fmt.Errorf(outId + ": nil Action struct")
+          return fmt.Errorf("%s: nil Action struct", outId)
 				}
 				if v.OutletActionCountP == 0 &&
 					v.OutletActionTargetsP[i] != "" {
-					return fmt.Errorf(outId + ": nil Action struct")
+          return fmt.Errorf("%s: nil Action struct", outId)
 				}
 				if v.OutletActionCountR == 0 &&
 					v.OutletActionTargetsR[i] != "" {
-					return fmt.Errorf(outId + ": nil Action struct")
+          return fmt.Errorf("%s: nil Action struct", outId)
 				}
 			} else {
 				if out.Actions.PowerControl == nil {
 					if v.OutletActionTargetsP[i] != "" {
-						return fmt.Errorf(outId + ": nil PowerControl struct")
+            return fmt.Errorf("%s: nil PowerControl struct", outId)
 					}
 				} else {
 					if out.Actions.PowerControl.Target !=
@@ -1050,7 +1049,7 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 				}
 				if out.Actions.ResetStatistics == nil {
 					if v.OutletActionTargetsR[i] != "" {
-						return fmt.Errorf(outId + ": nil ResetStats struct")
+            return fmt.Errorf("%s: nil ResetStats struct", outId)
 					}
 				} else {
 					if out.Actions.ResetStatistics.Target !=
@@ -1079,7 +1078,7 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 					outId, out.Ordinal, i, out.ID)
 			}
 		} else if outId != "" {
-			return fmt.Errorf("Outlet " + outId + " did not exist")
+      return fmt.Errorf("Outlet %s did not exist", outId)
 		}
 	}
 	return nil
