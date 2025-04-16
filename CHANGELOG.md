@@ -10,8 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Update
 
 - Updated module and image dependencies to latest versions
-- Removed some code that's now redundant with new hms-base module
 - Update version of Go to v1.24
+- Removed several sections of code code that's now redundant with the
+  latest hms-base module
+- Fixed various issues associated with upgrading Go to v1.24
 - Internal tracking tickets: CASMHMS-6482, CASMHMS-6401, CASMHMS-6402
 
 ## [2.36.0] - 2025-04-14
