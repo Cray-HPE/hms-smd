@@ -5386,7 +5386,7 @@ func (s *SmD) doCompLocksStatusGet(w http.ResponseWriter, r *http.Request) {
 		_, err = strconv.ParseBool(filter.Reserved[0])
 		if err != nil {
 			reservedParamBoolErrMsg := "bad 'Reserved' query parameter: " + filter.Reserved[0]
-			s.lg.Printf("doCompLocksStatusGet(): " + reservedParamBoolErrMsg)
+			s.lg.Printf("doCompLocksStatusGet(): %s", reservedParamBoolErrMsg)
 			sendJsonError(w, http.StatusBadRequest, reservedParamBoolErrMsg)
 			return
 		}
