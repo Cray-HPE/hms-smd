@@ -857,7 +857,7 @@ func VerifyGetRootInfo(e *RedfishEP, v RedfishEPVerifyInfo) error {
 		}
 		if m.Actions == nil {
 			if v.ManagerActionCount != -1 {
-        return fmt.Errorf("%s: nil Action struct", v.ManagerId)
+				return fmt.Errorf("%s: nil Action struct", v.ManagerId)
 			}
 		} else if len(m.Actions.ManagerReset.AllowableValues) !=
 			v.ManagerActionCount ||
