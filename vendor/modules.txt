@@ -4,8 +4,8 @@ github.com/Cray-HPE/hms-base/v2
 # github.com/Cray-HPE/hms-certs v1.7.0
 ## explicit; go 1.24.0
 github.com/Cray-HPE/hms-certs/pkg/hms_certs
-# github.com/Cray-HPE/hms-compcredentials v1.14.0
-## explicit; go 1.23.0
+# github.com/Cray-HPE/hms-compcredentials v1.14.1-0.20250417145157-e6d90bc688bc
+## explicit; go 1.24.0
 github.com/Cray-HPE/hms-compcredentials
 # github.com/Cray-HPE/hms-go-http-lib v1.7.1
 ## explicit; go 1.24.0
@@ -13,8 +13,8 @@ github.com/Cray-HPE/hms-go-http-lib
 # github.com/Cray-HPE/hms-msgbus v1.13.0
 ## explicit; go 1.23
 github.com/Cray-HPE/hms-msgbus
-# github.com/Cray-HPE/hms-securestorage v1.16.0
-## explicit; go 1.23.0
+# github.com/Cray-HPE/hms-securestorage v1.16.1-0.20250417144545-9fd2782ce8f3
+## explicit; go 1.24.0
 github.com/Cray-HPE/hms-securestorage
 # github.com/Cray-HPE/hms-xname v1.4.0
 ## explicit; go 1.23

@@ -5,10 +5,10 @@ go 1.24.0
 require (
 	github.com/Cray-HPE/hms-base/v2 v2.3.0
 	github.com/Cray-HPE/hms-certs v1.7.0
-	github.com/Cray-HPE/hms-compcredentials v1.14.0
+	github.com/Cray-HPE/hms-compcredentials v1.14.1-0.20250417145157-e6d90bc688bc
 	github.com/Cray-HPE/hms-go-http-lib v1.7.1
 	github.com/Cray-HPE/hms-msgbus v1.13.0
-	github.com/Cray-HPE/hms-securestorage v1.16.0
+	github.com/Cray-HPE/hms-securestorage v1.16.1-0.20250417144545-9fd2782ce8f3
 	github.com/Cray-HPE/hms-xname v1.4.0
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/Masterminds/squirrel v1.5.4
