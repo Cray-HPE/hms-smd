@@ -5,10 +5,10 @@ go 1.24.0
 require (
 	github.com/Cray-HPE/hms-base/v2 v2.3.0
 	github.com/Cray-HPE/hms-certs v1.7.0
-	github.com/Cray-HPE/hms-compcredentials v1.14.1-0.20250417145157-e6d90bc688bc
+	github.com/Cray-HPE/hms-compcredentials v1.15.0
 	github.com/Cray-HPE/hms-go-http-lib v1.7.1
 	github.com/Cray-HPE/hms-msgbus v1.13.0
-	github.com/Cray-HPE/hms-securestorage v1.16.1-0.20250417144545-9fd2782ce8f3
+	github.com/Cray-HPE/hms-securestorage v1.17.0
 	github.com/Cray-HPE/hms-xname v1.4.0
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/Masterminds/squirrel v1.5.4
@@ -22,7 +22,7 @@ require (
 
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
-	github.com/confluentinc/confluent-kafka-go/v2 v2.8.0 // indirect
+	github.com/confluentinc/confluent-kafka-go/v2 v2.10.0 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
