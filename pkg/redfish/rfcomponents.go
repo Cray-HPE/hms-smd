@@ -1679,13 +1679,16 @@ func (s *EpSystem) discoverRemotePhase1() {
 		s.Processors.Num = len(procInfo.Members)
 		s.Processors.OIDs = make(map[string]*EpProcessor)
 
+		errlog.Printf("JW_DEBUG: EpSystem->discoverRemotePhase1(): procInfo.Members pre-sort: %v", procInfo.Members)
 		sort.Sort(ResourceIDSlice(procInfo.Members))
+		errlog.Printf("JW_DEBUG: EpSystem->discoverRemotePhase1(): procInfo.Members post-sort: %v", procInfo.Members)
 		for procOrd, pOID := range procInfo.Members {
 			pID := pOID.Basename()
 			// Both CPUs and GPUs show up under /redfish/v1/Systems/{systemID}/Processors
 			// Need to update ordinal value of each processor based on value of its ProcessorType field (CPU or GPU)
 			// in EpProcessor.discoverPhase2
 			s.Processors.OIDs[pID] = NewEpProcessor(s, pOID, procOrd)
+			errlog.Printf("JW_DEBUG: EpSystem->discoverRemotePhase1(): s.Processors.OIDs[%v] = %v", pID, s.Processors.OIDs)
 		}
 		s.Processors.discoverRemotePhase1()
 	}
@@ -2243,6 +2246,7 @@ func NewEpProcessor(s *EpSystem, odataID ResourceID, rawOrdinal int) *EpProcesso
 // should be created with the appropriate constructor first.
 func (ps *EpProcessors) discoverRemotePhase1() {
 	for _, p := range ps.OIDs {
+		errlog.Printf("JW_DEBUG: EpProcessors->discoverRemotePhase1(): p = %v", p)
 		p.discoverRemotePhase1()
 	}
 }
@@ -2290,6 +2294,7 @@ func (p *EpProcessor) discoverRemotePhase1() {
 	}
 
 	p.LastStatus = VerifyingData
+	errlog.Printf("JW_DEBUG: EpProcessor->discoverRemotePhase1(): p = %v", p)
 }
 
 // This is the second discovery phase, after all information from
@@ -2300,6 +2305,7 @@ func (p *EpProcessor) discoverRemotePhase1() {
 func (ps *EpProcessors) discoverLocalPhase2() error {
 	var savedError error
 	for i, p := range ps.OIDs {
+		errlog.Printf("JW_DEBUG: EpProcessors->discoverLocalPhase2(): p = %v", p)
 		p.discoverLocalPhase2()
 		if p.LastStatus == RedfishSubtypeNoSupport {
 			errlog.Printf("Key %s: RF Processor type not supported: %s",
@@ -2378,8 +2384,9 @@ func (p *EpProcessor) discoverLocalPhase2() {
 		return
 	}
 
-	errlog.Printf("Processor xname ID ('%s') and Type ('%s') for: %s\n", p.ID, p.Type, p.ProcessorURL)
+	errlog.Printf("Processor xname ID ('%s') and Type ('%s') for: %s (FRUID: %s)\n", p.ID, p.Type, p.ProcessorURL, p.FRUID)
 	p.LastStatus = DiscoverOK
+	errlog.Printf("JW_DEBUG: EpProcessor->discoverLocalPhase2(): p = %v", p)
 }
 
 /////////////////////////////////////////////////////////////////////////////
