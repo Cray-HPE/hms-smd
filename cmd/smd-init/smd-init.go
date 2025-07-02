@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright [2019-2023] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2019-2023,2025] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -30,16 +30,16 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/Cray-HPE/hms-smd/v2/internal/hmsds"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
-	"github.com/Cray-HPE/hms-smd/v2/internal/hmsds"
 )
 
 const APP_VERSION = "1"
-const SCHEMA_VERSION = 20
-const SCHEMA_STEPS = 22
+const SCHEMA_VERSION = 21
+const SCHEMA_STEPS = 23
 
 var dbName string
 var dbUser string
