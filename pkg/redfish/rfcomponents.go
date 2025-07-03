@@ -2313,7 +2313,7 @@ func (ps *EpProcessors) discoverLocalPhase2() error {
 	// does guarantee that the order of iteration over slices.
 	//
 	// NOTE: We could have done this in getProcessorOrdinal() similarly to
-	// what was done in other get*Orginal() methods like
+	// what was done in other get*Ordinal() methods like
 	// getPowerSupplyOrdinal() but it seems more optimal to do it once here
 	// vs for each processor.
 
@@ -2329,15 +2329,15 @@ func (ps *EpProcessors) discoverLocalPhase2() error {
 	errlog.Printf("JW_DEBUG: EpProcessors->discoverLocalPhase2(): keys post-sort = %v", keys)
 
 	// Iterate over the sorted keys to access the processors in a consistent order
-	for _, key := range keys {
-		p := ps.OIDs[key]
+	for _, i := range keys {
+		p := ps.OIDs[i]
 		errlog.Printf("JW_DEBUG: EpProcessors->discoverLocalPhase2(): p = %v", p)
 		p.discoverLocalPhase2()
 		if p.LastStatus == RedfishSubtypeNoSupport {
 			errlog.Printf("Key %s: RF Processor type not supported: %s",
-				key, p.RedfishSubtype)
+				i, p.RedfishSubtype)
 		} else if p.LastStatus != DiscoverOK {
-			err := fmt.Errorf("Key %s: %s", key, p.LastStatus)
+			err := fmt.Errorf("Key %s: %s", i, p.LastStatus)
 			errlog.Printf("Proccesors discoverLocalPhase2: saw error: %s", err)
 			savedError = err
 		}
