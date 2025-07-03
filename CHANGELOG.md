@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed bug preventing duplicate "Detected" hw events from being pruned
 - Added postgres migration to remove duplicate fru history "Detected" events
 - Internal tracking ticket: CASMHMS-6568
 
