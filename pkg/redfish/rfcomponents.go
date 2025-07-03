@@ -2335,7 +2335,7 @@ func (ps *EpProcessors) discoverLocalPhase2() error {
 		p.discoverLocalPhase2()
 		if p.LastStatus == RedfishSubtypeNoSupport {
 			errlog.Printf("Key %s: RF Processor type not supported: %s",
-				i, p.RedfishSubtype)
+				key, p.RedfishSubtype)
 		} else if p.LastStatus != DiscoverOK {
 			err := fmt.Errorf("Key %s: %s", key, p.LastStatus)
 			errlog.Printf("Proccesors discoverLocalPhase2: saw error: %s", err)
