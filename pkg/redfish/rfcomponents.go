@@ -1679,7 +1679,7 @@ func (s *EpSystem) discoverRemotePhase1() {
 		s.Processors.Num = len(procInfo.Members)
 		s.Processors.OIDs = make(map[string]*EpProcessor)
 
-		errlog.Printf("JW_DEBUG: EpSystem->discoverRemotePhase1(): procInfo.Members pre-sort: %v", procInfo.Members)
+		errlog.Printf("JW_DEBUG: EpSystem->discoverRemotePhase1(): procInfo.Members pre-sort:  %v", procInfo.Members)
 		sort.Sort(ResourceIDSlice(procInfo.Members))
 		errlog.Printf("JW_DEBUG: EpSystem->discoverRemotePhase1(): procInfo.Members post-sort: %v", procInfo.Members)
 		for procOrd, pOID := range procInfo.Members {
@@ -2304,7 +2304,33 @@ func (p *EpProcessor) discoverRemotePhase1() {
 // under the system first, so that it is available during later steps.
 func (ps *EpProcessors) discoverLocalPhase2() error {
 	var savedError error
-	for i, p := range ps.OIDs {
+
+	// We need to iterate over the processors in a deterministic order
+	// every time we come through here so that the ordinals generated in
+	// discoverLocalPhase2() -> getProcessorOrdinal() are always consistent.
+	// Because Go doesn't guarantee the order of map iteration, we need to
+	// sort the keys of the map into a slice and iterate over that.  Go
+	// does guarantee that the order of iteration over slices.
+	//
+	// NOTE: We could have done this in getProcessorOrdinal() similarly to
+	// what was done in other get*Orginal() methods like
+	// getPowerSupplyOrdinal() but it seems more optimal to do it once here
+	// vs for each processor.
+
+	keys := make([]string, 0, len(ps.OIDs))
+	for k := range ps.OIDs {
+		keys = append(keys, k)
+	}
+
+	errlog.Printf("JW_DEBUG: EpProcessors->discoverLocalPhase2(): keys pre-sort  = %v", keys)
+
+	sort.Strings(keys)
+
+	errlog.Printf("JW_DEBUG: EpProcessors->discoverLocalPhase2(): keys post-sort = %v", keys)
+
+	// Iterate over the sorted keys to access the processors in a consistent order
+	for _, k := range keys {
+		p := ps.OIDs[k]
 		errlog.Printf("JW_DEBUG: EpProcessors->discoverLocalPhase2(): p = %v", p)
 		p.discoverLocalPhase2()
 		if p.LastStatus == RedfishSubtypeNoSupport {
