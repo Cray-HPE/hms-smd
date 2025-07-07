@@ -41,12 +41,12 @@ DECLARE
     fru_event2 RECORD;
 BEGIN
     FOR unique_id,unique_fru_id IN SELECT distinct id,fru_id FROM hwinv_hist LOOP
-        SELECT * INTO fru_event1 FROM hwinv_hist WHERE id = unique_id AND fru_id = unique_fru_id ORDER BY timestamp ASC LIMIT 1;
-        FOR fru_event2 IN SELECT * FROM hwinv_hist WHERE id = unique_id AND fru_id = unique_fru_id AND timestamp != fru_event1.timestamp ORDER BY timestamp ASC LOOP
+        SELECT * INTO fru_event1 FROM hwinv_hist WHERE id = unique_id AND fru_id = unique_fru_id ORDER BY "timestamp" ASC LIMIT 1;
+        FOR fru_event2 IN SELECT * FROM hwinv_hist WHERE id = unique_id AND fru_id = unique_fru_id AND "timestamp" != fru_event1.timestamp ORDER BY "timestamp" ASC LOOP
             IF fru_event1.event_type = 'Detected' AND fru_event1.event_type = fru_event2.event_type THEN
-                DELETE FROM hwinv_hist WHERE id = fru_event2.id AND fru_id = fru_event2.fru_id AND timestamp = fru_event2.timestamp;
+                DELETE FROM hwinv_hist WHERE id = fru_event2.id AND fru_id = fru_event2.fru_id AND "timestamp" = fru_event2.timestamp;
             ELSE
-                fru_event1 = fru_event2;
+                fru_event1 := fru_event2;
             END IF;
         END LOOP;
     END LOOP;
