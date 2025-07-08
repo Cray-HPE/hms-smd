@@ -46,20 +46,70 @@ DECLARE
     unique_ids RECORD;
     fru_event1 RECORD;
     fru_event2 RECORD;
-    deleted    bigint := 0;
+
+    del_total         bigint := 0;           /* Total deletions */
+    del_per_id        jsonb := '{}'::jsonb;  /* Map of deletions per xname */
+    del_this_id_pair  bigint := 0;           /* Deletions for this id pair */
 BEGIN
+    /* Loop through every unique xname + FRUID pair in the event history */
     FOR unique_ids IN SELECT distinct id,fru_id FROM hwinv_hist LOOP
+
+        /* Reset the deletion count for this id pair */
+        del_this_id_pair := 0;
+
+        /* For this unique pair of ids, select the first event in time */
         SELECT * INTO fru_event1 FROM hwinv_hist WHERE id = unique_ids.id AND fru_id = unique_ids.fru_id ORDER BY "timestamp" ASC LIMIT 1;
+
+        /* Starting at the second event for this pair, loop through their remaining events */
         FOR fru_event2 IN SELECT * FROM hwinv_hist WHERE id = unique_ids.id AND fru_id = unique_ids.fru_id AND "timestamp" != fru_event1.timestamp ORDER BY "timestamp" ASC LOOP
+
+            /* If the event type is 'Detected' and the two events match, delete it */
             IF fru_event1.event_type = 'Detected' AND fru_event1.event_type = fru_event2.event_type THEN
+
                 DELETE FROM hwinv_hist WHERE id = fru_event2.id AND fru_id = fru_event2.fru_id AND "timestamp" = fru_event2.timestamp;
-                deleted := deleted + 1;
+
+                /* Increment the deletion counts */
+                del_total := del_total + 1;
+                del_this_id_pair := del_this_id_pair + 1;
+
             ELSE
+
+                /* Otherwise, set the first event to the second and continue */
                 fru_event1 := fru_event2;
+
             END IF;
+
         END LOOP;
+
+        /* Update the deletion count (if non-zero) for this pair into the map for the xname */
+        if del_this_id_pair > 0 THEN
+            del_per_id := del_per_id || jsonb_build_object(
+                unique_ids.id,
+                COALESCE((del_per_id ->> unique_ids.id)::int, 0) + del_this_id_pair
+            );
+        END IF;
+
     END LOOP;
-    RAISE NOTICE 'Removed % duplicate Detected events.', deleted;
+
+    /* Output the deletion counts */
+
+    IF del_total = 0 THEN
+        RAISE NOTICE 'No duplicate Detected events found.';
+    ELSE
+        RAISE NOTICE 'Deleted events per xname:';
+        RAISE NOTICE '';
+
+        DECLARE
+            pair RECORD;
+        BEGIN
+            FOR pair IN SELECT * FROM jsonb_each_text(del_per_id) LOOP
+                RAISE NOTICE '\t%:\t%', pair.key, pair.value;
+            END LOOP;
+        END;
+
+        RAISE NOTICE '';
+        RAISE NOTICE 'Removed % duplicate Detected events.', del_total;
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 SQL

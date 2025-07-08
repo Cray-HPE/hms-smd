@@ -39,16 +39,31 @@ DECLARE
     fru_event1 RECORD;
     fru_event2 RECORD;
 BEGIN
+    /* Loop through every unique xname + FRUID pair in the event history */
     FOR unique_ids IN SELECT distinct id,fru_id FROM hwinv_hist LOOP
+
+        /* For this unique pair of ids, select the first event in time */
         SELECT * INTO fru_event1 FROM hwinv_hist WHERE id = unique_ids.id AND fru_id = unique_ids.fru_id ORDER BY "timestamp" ASC LIMIT 1;
+
+        /* Starting at the second event for this pair, loop through their remaining events */
         FOR fru_event2 IN SELECT * FROM hwinv_hist WHERE id = unique_ids.id AND fru_id = unique_ids.fru_id AND "timestamp" != fru_event1.timestamp ORDER BY "timestamp" ASC LOOP
+
+            /* If the event type is 'Detected' and the two events match, delete it */
             IF fru_event1.event_type = 'Detected' AND fru_event1.event_type = fru_event2.event_type THEN
+
                 DELETE FROM hwinv_hist WHERE id = fru_event2.id AND fru_id = fru_event2.fru_id AND "timestamp" = fru_event2.timestamp;
+                deleted := deleted + 1;
+
             ELSE
+
+                /* Otherwise, set the first event to the second and continue */
                 fru_event1 := fru_event2;
+
             END IF;
         END LOOP;
     END LOOP;
+
+    RAISE NOTICE 'Removed % duplicate Detected events.', deleted;
 END;
 $$ LANGUAGE plpgsql;
 
