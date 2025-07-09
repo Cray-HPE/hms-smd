@@ -34,7 +34,7 @@
 # If any issues occur, uncomment the following line to aid in debug:
 #set -x
 
-set -eu
+set -eo pipefail
 
 DB_NAME="hmsds"
 DB_USER="postgres"
@@ -51,7 +51,15 @@ DECLARE
     del_per_id        jsonb := '{}'::jsonb;  /* Map of deletions per xname */
     del_this_id_pair  bigint := 0;           /* Deletions for this id pair */
     pair              RECORD;                /* For looping through the stats */
+    tbl_size_before   bigint;                /* hwinv_history size before pruning */
+    tbl_size_after    bigint;                /* hwinv_history size after pruning */
+    db_size_before    bigint;                /* DB size before pruning */
+    db_size_after     bigint;                /* DB size after pruning */
 BEGIN
+    /* Capture size before pruning */
+    SELECT pg_database_size(current_database()) INTO db_size_before;
+    SELECT pg_total_relation_size('hwinv_hist') INTO tbl_size_before;
+    
     /* Loop through every unique xname + FRUID pair in the event history */
     FOR unique_ids IN SELECT distinct id,fru_id FROM hwinv_hist LOOP
 
@@ -92,7 +100,11 @@ BEGIN
 
     END LOOP;
 
-    /* Output the deletion counts */
+    /* Capture size after pruning */
+    SELECT pg_database_size(current_database()) INTO db_size_after;
+    SELECT pg_total_relation_size('hwinv_hist') INTO tbl_size_after;
+
+    /* Output statistics */
 
     IF del_total = 0 THEN
         RAISE NOTICE 'No duplicate Detected events found.';
@@ -101,11 +113,18 @@ BEGIN
         RAISE NOTICE '';
 
         FOR pair IN SELECT * FROM jsonb_each_text(del_per_id) LOOP
-            RAISE NOTICE '\t%:\t%', pair.key, pair.value;
+            RAISE NOTICE E'\t%:\t%', pair.key, pair.value;
         END LOOP;
 
         RAISE NOTICE '';
         RAISE NOTICE 'Removed % duplicate Detected events.', del_total;
+        RAISE NOTICE '';
+        RAISE NOTICE 'hwinv_history table size before pruning: % mb', tbl_size_before / 1024 / 1024;
+        RAISE NOTICE 'hwinv_history table size after pruning:  % mb', tbl_size_after / 1024 / 1024;
+        RAISE NOTICE '';
+        RAISE NOTICE 'Database size before pruning: % mb', db_size_before / 1024 / 1024;
+        RAISE NOTICE 'Database size after pruning:  % mb', db_size_after / 1024 / 1024;
+        RAISE NOTICE '';
     END IF;
 END;
 $$ LANGUAGE plpgsql;

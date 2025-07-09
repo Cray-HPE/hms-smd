@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed bug preventing duplicate "Detected" hw events from being pruned
 - Added postgres migration to remove duplicate fru history "Detected" events
+- Added a bash script to perform the postgres migration manually
+- Added additional bash scripts to backup and restore the fru history table
+- Added scripts to start and stop developer environments with Docker
 - Internal tracking ticket: CASMHMS-6568
 
 ## [2.38.0] - 2025-04-30
