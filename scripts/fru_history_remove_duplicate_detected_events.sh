@@ -39,47 +39,53 @@ set -eo pipefail
 DB_NAME="hmsds"
 DB_USER="postgres"
 
-psql_output=$(
+echo 'Pruning hwinv_hist table... This will take a while - please do not interrupt'
+
+# Capture all output from the SQL output so we can later print it
+
+pruning_output=$(
 psql "dbname=$DB_NAME user=$DB_USER" 2>&1 <<'SQL'
 DO $$
 DECLARE
-    unique_ids RECORD;
+    comp_id    RECORD;
     base_event RECORD;
     next_event RECORD;
 
     del_total         bigint := 0;           /* Total deletions */
+    del_this_id       bigint := 0;           /* Total deletions */
     del_per_id        jsonb := '{}'::jsonb;  /* Map of deletions per xname */
-    del_this_id_pair  bigint := 0;           /* Deletions for this id pair */
     pair              RECORD;                /* For looping through the stats */
-    tbl_size_before   bigint;                /* hwinv_history size before pruning */
-    tbl_size_after    bigint;                /* hwinv_history size after pruning */
-    db_size_before    bigint;                /* DB size before pruning */
-    db_size_after     bigint;                /* DB size after pruning */
+    tbl_size_before   bigint := 0;           /* hwinv_history size before pruning */
+    db_size_before    bigint := 0;           /* DB size before pruning */
 BEGIN
     /* Capture size before pruning */
-    SELECT pg_database_size(current_database()) INTO db_size_before;
     SELECT pg_total_relation_size('hwinv_hist') INTO tbl_size_before;
-    
-    /* Loop through every unique xname + FRUID pair in the event history */
-    FOR unique_ids IN SELECT distinct id,fru_id FROM hwinv_hist LOOP
+    SELECT pg_database_size(current_database()) INTO db_size_before;
+
+    /* Loop through every unique component in the event history but only for CPUs and GPUs */
+    FOR comp_id IN SELECT DISTINCT hist.id FROM hwinv_hist hist
+        JOIN hwinv_by_loc loc ON loc.id = hist.id WHERE loc.type IN ('Processor', 'NodeAccel') LOOP
 
         /* Reset the deletion count for this id pair */
-        del_this_id_pair := 0;
+        del_this_id := 0;
 
-        /* For this unique pair of ids, select the first event in time */
-        SELECT * INTO base_event FROM hwinv_hist WHERE id = unique_ids.id AND fru_id = unique_ids.fru_id ORDER BY "timestamp" ASC LIMIT 1;
+        /* For this id, select the first event in time */
+        SELECT * INTO base_event FROM hwinv_hist WHERE id = comp_id.id ORDER BY "timestamp" ASC LIMIT 1;
 
         /* Starting at the second event for this pair, loop through their remaining events */
-        FOR next_event IN SELECT * FROM hwinv_hist WHERE id = unique_ids.id AND fru_id = unique_ids.fru_id AND "timestamp" != base_event.timestamp ORDER BY "timestamp" ASC LOOP
+        FOR next_event IN SELECT * FROM hwinv_hist WHERE id = comp_id.id AND "timestamp" != base_event.timestamp ORDER BY "timestamp" ASC LOOP
 
-            /* If the event type is 'Detected' and the two events match, delete it */
+            /* If the event type is 'Detected' and the two consecutive events match, delete it */
+            /* Do not need to compare FRUIDs since a "Removed" event will always preceeds any */
+            /* "Detected" event that we need to retain */
+
             IF base_event.event_type = 'Detected' AND base_event.event_type = next_event.event_type THEN
 
-                DELETE FROM hwinv_hist WHERE id = next_event.id AND fru_id = next_event.fru_id AND "timestamp" = next_event.timestamp;
+                DELETE FROM hwinv_hist WHERE id = next_event.id AND "timestamp" = next_event.timestamp;
 
                 /* Increment the deletion counts */
                 del_total := del_total + 1;
-                del_this_id_pair := del_this_id_pair + 1;
+                del_this_id := del_this_id + 1;
 
             ELSE
 
@@ -90,19 +96,16 @@ BEGIN
 
         END LOOP;
 
-        /* Update the deletion count (if non-zero) for this pair into the map for the xname */
-        if del_this_id_pair > 0 THEN
+        /* Update the deletion count (if non-zero) for this id into the map for the xname */
+        if del_this_id > 0 THEN
+            /* TODO: Don't need to add, just assign */
             del_per_id := del_per_id || jsonb_build_object(
-                unique_ids.id,
-                COALESCE((del_per_id ->> unique_ids.id)::int, 0) + del_this_id_pair
+                comp_id.id,
+                COALESCE((del_per_id ->> comp_id.id)::int, 0) + del_this_id
             );
         END IF;
 
     END LOOP;
-
-    /* Capture size after pruning */
-    SELECT pg_database_size(current_database()) INTO db_size_after;
-    SELECT pg_total_relation_size('hwinv_hist') INTO tbl_size_after;
 
     /* Output statistics */
 
@@ -118,14 +121,12 @@ BEGIN
 
         RAISE NOTICE '';
         RAISE NOTICE 'Removed % duplicate Detected events.', del_total;
-        RAISE NOTICE '';
-        RAISE NOTICE 'hwinv_history table size before pruning: % mb', tbl_size_before / 1024 / 1024;
-        RAISE NOTICE 'hwinv_history table size after pruning:  % mb', tbl_size_after / 1024 / 1024;
-        RAISE NOTICE '';
-        RAISE NOTICE 'Database size before pruning: % mb', db_size_before / 1024 / 1024;
-        RAISE NOTICE 'Database size after pruning:  % mb', db_size_after / 1024 / 1024;
-        RAISE NOTICE '';
     END IF;
+
+    RAISE NOTICE '';
+    RAISE NOTICE 'hwinv_history table size before pruning: % mb', tbl_size_before / 1024 / 1024;
+    RAISE NOTICE 'Database size before pruning:            % mb', db_size_before / 1024 / 1024;
+
 END;
 $$ LANGUAGE plpgsql;
 SQL
@@ -136,4 +137,54 @@ if [[ $? -ne 0 ]]; then
   exit 1
 fi
 
-echo "$psql_output"
+echo "$pruning_output"
+
+# The pruning logic above removed a large part of the hwinv_hist table. This however
+# does not imply that the table and database sizes will have changed.  In order to
+# free space, a vacuum must run.  Here are the options:
+#
+#     1. Do nothing
+#            * Standard vacuum will eventually run but could be days or weeks
+#     2. Standard vacuum
+#            * Non-blocking
+#            * Frees internal space
+#            * Does not return disk space to the OS
+#     2. Full vacuum
+#            * Blocking - no updates allowed to table until complete
+#            * Frees internal space
+#            * Returns disk space to the OS
+#
+# So, run a full vacuum
+
+echo "Running VACUUM FULL on hwinv_hist table to reclaim disk space..."
+
+psql "dbname=$DB_NAME user=$DB_USER" -c "VACUUM FULL hwinv_hist;" || {
+  echo "Error running VACUUM FULL" >&2
+  exit 1
+}
+
+# Now capture the sizes after compaction has completed
+#
+ending_stats_output=$(
+psql "dbname=$DB_NAME user=$DB_USER" 2>&1 <<'SQL'
+DO $$
+DECLARE
+    tbl_size_after    bigint := 0;   /* hwinv_history size after pruning */
+    db_size_after     bigint := 0;   /* DB size after pruning */
+BEGIN
+
+    /* Capture size after pruning and full vacuum */
+
+    SELECT pg_total_relation_size('hwinv_hist') INTO tbl_size_after;
+    SELECT pg_database_size(current_database()) INTO db_size_after;
+
+    /* Output the sizes */
+
+    RAISE NOTICE 'hwinv_history table size after pruning:  % mb', tbl_size_after / 1024 / 1024;
+    RAISE NOTICE 'Database size after pruning:             % mb', db_size_after / 1024 / 1024;
+END;
+$$ LANGUAGE plpgsql;
+SQL
+)
+
+echo "$ending_stats_output"
