@@ -23,8 +23,6 @@
  */
 -- Removes duplicate "Detected" events from the hardware history table
 
-BEGIN;
-
 -- For each unique id (xname) and fru_id combination, grab the earliest event
 -- for the pair to use as a 'base' event. Then compare the remaining events
 -- for the id pair (in time order) to this base event. If the event_type of
@@ -34,37 +32,44 @@ BEGIN;
 -- the first occurrence of each "Detected" event that does not come after a
 -- non-"Detected" event for the same id (xname) and fru_id pair.
 
+BEGIN;
+
 CREATE OR REPLACE FUNCTION hwinv_hist_remove_duplicate_detected_events()
 RETURNS VOID AS $$
-DECLARE
-    unique_ids RECORD;
-    base_event RECORD;
-    next_event RECORD;
 BEGIN
-    /* Loop through every unique xname + FRUID pair in the event history */
-    FOR unique_ids IN SELECT distinct id,fru_id FROM hwinv_hist LOOP
+    -- Create a temporary timestamp index to speed up pruning
 
-        /* For this unique pair of ids, select the first event in time */
-        SELECT * INTO base_event FROM hwinv_hist WHERE id = unique_ids.id AND fru_id = unique_ids.fru_id ORDER BY "timestamp" ASC LIMIT 1;
+    CREATE INDEX IF NOT EXISTS hwinvhist_id_ts_idx ON hwinv_hist (id, "timestamp");
 
-        /* Starting at the second event for this pair, loop through their remaining events */
-        FOR next_event IN SELECT * FROM hwinv_hist WHERE id = unique_ids.id AND fru_id = unique_ids.fru_id AND "timestamp" != base_event.timestamp ORDER BY "timestamp" ASC LOOP
+    -- Run the pruning logic
 
-            /* If the event type is 'Detected' and the two events match, delete it */
-            IF base_event.event_type = 'Detected' AND base_event.event_type = next_event.event_type THEN
+    WITH dups AS (
+        SELECT id, "timestamp"
+        FROM (
+            SELECT id, "timestamp", event_type,
+                   LAG(event_type) OVER (PARTITION BY id ORDER BY "timestamp") AS prev_type
+            FROM hwinv_hist
+            WHERE id IN (
+                SELECT hist.id
+                FROM hwinv_hist hist
+                JOIN hwinv_by_loc loc ON loc.id = hist.id
+                WHERE loc.type IN ('Processor', 'NodeAccel')
+            )
+        ) sub
+        WHERE event_type = 'Detected' AND prev_type = 'Detected'
+    )
+    DELETE FROM hwinv_hist h
+        USING dups
+        WHERE h.id = dups.id AND h."timestamp" = dups."timestamp";
 
-                DELETE FROM hwinv_hist WHERE id = next_event.id AND fru_id = next_event.fru_id AND "timestamp" = next_event.timestamp;
+    -- Drop the temporary index to free up associated resources
 
-            ELSE
-
-                /* Otherwise, set the base event to the next event and continue */
-                base_event := next_event;
-
-            END IF;
-        END LOOP;
-    END LOOP;
+    DROP INDEX IF EXISTS hwinvhist_id_ts_idx;
 END;
 $$ LANGUAGE plpgsql;
+
+-- A full vacuum must be run to reclaim space but cannot run in a migration.
+-- The cray-smd-init service will run it manually after the migration is complete.
 
 -- Bump the schema version
 insert into system values(0, 21, '{}'::JSON)

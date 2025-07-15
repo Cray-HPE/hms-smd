@@ -37,7 +37,7 @@
 set -eo pipefail
 
 DB_NAME="hmsds"
-DB_USER="hmsdsuser"
+DB_USER="postgres"
 
 # Capture and print sizes before pruning and vacuuming
 

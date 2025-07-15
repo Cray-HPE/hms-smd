@@ -40,6 +40,7 @@ import (
 const APP_VERSION = "1"
 const SCHEMA_VERSION = 21
 const SCHEMA_STEPS = 23
+const DELETE_DUPLICATE_DETECTED_EVENTS_STEP = 23
 
 var dbName string
 var dbUser string
@@ -207,6 +208,8 @@ func main() {
 	}
 	lg.Printf("Connected to postgres successfully")
 
+	defer db.Close()
+
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		lg.Printf("Creating postgres driver failed: '%s'", err)
@@ -307,5 +310,20 @@ func main() {
 		os.Exit(1)
 	} else {
 		lg.Printf("Migration: At step version %d, dirty: %t", version2, dirty2)
+	}
+
+	// If we pruned "Detected" events in a migration we need to run a full
+	// vacuum as it was not allowed in the migration itself.
+	if version < DELETE_DUPLICATE_DETECTED_EVENTS_STEP &&
+		migrateStep >= DELETE_DUPLICATE_DETECTED_EVENTS_STEP {
+
+		lg.Printf("Migration: Running full vacuum...")
+
+		_, err = db.Exec("VACUUM FULL hwinv_hist;")
+		if err != nil {
+			log.Printf("VACUUM FULL failed: %v", err)
+		}
+
+		lg.Printf("Migration: Full vacuum completed successfully")
 	}
 }
