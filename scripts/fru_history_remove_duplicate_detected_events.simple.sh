@@ -37,7 +37,7 @@
 set -eo pipefail
 
 DB_NAME="hmsds"
-DB_USER="postgres"
+DB_USER="hmsdsuser"
 
 # Capture and print sizes before pruning and vacuuming
 
@@ -79,24 +79,42 @@ echo 'Pruning hwinv_hist table... This will take a while - please do not interru
 
 pruning_output=$(
 psql "dbname=$DB_NAME user=$DB_USER" 2>&1 <<'SQL'
-    WITH dups AS (
-        SELECT id, "timestamp"
-        FROM (
-            SELECT id, "timestamp", event_type,
-                   LAG(event_type) OVER (PARTITION BY id ORDER BY "timestamp") AS prev_type
-            FROM hwinv_hist
-            WHERE id IN (
-                SELECT hist.id
-                FROM hwinv_hist hist
-                JOIN hwinv_by_loc loc ON loc.id = hist.id
-                WHERE loc.type IN ('Processor', 'NodeAccel')
-            )
-        ) sub
-        WHERE event_type = 'Detected' AND prev_type = 'Detected'
-    )
-    DELETE FROM hwinv_hist h
-        USING dups
-        WHERE h.id = dups.id AND h."timestamp" = dups."timestamp";
+DO $$
+DECLARE
+    comp_id    RECORD;
+    base_event RECORD;
+    next_event RECORD;
+BEGIN
+    /* Loop through every unique component in the event history but only for CPUs and GPUs */
+    FOR comp_id IN SELECT DISTINCT hist.id FROM hwinv_hist hist
+        JOIN hwinv_by_loc loc ON loc.id = hist.id WHERE loc.type IN ('Processor', 'NodeAccel') LOOP
+
+        /* For this id, select the first event in time */
+        SELECT * INTO base_event FROM hwinv_hist WHERE id = comp_id.id ORDER BY "timestamp" ASC LIMIT 1;
+
+        /* Starting at the second event for this pair, loop through their remaining events */
+        FOR next_event IN SELECT * FROM hwinv_hist WHERE id = comp_id.id AND "timestamp" != base_event.timestamp ORDER BY "timestamp" ASC LOOP
+
+            /* If the event type is 'Detected' and the two consecutive events match, delete it */
+            /* Do not need to compare FRUIDs since a "Removed" event will always preceeds any */
+            /* "Detected" event that we need to retain */
+
+            IF base_event.event_type = 'Detected' AND base_event.event_type = next_event.event_type THEN
+
+                DELETE FROM hwinv_hist WHERE id = next_event.id AND "timestamp" = next_event.timestamp;
+
+            ELSE
+
+                /* Otherwise, set the base event to the next event and continue */
+                base_event := next_event;
+
+            END IF;
+
+        END LOOP;
+
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
 SQL
 )
 
