@@ -2330,8 +2330,8 @@ func (ps *EpProcessors) discoverLocalPhase2() error {
 
 	// Iterate over the sorted keys to access the processors in a consistent order
 	for _, i := range keys {
+		errlog.Printf("JW_DEBUG: EpProcessors->discoverLocalPhase2(): i = %v", i)
 		p := ps.OIDs[i]
-		errlog.Printf("JW_DEBUG: EpProcessors->discoverLocalPhase2(): p = %v", p)
 		p.discoverLocalPhase2()
 		if p.LastStatus == RedfishSubtypeNoSupport {
 			errlog.Printf("Key %s: RF Processor type not supported: %s",
