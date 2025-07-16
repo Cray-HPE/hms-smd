@@ -269,6 +269,7 @@ func main() {
 		}
 		lg.Printf("Migration: (Dirty) Force(%d) succeeded!", version)
 	}
+lg.Printf("JW_DEBUG: noVersion=%v version=%v migrateStep=%v dirty=%v", noVersion, version, migrateStep, dirty)
 	// Initial install - migrate all the way up.
 	if noVersion {
 		lg.Printf("Migration: Initial install, call Up()...")
@@ -284,6 +285,10 @@ func main() {
 	} else if version != migrateStep || dirty == true {
 		if dirty == true {
 			lg.Printf("Migration: DB is dirty, forcing migration to step %d", migrateStep)
+			if migrateStep == 23 {
+				m.Down()
+				err = m.Force(int(version))
+			}
 		} else if version < migrateStep {
 			lg.Printf("Migration: DB at step %d/%d. Updating...", version, migrateStep)
 		} else {
