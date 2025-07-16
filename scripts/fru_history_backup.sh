@@ -30,7 +30,7 @@ DB_NAME="hmsds"
 DB_USER="postgres"
 DB_TABLE="hwinv_hist"
 
-BACKUP_FILE="smd_hwinv_hist_table_backup-$(date +"%m%d%Y-%H:%M:%S").sql"
+BACKUP_FILE="smd_hwinv_hist_table_backup-$(date +"%m%d%Y-%H%M%S").sql"
 
 # Determine the SMD postgres leader
 
