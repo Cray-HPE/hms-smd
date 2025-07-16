@@ -227,7 +227,6 @@ func main() {
 		os.Exit(1)
 	}
 	defer m.Close()
-	defer db.Close()	// Close after closing migration
 
 	lg.Printf("Creating migration succeeded")
 

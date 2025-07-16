@@ -24,8 +24,6 @@
 
 -- Removes duplicate "Detected" events from the hardware history table
 
-BEGIN;
-
 CREATE OR REPLACE FUNCTION hwinv_hist_remove_duplicate_detected_events()
 RETURNS VOID AS $$
 BEGIN
@@ -70,5 +68,3 @@ SELECT hwinv_hist_remove_duplicate_detected_events()
 -- Bump the schema version
 insert into system values(0, 21, '{}'::JSON)
     on conflict(id) do update set schema_version=21;
-
-COMMIT;
