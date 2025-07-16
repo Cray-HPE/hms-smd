@@ -287,7 +287,6 @@ lg.Printf("JW_DEBUG: noVersion=%v version=%v migrateStep=%v dirty=%v", noVersion
 			lg.Printf("Migration: DB is dirty, forcing migration to step %d", migrateStep)
 			if migrateStep == 23 {
 				m.Down()
-				err = m.Force(int(version))
 			}
 		} else if version < migrateStep {
 			lg.Printf("Migration: DB at step %d/%d. Updating...", version, migrateStep)
