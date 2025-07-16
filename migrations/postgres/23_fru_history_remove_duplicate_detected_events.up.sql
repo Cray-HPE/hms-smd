@@ -60,6 +60,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Execute the pruning function
+
+SELECT hwinv_hist_remove_duplicate_detected_events()
+
 -- A full vacuum must be run to reclaim space but cannot run from a migration.
 -- The cray-smd-init service will run it manually after the migration completes.
 
