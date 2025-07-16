@@ -283,7 +283,7 @@ func main() {
 		}
 	} else if version != migrateStep || dirty == true {
 		if dirty == true {
-			lg.Printf("Migration: DB is dirty, forcing migration to step %d", migrateStep
+			lg.Printf("Migration: DB is dirty, forcing migration to step %d", migrateStep)
 		} else if version < migrateStep {
 			lg.Printf("Migration: DB at step %d/%d. Updating...", version, migrateStep)
 		} else {
