@@ -208,8 +208,6 @@ func main() {
 	}
 	lg.Printf("Connected to postgres successfully")
 
-	defer db.Close()
-
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		lg.Printf("Creating postgres driver failed: '%s'", err)
@@ -229,6 +227,7 @@ func main() {
 		os.Exit(1)
 	}
 	defer m.Close()
+	defer db.Close()	// Close after closing migration
 
 	lg.Printf("Creating migration succeeded")
 
@@ -302,6 +301,23 @@ func main() {
 		lg.Printf("Migration: Already at expected step.  Nothing to do.")
 		os.Exit(0)
 	}
+
+	// If we pruned "Detected" events in migration 23 we need to run a full
+	// vacuum to free space.  This is not allowed in the migration itself.
+	if version < DELETE_DUPLICATE_DETECTED_EVENTS_STEP &&
+		migrateStep >= DELETE_DUPLICATE_DETECTED_EVENTS_STEP {
+
+		lg.Printf("Migration: Running full vacuum to reclaim space...")
+
+		_, err = db.Exec("VACUUM FULL hwinv_hist;")
+		if err != nil {
+			log.Printf("VACUUM FULL failed: %v", err)
+		}
+
+		lg.Printf("Migration: Full vacuum completed successfully")
+	}
+
+	// Check the version again to ensure we are at the expected step.
 	version2, dirty2, err := m.Version()
 	if err == migrate.ErrNilVersion {
 		lg.Printf("Migration: NO VERSION AFTER MIGRATE (%d) yet", version2)
@@ -310,20 +326,5 @@ func main() {
 		os.Exit(1)
 	} else {
 		lg.Printf("Migration: At step version %d, dirty: %t", version2, dirty2)
-	}
-
-	// If we pruned "Detected" events in a migration we need to run a full
-	// vacuum as it was not allowed in the migration itself.
-	if version < DELETE_DUPLICATE_DETECTED_EVENTS_STEP &&
-		migrateStep >= DELETE_DUPLICATE_DETECTED_EVENTS_STEP {
-
-		lg.Printf("Migration: Running full vacuum...")
-
-		_, err = db.Exec("VACUUM FULL hwinv_hist;")
-		if err != nil {
-			log.Printf("VACUUM FULL failed: %v", err)
-		}
-
-		lg.Printf("Migration: Full vacuum completed successfully")
 	}
 }

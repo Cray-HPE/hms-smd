@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright [2019-2024] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2019-2025] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -2309,13 +2309,13 @@ func (ps *EpProcessors) discoverLocalPhase2() error {
 	// every time we come through here so that the ordinals generated in
 	// discoverLocalPhase2() -> getProcessorOrdinal() are always consistent.
 	// Because Go doesn't guarantee the order of map iteration, we need to
-	// sort the keys of the map into a slice and iterate over that.  Go
-	// does guarantee that the order of iteration over slices.
+	// sort the keys of the map into a slice and then iterate over that.  Go
+	// does guarantee deterministic iteration over slices.
 	//
 	// NOTE: We could have done this in getProcessorOrdinal() similarly to
 	// what was done in other get*Ordinal() methods like
 	// getPowerSupplyOrdinal() but it seems more optimal to do it once here
-	// vs for each processor.
+	// rather than for every single processor we iterate over.
 
 	keys := make([]string, 0, len(ps.OIDs))
 	for k := range ps.OIDs {

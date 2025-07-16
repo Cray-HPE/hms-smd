@@ -21,16 +21,8 @@
  * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
--- Removes duplicate "Detected" events from the hardware history table
 
--- For each unique id (xname) and fru_id combination, grab the earliest event
--- for the pair to use as a 'base' event. Then compare the remaining events
--- for the id pair (in time order) to this base event. If the event_type of
--- the next event matches the base event and is a "Detected" event, delete it
--- and move to the event after it, and so on. If they do not match then set
--- the base event to this next event and continue. This will remove all but
--- the first occurrence of each "Detected" event that does not come after a
--- non-"Detected" event for the same id (xname) and fru_id pair.
+-- Removes duplicate "Detected" events from the hardware history table
 
 BEGIN;
 
@@ -68,8 +60,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- A full vacuum must be run to reclaim space but cannot run in a migration.
--- The cray-smd-init service will run it manually after the migration is complete.
+-- A full vacuum must be run to reclaim space but cannot run from a migration.
+-- The cray-smd-init service will run it manually after the migration completes.
 
 -- Bump the schema version
 insert into system values(0, 21, '{}'::JSON)

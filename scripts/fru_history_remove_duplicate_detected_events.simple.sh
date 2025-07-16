@@ -28,7 +28,8 @@
 # This is provided outside of a migration so that databases can be pruned
 # outside the scope of an SMD upgrade.
 #
-# Set PGPASSWORD in the env if default credentials don't work
+# Set PGPASSWORD in the env if default credentials don't work.
+#
 # If default user changed from 'postgres' then update DB_USER below
 #
 # If any issues occur, uncomment the following line to aid in debug:

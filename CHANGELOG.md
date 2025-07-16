@@ -5,14 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.39.0] - 2025-07-11
+## [2.39.0] - 2025-07-23
 
 ### Fixed
 
 - Fixed bug preventing duplicate "Detected" hw events from being pruned
-- Added postgres migration to remove duplicate fru history "Detected" events
-- Added a bash script to perform the postgres migration manually
-- Added additional bash scripts to backup and restore the fru history table
+- Added a postgres migration that prunes duplicate "Detected" events for
+  CPUs and GPUs from the FRU history
+- Added a bash script does manual pruning
+- Added additional bash scripts to backup and restore several DB tables
 - Added scripts to start and stop developer environments with Docker
 - Internal tracking ticket: CASMHMS-6568
 
