@@ -64,7 +64,7 @@ echo "Copying $BACKUP_FILE to /tmp/$BACKUP_FILE_BASENAME in the postgres leader 
 
 kubectl cp $BACKUP_FILE services/$POSTGRES_LEADER:/tmp/$BACKUP_FILE_BASENAME -c postgres
 
-# Clear the contents of the hwinv_hist table
+# Replace the contents of the hwinv_hist table with the backup
 
 echo "Using psql to restore the $DB_TABLE table usign specified backup"
 
