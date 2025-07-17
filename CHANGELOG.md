@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed bug preventing duplicate "Detected" hw events in hiwinv history
+- Fixed bug causing duplicate "Detected" hw events in hiwinv history
 - Added scripts to start and stop developer environments with Docker
 - Internal tracking ticket: CASMHMS-6568
 
