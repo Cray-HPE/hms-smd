@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright [2019-2024] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2019-2025] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -1679,13 +1679,16 @@ func (s *EpSystem) discoverRemotePhase1() {
 		s.Processors.Num = len(procInfo.Members)
 		s.Processors.OIDs = make(map[string]*EpProcessor)
 
+		errlog.Printf("JW_DEBUG: EpSystem->discoverRemotePhase1(): procInfo.Members pre-sort:  %v", procInfo.Members)
 		sort.Sort(ResourceIDSlice(procInfo.Members))
+		errlog.Printf("JW_DEBUG: EpSystem->discoverRemotePhase1(): procInfo.Members post-sort: %v", procInfo.Members)
 		for procOrd, pOID := range procInfo.Members {
 			pID := pOID.Basename()
 			// Both CPUs and GPUs show up under /redfish/v1/Systems/{systemID}/Processors
 			// Need to update ordinal value of each processor based on value of its ProcessorType field (CPU or GPU)
 			// in EpProcessor.discoverPhase2
 			s.Processors.OIDs[pID] = NewEpProcessor(s, pOID, procOrd)
+			errlog.Printf("JW_DEBUG: EpSystem->discoverRemotePhase1(): s.Processors.OIDs[%v] = %v", pID, s.Processors.OIDs)
 		}
 		s.Processors.discoverRemotePhase1()
 	}
@@ -2243,6 +2246,7 @@ func NewEpProcessor(s *EpSystem, odataID ResourceID, rawOrdinal int) *EpProcesso
 // should be created with the appropriate constructor first.
 func (ps *EpProcessors) discoverRemotePhase1() {
 	for _, p := range ps.OIDs {
+		errlog.Printf("JW_DEBUG: EpProcessors->discoverRemotePhase1(): p = %v", p)
 		p.discoverRemotePhase1()
 	}
 }
@@ -2290,6 +2294,7 @@ func (p *EpProcessor) discoverRemotePhase1() {
 	}
 
 	p.LastStatus = VerifyingData
+	errlog.Printf("JW_DEBUG: EpProcessor->discoverRemotePhase1(): p = %v", p)
 }
 
 // This is the second discovery phase, after all information from
@@ -2299,7 +2304,34 @@ func (p *EpProcessor) discoverRemotePhase1() {
 // under the system first, so that it is available during later steps.
 func (ps *EpProcessors) discoverLocalPhase2() error {
 	var savedError error
-	for i, p := range ps.OIDs {
+
+	// We need to iterate over the processors in a deterministic order
+	// every time we come through here so that the ordinals generated in
+	// discoverLocalPhase2() -> getProcessorOrdinal() are always consistent.
+	// Because Go doesn't guarantee the order of map iteration, we need to
+	// sort the keys of the map into a slice and then iterate over that.  Go
+	// does guarantee deterministic iteration over slices.
+	//
+	// NOTE: We could have done this in getProcessorOrdinal() similarly to
+	// what was done in other get*Ordinal() methods like
+	// getPowerSupplyOrdinal() but it seems more optimal to do it once here
+	// rather than for every single processor we iterate over.
+
+	keys := make([]string, 0, len(ps.OIDs))
+	for k := range ps.OIDs {
+		keys = append(keys, k)
+	}
+
+	errlog.Printf("JW_DEBUG: EpProcessors->discoverLocalPhase2(): keys pre-sort  = %v", keys)
+
+	sort.Strings(keys)
+
+	errlog.Printf("JW_DEBUG: EpProcessors->discoverLocalPhase2(): keys post-sort = %v", keys)
+
+	// Iterate over the sorted keys to access the processors in a consistent order
+	for _, i := range keys {
+		errlog.Printf("JW_DEBUG: EpProcessors->discoverLocalPhase2(): i = %v", i)
+		p := ps.OIDs[i]
 		p.discoverLocalPhase2()
 		if p.LastStatus == RedfishSubtypeNoSupport {
 			errlog.Printf("Key %s: RF Processor type not supported: %s",
@@ -2378,8 +2410,9 @@ func (p *EpProcessor) discoverLocalPhase2() {
 		return
 	}
 
-	errlog.Printf("Processor xname ID ('%s') and Type ('%s') for: %s\n", p.ID, p.Type, p.ProcessorURL)
+	errlog.Printf("Processor xname ID ('%s') and Type ('%s') for: %s (FRUID: %s)\n", p.ID, p.Type, p.ProcessorURL, p.FRUID)
 	p.LastStatus = DiscoverOK
+	errlog.Printf("JW_DEBUG: EpProcessor->discoverLocalPhase2(): p = %v", p)
 }
 
 /////////////////////////////////////////////////////////////////////////////
