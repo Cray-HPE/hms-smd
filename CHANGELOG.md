@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.32.2] - 2025-07-23
+
+### Fixed
+
+- Fixed bug causing duplicate "Detected" hw events in hiwinv history
+- Added scripts to start and stop developer environments with Docker
+- Internal tracking ticket: CASMHMS-6568
+
 ## [2.32.1] - 2025-04-14
 
 ## Fixed
@@ -13,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.32.0] - 2025-01-10
 
-### Changed
+### Fixed
 
 - Added DiscoveryStarted to allowed redfishendpoint states for the tests
 
