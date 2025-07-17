@@ -29,10 +29,10 @@ import (
 	"sync"
 
 	base "github.com/Cray-HPE/hms-base/v2"
+	"github.com/Cray-HPE/hms-xname/xnametypes"
 	compcreds "github.com/Cray-HPE/hms-compcredentials"
 	rf "github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
 	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
-	"github.com/Cray-HPE/hms-xname/xnametypes"
 )
 
 // When we discover a Redfish Endpoint, the data retrieved is processed
@@ -870,7 +870,6 @@ func (s *SmD) GenerateHWInvHist(hwlocs []*sm.HWInvByLoc) error {
 		}
 		locIDs = append(locIDs, hwloc.ID)
 	}
-	s.LogAlways("JW_DEBUG: GenerateHWInvHist(): locIDs = %v", locIDs)
 	// Get the most recent event for each locID
 	lhs, err := s.db.GetHWInvHistLastEvents(locIDs)
 	if err != nil {
@@ -880,7 +879,6 @@ func (s *SmD) GenerateHWInvHist(hwlocs []*sm.HWInvByLoc) error {
 	for _, lh := range lhs {
 		lhsMap[lh.ID] = lh
 	}
-	s.LogAlways("JW_DEBUG: GenerateHWInvHist(): lhsMap = %v", lhsMap)
 	for _, hwloc := range hwlocs {
 		// Skip hwlocs that have no FRU
 		if hwloc == nil || hwloc.PopulatedFRU == nil {
@@ -893,13 +891,10 @@ func (s *SmD) GenerateHWInvHist(hwlocs []*sm.HWInvByLoc) error {
 		}
 		// Only create a new 'detected' event if the previous event for that location
 		// is not a Location+FRUID+EventType duplicate.
-		s.LogAlways("JW_DEBUG: GenerateHWInvHist(): hwloc = %v", hwloc)
 		if lastHist, ok := lhsMap[hwloc.ID]; !ok ||
 		   lastHist.FruId != hwloc.PopulatedFRU.FRUID ||
 		   lastHist.EventType != sm.HWInvHistEventTypeDetected {
 			hwhists = append(hwhists, &newHist)
-			s.LogAlways("JW_DEBUG: GenerateHWInvHist(): lastHist = %v", lastHist)
-			s.LogAlways("JW_DEBUG: GenerateHWInvHist(): newhist  = %v", &newHist)
 		}
 	}
 	if len(hwhists) > 0 {
