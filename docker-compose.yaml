@@ -1,0 +1,187 @@
+# MIT License
+#
+# (C) Copyright [2022,2024-2025] Hewlett Packard Enterprise Development LP
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
+
+networks:
+  smd:
+
+services:
+  hmsds-postgres:
+    hostname: hmsds-postgres
+    image: artifactory.algol60.net/docker.io/library/postgres:11-alpine
+    environment:
+      - POSTGRES_PASSWORD=hmsdsuser
+      - POSTGRES_USER=hmsdsuser
+      - POSTGRES_DB=hmsds
+    ports:
+      - "5432:5432"
+    networks:
+      - smd
+  cray-smd-init:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["smd-init"]
+    entrypoint: ["/entrypoint.sh"]
+    environment:
+      - SMD_DBHOST=hmsds-postgres
+      - SMD_DBPORT=5432
+    depends_on:
+      - hmsds-postgres
+    networks:
+      - smd
+  vault:
+    hostname: vault
+    image: artifactory.algol60.net/docker.io/library/vault:1.6.1
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=hms
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+      - VAULT_ADDR=http://127.0.0.1:8200
+    ports:
+      - "8200:8200"
+    cap_add:
+      - IPC_LOCK
+    networks:
+      - smd
+  vault-kv-enabler:
+    image: artifactory.algol60.net/csm-docker/stable/vault-kv-enabler:1.25.0
+    environment:
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=hms
+      - KV_STORES=hms-creds
+    depends_on:
+      - vault
+    networks:
+      - smd
+  cray-smd:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - POSTGRES_HOST=hmsds-postgres
+      - POSTGRES_PORT=5432
+      - RF_MSG_HOST=kafka:9092:cray-dmtf-resource-event
+      - CRAY_VAULT_AUTH_PATH=auth/token/create
+      - CRAY_VAULT_ROLE_FILE=configs/namespace
+      - CRAY_VAULT_JWT_FILE=configs/token
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=hms
+      - VAULT_KEYPATH=hms-creds
+    hostname: cray-smd
+    depends_on:
+      - cray-smd-init
+      - vault
+    ports:
+      - "27779:27779"
+    networks:
+      - smd
+
+  # Redfish Emulators
+  emulator-loader:
+    image: artifactory.algol60.net/docker.io/library/golang:1.24-alpine
+    command: >
+      sh -c "apk add curl && sleep 10 &&
+      curl -X POST -d '{\"RedfishEndpoints\":[{
+        \"ID\":\"x0c0b0\",
+        \"FQDN\":\"x0c0b0\",
+        \"RediscoverOnUpdate\":true,
+        \"User\":\"root\",
+        \"Password\":\"root_password\"
+      },{
+        \"ID\":\"x0c0s1b0\",
+        \"FQDN\":\"x0c0s1b0\",
+        \"RediscoverOnUpdate\":true,
+        \"User\":\"root\",
+        \"Password\":\"root_password\"
+      },{
+        \"ID\":\"x0c0r2b0\",
+        \"FQDN\":\"x0c0r2b0\",
+        \"RediscoverOnUpdate\":true,
+        \"User\":\"root\",
+        \"Password\":\"root_password\"
+      },{
+        \"ID\":\"x1c0s3b0\",
+        \"FQDN\":\"x1c0s3b0\",
+        \"RediscoverOnUpdate\":true,
+        \"User\":\"root\",
+        \"Password\":\"root_password\"
+      }]}' http://cray-smd:27779/hsm/v2/Inventory/RedfishEndpoints"
+    depends_on:
+      - cray-smd
+      - rfemulator0
+      - rfemulator1
+      - rfemulator2
+      - rfemulator3
+    networks:
+      - smd
+  rfemulator0:
+    hostname: x0c0b0
+    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.7.0
+    environment:
+      - MOCKUPFOLDER=CMM
+      - XNAME=x0c0b0
+      - PORT=443
+    ports:
+      - "5000:443"
+    networks:
+      smd:
+        aliases:
+          - x0c0b0
+  rfemulator1:
+    hostname: x0c0s1b0
+    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.7.0
+    environment:
+      - MOCKUPFOLDER=EX235a
+      - MAC_SCHEMA=Mountain
+      - XNAME=x0c0s1b0
+      - PORT=443
+    ports:
+      - "5001:443"
+    networks:
+      smd:
+        aliases:
+          - x0c0s1b0
+  rfemulator2:
+    hostname: x0c0r2b0
+    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.7.0
+    environment:
+      - MOCKUPFOLDER=Slingshot_Switch_Blade
+      - XNAME=x0c0r2b0
+      - PORT=443
+    ports:
+      - "5002:443"
+    networks:
+      smd:
+        aliases:
+          - x0c0r2b0
+  rfemulator3:
+    hostname: x1c0s3b0
+    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.7.0
+    environment:
+      - MOCKUPFOLDER=XL675d_A40
+      - XNAME=x1c0s3b0
+      - PORT=443
+    ports:
+      - "5003:443"
+    networks:
+      smd:
+        aliases:
+          - x1c0s3b0

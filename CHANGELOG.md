@@ -5,150 +5,190 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v2.18.0]
+## [2.37.0] - 2025-04-18
 
-- Added PUT to /group/{id}/members
-- Added RedfishEndpoint data parsing for PUT (POST already has)
-- Added scorecard.yaml to CI
-- Added windows OS build target
-- Fixed PUT to RedfishEndpoints not creating if not extant
-- Fixed 'URI' case in swagger_v2.yaml
-- Updated amd64 from v1 to v3
-- Updated arm64 to v8.0
-- Updated goreleaser to v2.4
+## Update
 
-## [v2.17.7]
+- Updated module and image dependencies to latest versions
+- Update version of Go to v1.24
+- Removed several sections of code code that's now redundant with the
+  latest hms-base module
+- Fixed various issues associated with upgrading Go to v1.24
+- Internal tracking tickets: CASMHMS-6482, CASMHMS-6401, CASMHMS-6402
 
-- Refectored MUSL builds in CI (again)
-- Use latest stable Go instead of 1.23
+## [2.36.0] - 2025-04-14
 
-## [v2.17.6]
+## Fixed
 
-- Refactored MUSL installation in CI
+- Fixed false positive ComponentEndpoints test failure
 
-## [v2.17.5]
+# [2.35.0] - 2025-03-05
 
-- Fixed running of release action without container for CI
+### Updated
 
-## [v2.17.4]
+- Updated functional test to allow additional values for component flag
+- Updated error message to indicate error may be due to duplicate ids
 
-- Fixed running of release action in container for CI
+## [2.34.0] - 2025-03-04
 
-## [v2.17.3]
+### Security
 
-- Updated goreleaser to build all binaries statically and with version info
+- Update module dependencies related to hms-certs
+- Updated vault override variables due to hms-certs update
 
-## [v2.17.2]
+## [2.33.0] - 2025-01-24
 
-- Updated arm64_v1 to arm64 for CI builds
+### Security
 
-## [v2.17.1]
+- Update image and module dependencies
 
-- Fixed attestation and builds in CI for multiple architectures
-
-## [v2.17.0]
-
-- Added logic to parse manager data in SMD API (SchemaVersion = 1)
-- Added version info to print on startup
-- Added arm64 builds for binaries and containers
-- Added building for pull requests to CI
-- Fixed NID assignment when parsing Redfish data
-- Update Go to 1.23
-
-## [2.16.1]
-
-- Fixed issue with EthernetNICInfo being added incorrectly
-- Refactor response.go for clearer error reporting
-- Added a few forgotten functions
-
-## [2.16.0]
-
-- Added new parsing method to handle new data format
-- Added schema versioning check for compatibility
-
-## [2.15.3]
-
-- Added HTTP status codes for public key fetch failures
-- Added more descriptive messages for EOF related errors
-- Added OpenCHAMI middleware for logging and authentication
-
-## [2.15.2]
-
-- Removed scope check from certain endpoints
-
-## [2.15.1]
-
-- Removed arm64 build from goreleaser
-
-## [2.15.0]
+## [2.32.0] - 2025-01-10
 
 ### Changed
 
-- Updated go module dependencies to use temporary jwtauth with OpenCHAMI
+- Added DiscoveryStarted to allowed redfishendpoint states for the tests
+
+## [2.31.0] - 2025-01-08
 
 ### Added
 
-- Added error check to jwtauth.NewKeySet
-- Added jwtauth.NewKeySet to use entire JWKS for verification
-- Added access token scope checks
+- Added support for ppprof builds
 
-## [2.14.2]
-
-### Added
-
-- Added curl to container image
-
-### Changed
-
-- Changed go-chi to v5
-
-## [2.14.1]
-
-### Added
-
-- Added `SMD_JWKS_URL` environment variable and updated default value
-- Added `jwksURL` parameter to fetch public key for validation
-- Added more middleware options, including one to strip slashes in URLS
+## [2.30.0] - 2024-12-13
 
 ### Fixed
 
-- Fixed formatting strings
+- Resolved various scaling/resource issues
+- Upgraded Go to 1.23
+- Updated go-retryablehttp to 0.7.7
+- Fixed docker compose build issues
 
-### Removed
-
-- Removed extra unnecessary logging
-
-## [2.14.0]
-
-### Changed
-
-- Split routes into public and protected endpoints
+## [2.29.0] - 2024-09-18
 
 ### Fixed
 
-- Fixed JWT verification implementation
+- Fixed failing tavern test for ethernet interfaces named DC[0-9A-Za-z]+ 
+- Updated CT/Unit tests to use "docker compose" rather than "docker-compose"
+
+## [2.28.0] - 2024-07-22
+
+### Fixed
+
+- Parse Managers .Actions correctly for Gigabyte and Paradise platforms during discovery
+
+## [2.27.0] - 2024-07-15
+
+### Fixed
+
+- Paradise: Adapted SMD to BMC fw changing the behavior of the /Power endpoint read over redfish
+
+## [2.26.0] - 2024-06-17
+
+### Fixed
+
+- Paradise: Fixed functional hardware test to pass processor types of "FPGA"
+
+## [2.25.0] - 2024-06-06
+
+### Fixed
+
+- Paradise: Re-discover Power data in the system endpoint when the node power on event is received
+
+## [2.24.0] - 2024-05-29
 
 ### Added
 
-- Added middleware to verify JWTs in router
+- Added support for Foxconn Paradise OpenBmc power Events
 
-### Removed
-
-- Removed required `xname` check for `doPartitionMembersPost`
-
-## [2.9.1]
+## [2.23.0] - 2024-05-28
 
 ### Fixed
 
-- Linter Errors
+- Fixed incorrect call of `VerifyNormalizeRole` on a subrole that broke component subrole bulk updates.
+- Fix filtering bug that prevents bulk component role/subrole updates from updating components that already have
+  the correct role (but incorrect subrole), or vice versa.
+
+### Added
+
+- Restored API tests that were disabled due to above bugs.
+
+## [2.22.0] - 2024-05-15
+
+### Fixed
+
+- Add 'Zone' chassis type to tavern test
+
+## [2.21.0] - 2024-05-15
+
+### Fixed
+
+- Pick appropriate chassis to act as node enclosure for Paradise
+
+## [2.20.0] - 2024-05-06
+
+### Fixed
+
+- Updated tavern tests to handle Foxconn Paradise ethernet interface names
+
+## [2.19.0] - 2024-05-03
+
+### Fixed
+
+- Fixed tests to handle componentEndpoints of the type CDUMgmtSwitch
+
+## [2.18.0] - 2024-05-01
+
+### Fixed
+
+- Paradise discovery enhancements (including fixed power capping)
+
+## [2.17.0] - 2024-04-15
+
+### Added
+
+- Discover Paradise node MACs using correct redfish endpoint
+
+## [2.16.0] - 2024-03-18
+
+### Fixed
+
+- Handle alternative Paradise system model string
+
+## [2.15.0] - 2024-03-13
+
+### Added
+
+- Add ability to assign architecture to Paradise nodes
+
+## [2.14.0] - 2023-09-26
+
+### Fixed
+
+- FRU history not creating 'Detected' events after 'Removed' events.
+
+## [2.13.0] - 2023-09-05
+
+### Added
+
+- Added support for the VirtualNode type.
+
+## [2.12.0] - 2023-08-30
 
 ### Changed
 
-- Support local builds
-- Support goreleaser for builds/releases
-- Move to github.com/bikeshack/hms-smd
-- Container now based on wolfi
-- Deprecated built-in kafaka listener for redfish events
+- Migrated HSM to use the hms-xname library and the v2 version of hms-base.
+
+## [2.11.0] - 2023-08-21
+
+### Fixed
+
+- Fixed bug in HSN NIC numbering.
+
+## [2.10.0] - 2023-08-17
+
+### Fixed
+
+- Swagger spec for the component Arch enum.
 
 ## [2.9.0] - 2023-05-19
 

@@ -1,0 +1,10 @@
+networks:
+  smd:
+
+services:
+  unit-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.test.unit.Dockerfile
+    networks:
+      - smd
