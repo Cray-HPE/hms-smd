@@ -24,10 +24,11 @@ package hmsds
 
 import (
 	"fmt"
-	base "github.com/Cray-HPE/hms-base/v2"
-	"github.com/Cray-HPE/hms-xname/xnametypes"
-	"github.com/OpenCHAMI/smd/v2/pkg/sm"
 	"strings"
+
+	base "github.com/Cray-HPE/hms-base/v2"
+	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
+	"github.com/Cray-HPE/hms-xname/xnametypes"
 )
 
 // Matches generic query sources in external API, but with real table names,

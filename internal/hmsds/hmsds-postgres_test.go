@@ -34,10 +34,10 @@ import (
 	"time"
 
 	base "github.com/Cray-HPE/hms-base/v2"
+	rf "github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
+	stest "github.com/Cray-HPE/hms-smd/v2/pkg/sharedtest"
+	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
 	"github.com/Cray-HPE/hms-xname/xnametypes"
-	rf "github.com/OpenCHAMI/smd/v2/pkg/redfish"
-	stest "github.com/OpenCHAMI/smd/v2/pkg/sharedtest"
-	"github.com/OpenCHAMI/smd/v2/pkg/sm"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	sq "github.com/Masterminds/squirrel"

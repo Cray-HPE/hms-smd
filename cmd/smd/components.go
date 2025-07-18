@@ -27,9 +27,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/OpenCHAMI/smd/v2/internal/hmsds"
-	rf "github.com/OpenCHAMI/smd/v2/pkg/redfish"
 	base "github.com/Cray-HPE/hms-base/v2"
+	"github.com/Cray-HPE/hms-smd/v2/internal/hmsds"
+	rf "github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
 	"github.com/Cray-HPE/hms-xname/xnametypes"
 )
 

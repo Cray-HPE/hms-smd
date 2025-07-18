@@ -30,7 +30,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/OpenCHAMI/smd/v2/internal/hmsds"
+	"github.com/Cray-HPE/hms-smd/v2/internal/hmsds"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"

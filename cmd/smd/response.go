@@ -28,7 +28,7 @@ import (
 	"net/http"
 
 	base "github.com/Cray-HPE/hms-base/v2"
-	"github.com/OpenCHAMI/smd/v2/pkg/sm"
+	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
 )
 
 type Response struct {

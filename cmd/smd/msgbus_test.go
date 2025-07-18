@@ -1,7 +1,7 @@
 // This build flag is used to enable the message bus.
 // CSM uses the message bus and OpenCHAMI does not.
 //
-//go:build csm
+//go:build !openchami
 
 // MIT License
 //

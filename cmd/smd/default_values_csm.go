@@ -1,6 +1,6 @@
 // These are the default values for CSM
 //
-//go:build csm
+//go:build !openchami
 
 // MIT License
 //

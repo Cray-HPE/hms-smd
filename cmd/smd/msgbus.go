@@ -1,7 +1,7 @@
 // This build flag is used to enable the message bus.
 // CSM uses the message bus and OpenCHAMI does not.
 //
-//go:build csm
+//go:build !openchami
 
 // MIT License
 //
@@ -28,10 +28,11 @@
 package main
 
 import (
-	base "github.com/Cray-HPE/hms-base/v2"
-	msgbus "github.com/Cray-HPE/hms-msgbus"
 	"strconv"
 	"strings"
+
+	base "github.com/Cray-HPE/hms-base/v2"
+	msgbus "github.com/Cray-HPE/hms-msgbus"
 )
 
 const MSG_BUS_BUILD = true
