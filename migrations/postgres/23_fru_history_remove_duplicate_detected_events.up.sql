@@ -31,6 +31,27 @@ BEGIN
 
     CREATE INDEX IF NOT EXISTS hwinvhist_id_ts_idx ON hwinv_hist (id, "timestamp");
 
+    -- Run the pruning logic
+
+    WITH dups AS (
+        SELECT id, "timestamp"
+        FROM (
+            SELECT id, "timestamp", event_type,
+                   LAG(event_type) OVER (PARTITION BY id ORDER BY "timestamp") AS prev_type
+            FROM hwinv_hist
+            WHERE id IN (
+                SELECT hist.id
+                FROM hwinv_hist hist
+                JOIN hwinv_by_loc loc ON loc.id = hist.id
+                WHERE loc.type IN ('Processor', 'NodeAccel')
+            )
+        ) sub
+        WHERE event_type = 'Detected' AND prev_type = 'Detected'
+    )
+    DELETE FROM hwinv_hist h
+        USING dups
+        WHERE h.id = dups.id AND h."timestamp" = dups."timestamp";
+
     -- Drop the temporary index to free up associated resources
 
     DROP INDEX IF EXISTS hwinvhist_id_ts_idx;
