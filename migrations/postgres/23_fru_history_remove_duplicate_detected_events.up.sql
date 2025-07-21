@@ -22,49 +22,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
--- Removes duplicate "Detected" events from the hardware history table
-
-CREATE OR REPLACE FUNCTION hwinv_hist_remove_duplicate_detected_events()
-RETURNS VOID AS $$
-BEGIN
-    -- Create a temporary timestamp index to speed up pruning
-
-    CREATE INDEX IF NOT EXISTS hwinvhist_id_ts_idx ON hwinv_hist (id, "timestamp");
-
-    -- Run the pruning logic
-
-    WITH dups AS (
-        SELECT id, "timestamp"
-        FROM (
-            SELECT id, "timestamp", event_type,
-                   LAG(event_type) OVER (PARTITION BY id ORDER BY "timestamp") AS prev_type
-            FROM hwinv_hist
-            WHERE id IN (
-                SELECT hist.id
-                FROM hwinv_hist hist
-                JOIN hwinv_by_loc loc ON loc.id = hist.id
-                WHERE loc.type IN ('Processor', 'NodeAccel')
-            )
-        ) sub
-        WHERE event_type = 'Detected' AND prev_type = 'Detected'
-    )
-    DELETE FROM hwinv_hist h
-        USING dups
-        WHERE h.id = dups.id AND h."timestamp" = dups."timestamp";
-
-    -- Drop the temporary index to free up associated resources
-
-    DROP INDEX IF EXISTS hwinvhist_id_ts_idx;
-END;
-$$ LANGUAGE plpgsql;
-
--- Execute the pruning function
-
-SELECT hwinv_hist_remove_duplicate_detected_events()
-
--- A full vacuum must be run to reclaim space but cannot run from a migration.
--- The cray-smd-init service will run it manually after the migration completes.
-
 -- Bump the schema version
 insert into system values(0, 21, '{}'::JSON)
     on conflict(id) do update set schema_version=21;

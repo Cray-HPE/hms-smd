@@ -24,7 +24,7 @@
 -- Removes function that removes duplicate detected events from the hardware
 -- history table.
 
-DROP FUNCTION hwinv_hist_remove_duplicate_detected_events();
+-- DROP FUNCTION hwinv_hist_remove_duplicate_detected_events();
 
 -- Decrease the schema version
 INSERT INTO system VALUES(0, 20, '{}'::JSON)
