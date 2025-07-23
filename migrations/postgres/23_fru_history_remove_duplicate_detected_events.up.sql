@@ -35,20 +35,27 @@ BEGIN
     -- Run the pruning logic
 
     WITH ordered AS (
+        -- Build a temporary view of all events, ordered by time per device (id)
         SELECT ctid, id, "timestamp", event_type,
-               LAG(event_type) OVER (PARTITION BY id ORDER BY "timestamp") AS prev_type
+                -- For each event, get the previous event type for the same id
+                LAG(event_type) OVER (PARTITION BY id ORDER BY "timestamp") AS prev_type
         FROM hwinv_hist
         WHERE id IN (
+            -- Limit to CPUs and GPUs only
             SELECT loc.id
             FROM hwinv_by_loc loc
             WHERE loc.type IN ('Processor', 'NodeAccel')
         )
     ),
     dups AS (
+        -- Identify rows where both this and previous event are "Detected" for the same id
         SELECT ctid
         FROM ordered
         WHERE event_type = 'Detected' AND prev_type = 'Detected'
     )
+
+    -- Now delete the rows that have been identified as duplicates
+
     DELETE FROM hwinv_hist
     WHERE ctid IN (SELECT ctid FROM dups);
 
