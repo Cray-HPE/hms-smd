@@ -61,10 +61,14 @@ SQL
 
 echo "$starting_stats_output"
 
-# Creating a timestamp index speeds up execution several orders of magnitude.
-# We will drop it after pruning is complete.
+echo ''
+echo 'Operations may take considerable time - please do not interrupt'
+echo ''
 
-echo 'Creating temporary "timestamp" index on hwinv_hist table...'
+# Creating this temporary index speeds up execution by several orders of
+# magnitude. We'll drop it after pruning is complete.
+
+echo 'Creating temporary index on hwinv_hist table...'
 
 psql "dbname=$DB_NAME user=$DB_USER" -c \
   "CREATE INDEX IF NOT EXISTS hwinvhist_id_ts_idx ON hwinv_hist (id, "timestamp");"
@@ -74,30 +78,29 @@ if [[ $? -ne 0 ]]; then
   exit 1
 fi
 
-# Now run main pruning logic
+# Run the pruning logic
 
-echo 'Pruning hwinv_hist table... This will take a while - please do not interrupt'
+echo 'Pruning hwinv_hist table... '
 
 pruning_output=$(
 psql "dbname=$DB_NAME user=$DB_USER" 2>&1 <<'SQL'
-    WITH dups AS (
-        SELECT id, "timestamp"
-        FROM (
-            SELECT id, "timestamp", event_type,
-                   LAG(event_type) OVER (PARTITION BY id ORDER BY "timestamp") AS prev_type
-            FROM hwinv_hist
-            WHERE id IN (
-                SELECT hist.id
-                FROM hwinv_hist hist
-                JOIN hwinv_by_loc loc ON loc.id = hist.id
-                WHERE loc.type IN ('Processor', 'NodeAccel')
-            )
-        ) sub
-        WHERE event_type = 'Detected' AND prev_type = 'Detected'
+  WITH ordered AS (
+    SELECT ctid, id, "timestamp", event_type,
+           LAG(event_type) OVER (PARTITION BY id ORDER BY "timestamp") AS prev_type
+    FROM hwinv_hist
+    WHERE id IN (
+      SELECT loc.id
+      FROM hwinv_by_loc loc
+      WHERE loc.type IN ('Processor', 'NodeAccel')
     )
-    DELETE FROM hwinv_hist h
-        USING dups
-        WHERE h.id = dups.id AND h."timestamp" = dups."timestamp";
+  ),
+  dups AS (
+    SELECT ctid
+    FROM ordered
+    WHERE event_type = 'Detected' AND prev_type = 'Detected'
+  )
+  DELETE FROM hwinv_hist
+  WHERE ctid IN (SELECT ctid FROM dups);
 SQL
 )
 
@@ -107,6 +110,17 @@ if [[ $? -ne 0 ]]; then
 fi
 
 echo "$pruning_output"
+
+# Now drop the index to free up associated resources
+
+echo 'Dropping temporary index on hwinv_hist table...'
+
+psql "dbname=$DB_NAME user=$DB_USER" -c "DROP INDEX IF EXISTS hwinvhist_id_ts_idx;"
+
+if [[ $? -ne 0 ]]; then
+  echo "Error dropping temporary timestamp index" >&2
+  exit 1
+fi
 
 # The pruning logic above removed a large part of the hwinv_hist table. This
 # did not however change the teble and database sizes.  In order to free
@@ -131,17 +145,6 @@ psql "dbname=$DB_NAME user=$DB_USER" -c "VACUUM FULL hwinv_hist;" || {
   echo "Error running VACUUM FULL" >&2
   exit 1
 }
-
-# Now drop the index to free up associated resources
-
-echo 'Dropping temporary "timestamp" index on hwinv_hist table...'
-
-psql "dbname=$DB_NAME user=$DB_USER" -c "DROP INDEX IF EXISTS hwinvhist_id_ts_idx;"
-
-if [[ $? -ne 0 ]]; then
-  echo "Error dropping temporary timestamp index" >&2
-  exit 1
-fi
 
 # Capture and print sizes after pruning and vacuuming
 

@@ -269,7 +269,6 @@ func main() {
 		}
 		lg.Printf("Migration: (Dirty) Force(%d) succeeded!", version)
 	}
-lg.Printf("JW_DEBUG: noVersion=%v version=%v migrateStep=%v dirty=%v", noVersion, version, migrateStep, dirty)
 	// Initial install - migrate all the way up.
 	if noVersion {
 		lg.Printf("Migration: Initial install, call Up()...")

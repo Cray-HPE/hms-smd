@@ -27,30 +27,30 @@
 CREATE OR REPLACE FUNCTION hwinv_hist_remove_duplicate_detected_events()
 RETURNS VOID AS $$
 BEGIN
-    -- Create a temporary timestamp index to speed up pruning
+    -- Creating this temporary index speeds up execution by several orders of
+    -- magnitude. We'll drop it after pruning is complete.
 
     CREATE INDEX IF NOT EXISTS hwinvhist_id_ts_idx ON hwinv_hist (id, "timestamp");
 
     -- Run the pruning logic
 
-    WITH dups AS (
-        SELECT id, "timestamp"
-        FROM (
-            SELECT id, "timestamp", event_type,
-                   LAG(event_type) OVER (PARTITION BY id ORDER BY "timestamp") AS prev_type
-            FROM hwinv_hist
-            WHERE id IN (
-                SELECT hist.id
-                FROM hwinv_hist hist
-                JOIN hwinv_by_loc loc ON loc.id = hist.id
-                WHERE loc.type IN ('Processor', 'NodeAccel')
-            )
-        ) sub
+    WITH ordered AS (
+        SELECT ctid, id, "timestamp", event_type,
+               LAG(event_type) OVER (PARTITION BY id ORDER BY "timestamp") AS prev_type
+        FROM hwinv_hist
+        WHERE id IN (
+            SELECT loc.id
+            FROM hwinv_by_loc loc
+            WHERE loc.type IN ('Processor', 'NodeAccel')
+        )
+    ),
+    dups AS (
+        SELECT ctid
+        FROM ordered
         WHERE event_type = 'Detected' AND prev_type = 'Detected'
     )
-    DELETE FROM hwinv_hist h
-        USING dups
-        WHERE h.id = dups.id AND h."timestamp" = dups."timestamp";
+    DELETE FROM hwinv_hist
+    WHERE ctid IN (SELECT ctid FROM dups);
 
     -- Drop the temporary index to free up associated resources
 
