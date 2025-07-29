@@ -26,8 +26,20 @@
 
 set -eo pipefail
 
+# Dig into the secrets store to find all necessary connection data
+#
+# Update SECRET_KEY_REF if it was changed in the SMD chart!
+
+SECRET_KEY_REF="hmsdsuser.cray-smd-postgres.credentials"
+
+DB_USER=$(kubectl get secret -n services $SECRET_KEY_REF -o jsonpath='{.data.username}' | base64 -d)
+PGPASSWORD=$(kubectl get secret -n services $SECRET_KEY_REF -o jsonpath='{.data.password}' | base64 -d)
+
+# Additional postgres connection details that should mirror what is set in
+# the SMD's chart values.yaml file:
+
 DB_NAME="hmsds"
-DB_USER="postgres"
+DB_PORT="5432"
 DB_TABLE="hwinv_hist"
 
 BACKUP_FILE="smd_hwinv_hist_table_backup-$(date +"%m%d%Y-%H%M%S").sql"
@@ -46,6 +58,6 @@ echo "The SMD postgres leader is $POSTGRES_LEADER"
 
 echo "Using pg_dump to dump the $DB_TABLE table..."
 
-kubectl -n services exec "$POSTGRES_LEADER" -c postgres -it -- bash -c "pg_dump -U $DB_USER -d $DB_NAME -t $DB_TABLE --clean" > "$BACKUP_FILE"
+kubectl -n services exec "$POSTGRES_LEADER" -c postgres -it -- bash -c "pg_dump -U $DB_USER -d $DB_NAME -t $DB_TABLE -p $DB_PORT --clean" > "$BACKUP_FILE"
 
 echo "Dump complete. Dump file is: $BACKUP_FILE"
