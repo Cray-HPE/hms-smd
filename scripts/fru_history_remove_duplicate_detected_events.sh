@@ -21,24 +21,36 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 
-# This script manually applies the pruning changes in:
+# This script manually applies the SMD pruning changes in:
 #
 #     migrations/postgres/23_fru_history_remove_duplicate_detected_events.up.sql
 #
 # This is provided outside of a migration so that databases can be pruned
 # outside the scope of an SMD upgrade.
 #
-# Set PGPASSWORD in the env if default credentials don't work.
-#
-# If default user changed from 'postgres' then update DB_USER below
-#
 # If any issues occur, uncomment the following line to aid in debug:
 #set -x
 
 set -eo pipefail
 
+# Dig into the secrets store to find all necessary connection data
+#
+# Update SECRET_KEY_REF if it was changed in the SMD chart!
+
+SECRET_KEY_REF="hmsdsuser.cray-smd-postgres.credentials"
+
+DB_USER=$(kubectl get secret -n services $SECRET_KEY_REF -o jsonpath='{.data.username}' | base64 -d)
+PGPASSWORD=$(kubectl get secret -n services $SECRET_KEY_REF -o jsonpath='{.data.password}' | base64 -d)
+
+# Additional postgres connection details that should mirror what is set in
+# the SMD's chart values.yaml file:
+
 DB_NAME="hmsds"
-DB_USER="postgres"
+DB_PORT="5432"
+
+# Bundle them all into one psql options string
+
+PSQL_OPTS="dbname=$DB_NAME user=$DB_USER port=$DB_PORT"
 
 # Determine the SMD postgres leader
 
@@ -51,7 +63,7 @@ echo "The SMD postgres leader is $POSTGRES_LEADER"
 # Capture and print sizes before pruning and vacuuming
 
 kubectl -n services exec "$POSTGRES_LEADER" -c postgres -it -- bash -c "
-	psql \"dbname=$DB_NAME user=$DB_USER\" -c \"
+	psql \"$PSQL_OPTS\" -c \"
 	DO \\\$\$
 	DECLARE
 		tbl_size_before    bigint := 0;   /* hwinv_history size before pruning */
@@ -76,7 +88,7 @@ echo ""
 echo "Creating temporary index on hwinv_hist table..."
 
 kubectl -n services exec "$POSTGRES_LEADER" -c postgres -it -- bash -c "
-	psql \"dbname=$DB_NAME user=$DB_USER\" -c \
+	psql \"$PSQL_OPTS\" -c \
 		\"CREATE INDEX IF NOT EXISTS hwinvhist_id_ts_idx ON hwinv_hist (id, \"timestamp\");\"
 "
 
@@ -91,7 +103,7 @@ echo ""
 echo "Pruning hwinv_hist table... "
 
 kubectl -n services exec "$POSTGRES_LEADER" -c postgres -it -- bash -c "
-	psql \"dbname=$DB_NAME user=$DB_USER\" -c \"
+	psql \"$PSQL_OPTS\" -c \"
 	WITH ordered AS (
 		SELECT ctid, id, \"timestamp\", event_type,
 			LAG(event_type) OVER (PARTITION BY id ORDER BY \"timestamp\") AS prev_type
@@ -122,7 +134,7 @@ echo ""
 echo "Dropping temporary index on hwinv_hist table..."
 
 kubectl -n services exec "$POSTGRES_LEADER" -c postgres -it -- bash -c "
-	psql \"dbname=$DB_NAME user=$DB_USER\" -c \"DROP INDEX IF EXISTS hwinvhist_id_ts_idx;\"
+	psql \"$PSQL_OPTS\" -c \"DROP INDEX IF EXISTS hwinvhist_id_ts_idx;\"
 "
 
 if [[ $? -ne 0 ]]; then
@@ -140,7 +152,7 @@ fi
 #            * Non-blocking
 #            * Frees internal space
 #            * Does not return disk space to the OS
-#     2. Full vacuum
+#     3. Full vacuum
 #            * Blocking - no updates allowed to table until complete
 #            * Frees internal space
 #            * Returns disk space to the OS
@@ -151,7 +163,7 @@ echo ""
 echo "Running VACUUM FULL on hwinv_hist table to reclaim disk space..."
 
 kubectl -n services exec "$POSTGRES_LEADER" -c postgres -it -- bash -c "
-	psql \"dbname=$DB_NAME user=$DB_USER\" -c \"VACUUM FULL hwinv_hist;\"
+	psql \"$PSQL_OPTS\" -c \"VACUUM FULL hwinv_hist;\"
 "
 
 if [[ $? -ne 0 ]]; then
@@ -164,7 +176,7 @@ fi
 echo ""
 
 kubectl -n services exec "$POSTGRES_LEADER" -c postgres -it -- bash -c "
-	psql \"dbname=$DB_NAME user=$DB_USER\" -c \"
+	psql \"$PSQL_OPTS\" -c \"
 	DO \\\$\$
 	DECLARE
 		tbl_size_after    bigint := 0;   /* hwinv_history size after pruning */

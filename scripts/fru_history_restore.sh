@@ -32,8 +32,20 @@
 
 set -eo pipefail
 
+# Dig into the secrets store to find all necessary connection data
+#
+# Update SECRET_KEY_REF if it was changed in the SMD chart!
+
+SECRET_KEY_REF="hmsdsuser.cray-smd-postgres.credentials"
+
+DB_USER=$(kubectl get secret -n services $SECRET_KEY_REF -o jsonpath='{.data.username}' | base64 -d)
+PGPASSWORD=$(kubectl get secret -n services $SECRET_KEY_REF -o jsonpath='{.data.password}' | base64 -d)
+
+# Additional postgres connection details that should mirror what is set in
+# the SMD's chart values.yaml file:
+
 DB_NAME="hmsds"
-DB_USER="postgres"
+DB_PORT="5432"
 DB_TABLE="hwinv_hist"
 
 # Check that a backup file was specified, exists, and is readable
@@ -68,7 +80,7 @@ kubectl cp $BACKUP_FILE services/$POSTGRES_LEADER:/tmp/$BACKUP_FILE_BASENAME -c 
 
 echo "Using psql to restore the $DB_TABLE table usign specified backup"
 
-kubectl -n services exec "$POSTGRES_LEADER" -c postgres -it -- bash -c "psql -U $DB_USER -d $DB_NAME -f /tmp/$BACKUP_FILE_BASENAME"
+kubectl -n services exec "$POSTGRES_LEADER" -c postgres -it -- bash -c "psql -U $DB_USER -d $DB_NAME -p $DB_PORT -f /tmp/$BACKUP_FILE_BASENAME"
 
 # Remove the backup from the container to free up space
 
