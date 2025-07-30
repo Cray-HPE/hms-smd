@@ -81,11 +81,10 @@ kubectl -n services exec "$POSTGRES_LEADER" -c postgres -it -- bash -c "
 echo ""
 echo "Operations may take considerable time - please do not interrupt"
 
-# Creating this temporary index speeds up execution by several orders of
-# magnitude. We'll drop it after pruning is complete.
+# Creating this index speeds up execution by several orders of magnitude.
 
 echo ""
-echo "Creating temporary index on hwinv_hist table..."
+echo "Creating hwinvhist_id_ts_idx index on hwinv_hist table..."
 
 kubectl -n services exec "$POSTGRES_LEADER" -c postgres -it -- bash -c "
 	psql \"$PSQL_OPTS\" -c \
@@ -125,20 +124,6 @@ kubectl -n services exec "$POSTGRES_LEADER" -c postgres -it -- bash -c "
 
 if [[ $? -ne 0 ]]; then
 	echo "Error executing SQL command" >&2
-	exit 1
-fi
-
-# Now drop the index to free up associated resources
-
-echo ""
-echo "Dropping temporary index on hwinv_hist table..."
-
-kubectl -n services exec "$POSTGRES_LEADER" -c postgres -it -- bash -c "
-	psql \"$PSQL_OPTS\" -c \"DROP INDEX IF EXISTS hwinvhist_id_ts_idx;\"
-"
-
-if [[ $? -ne 0 ]]; then
-	echo "Error dropping temporary timestamp index" >&2
 	exit 1
 fi
 

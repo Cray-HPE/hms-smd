@@ -27,8 +27,7 @@
 CREATE OR REPLACE FUNCTION hwinv_hist_remove_duplicate_detected_events()
 RETURNS VOID AS $$
 BEGIN
-    -- Creating this temporary index speeds up execution by several orders of
-    -- magnitude. We'll drop it after pruning is complete.
+    -- Creating this index speeds up execution by several orders of magnitude
 
     CREATE INDEX IF NOT EXISTS hwinvhist_id_ts_idx ON hwinv_hist (id, "timestamp");
 
@@ -58,10 +57,6 @@ BEGIN
 
     DELETE FROM hwinv_hist
     WHERE ctid IN (SELECT ctid FROM dups);
-
-    -- Drop the temporary index to free up associated resources
-
-    DROP INDEX IF EXISTS hwinvhist_id_ts_idx;
 END;
 $$ LANGUAGE plpgsql;
 
