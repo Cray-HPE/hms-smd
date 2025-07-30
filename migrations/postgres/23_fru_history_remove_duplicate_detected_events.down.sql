@@ -21,8 +21,10 @@
  * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
--- Removes function that removes duplicate detected events from the hardware
--- history table.
+-- Removes function and index that removes duplicate detected events from
+-- the hardware history table.
+
+DROP INDEX IF EXISTS hwinvhist_id_ts_idx;
 
 DROP FUNCTION hwinv_hist_remove_duplicate_detected_events();
 
