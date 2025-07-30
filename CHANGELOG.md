@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Added migration to prune duplicate "Detected" events from CPUs and GPUs
+- Added a migration to prune duplicate "Detected" events from CPUs and GPUs
 - Internal tracking ticket: CASMHMS-6578
 
 ## [2.39.0] - 2025-07-17
