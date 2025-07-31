@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump version yet again because I tagged the wrong branch last time
 - Internal tracking ticket: CASMHMS-6578
 
+## [2.32.4] - 2025-07-31
+
+### Fixed
+
+- Bump version to enable creation of new tag on git branch
+- Internal tracking ticket: CASMHMS-6578
+
 ## [2.32.3] - 2025-07-31
 
 ### Fixed
