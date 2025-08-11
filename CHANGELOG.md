@@ -5,9 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.40.0] - 2025-07-31
+
+### Fixed
+
+- Added a migration to prune duplicate "Detected" events from CPUs and GPUs
+- Internal tracking ticket: CASMHMS-6578
+
+## [2.39.0] - 2025-07-17
+
+### Fixed
+
+- Fixed bug causing duplicate "Detected" hw events in hiwinv history
+- Added scripts to start and stop developer environments with Docker
+- Internal tracking ticket: CASMHMS-6568
+
+## [2.38.0] - 2025-04-30
+
+### Fixed
+
+- Added 'curl' command to container image
+- Remove potential for future false positives in CT test
+- Internal tracking tickets: CASMHMS-6499, CASMTRIAGE-8079
+
 ## [2.37.0] - 2025-04-18
 
-## Update
+### Fixed
 
 - Updated module and image dependencies to latest versions
 - Update version of Go to v1.24
@@ -18,13 +41,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.36.0] - 2025-04-14
 
-## Fixed
+### Fixed
 
 - Fixed false positive ComponentEndpoints test failure
 
 # [2.35.0] - 2025-03-05
 
-### Updated
+### Fixed
 
 - Updated functional test to allow additional values for component flag
 - Updated error message to indicate error may be due to duplicate ids
@@ -44,7 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.32.0] - 2025-01-10
 
-### Changed
+### Fixed
 
 - Added DiscoveryStarted to allowed redfishendpoint states for the tests
 

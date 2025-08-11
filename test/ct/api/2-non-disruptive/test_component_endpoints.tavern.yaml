@@ -270,14 +270,6 @@ ncsi[0-9]+"
                                   RedfishId:
                                     type: str
                                     required: True
-                                    # missing interface <num>, MAC computed via workaround
-                                    # expected for some hardware types, leaves RedfishId empty
-                                    pattern: "^$|\
-[0-9]+|\
-HPCNet[0-9]+|\
-ManagementEthernet|\
-D[0-9A-Za-z]+|\
-ncsi[0-9]+-p[0-9]+-c[0-9]+(-primary_eth)?"
                                   "@odata.id":
                                     type: str
                                     required: False

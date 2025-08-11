@@ -109,6 +109,7 @@ RUN set -ex \
     && apk -U upgrade \
     && apk add --no-cache \
         postgresql-client \
+        curl \
     && mkdir -p /persistent_migrations \
     && chmod 777 /persistent_migrations
 
