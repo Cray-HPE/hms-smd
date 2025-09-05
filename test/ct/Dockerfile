@@ -20,7 +20,8 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 
-FROM artifactory.algol60.net/csm-docker/stable/hms-test:5.3.0
+#FROM artifactory.algol60.net/csm-docker/stable/hms-test:5.3.1
+FROM artifactory.algol60.net/csm-docker/unstable/hms-test:5.3.1-20250905174118.139d4d0
 
 COPY smoke/ /src/app
 COPY api/ /src/app/api
