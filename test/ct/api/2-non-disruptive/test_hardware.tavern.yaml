@@ -920,7 +920,7 @@ stages:
                                         type: int
                                         required: True
                                       CapableSpeedGbs:
-                                        type: int
+                                        type: number
                                         required: True
                                       FailurePredicted:
                                         type: bool
@@ -932,10 +932,10 @@ stages:
                                         type: str
                                         required: True
                                       NegotiatedSpeedGbs:
-                                        type: int
+                                        type: number
                                         required: True
                                       PredictedMediaLifeLeftPercent:
-                                        type: int
+                                        type: number
                                         required: True
                       NodeAccels:
                         type: seq
