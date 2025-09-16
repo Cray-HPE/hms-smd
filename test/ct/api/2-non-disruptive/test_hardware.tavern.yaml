@@ -1,6 +1,6 @@
 # MIT License
 #
-# (C) Copyright [2019-2022,2024] Hewlett Packard Enterprise Development LP
+# (C) Copyright [2019-2022,2024-2025] Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -920,7 +920,7 @@ stages:
                                         type: int
                                         required: True
                                       CapableSpeedGbs:
-                                        type: int
+                                        type: number
                                         required: True
                                       FailurePredicted:
                                         type: bool
@@ -932,10 +932,10 @@ stages:
                                         type: str
                                         required: True
                                       NegotiatedSpeedGbs:
-                                        type: int
+                                        type: number
                                         required: True
                                       PredictedMediaLifeLeftPercent:
-                                        type: int
+                                        type: number
                                         required: True
                       NodeAccels:
                         type: seq
