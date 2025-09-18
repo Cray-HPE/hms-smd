@@ -4,10 +4,10 @@ go 1.24.0
 
 require (
 	github.com/Cray-HPE/hms-base/v2 v2.3.0
-	github.com/Cray-HPE/hms-certs v1.7.0
+	github.com/Cray-HPE/hms-certs v1.7.1
 	github.com/Cray-HPE/hms-compcredentials v1.15.0
 	github.com/Cray-HPE/hms-go-http-lib v1.7.1
-	github.com/Cray-HPE/hms-msgbus v1.13.0
+	github.com/Cray-HPE/hms-msgbus v1.13.1
 	github.com/Cray-HPE/hms-securestorage v1.17.0
 	github.com/Cray-HPE/hms-xname v1.4.0
 	github.com/DATA-DOG/go-sqlmock v1.5.2
@@ -42,7 +42,7 @@ require (
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/net v0.39.0 // indirect
-	golang.org/x/sys v0.32.0 // indirect
+	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
 	golang.org/x/time v0.11.0 // indirect
 )
