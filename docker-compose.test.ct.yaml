@@ -87,7 +87,7 @@ services:
     networks:
       - smd
   cray-sls:
-    image: artifactory.algol60.net/csm-docker/stable/cray-sls:2.8.0
+    image: artifactory.algol60.net/csm-docker/stable/cray-sls:2.11.0
     environment:
       - POSTGRES_HOST=cray-sls-postgres
       - DBOPTS=sslmode=disable
@@ -180,7 +180,7 @@ services:
     networks:
       - smd
   cray-hms-hmcollector:
-    image: artifactory.algol60.net/csm-docker/stable/hms-hmcollector:2.37.0
+    image: artifactory.algol60.net/csm-docker/stable/hms-hmcollector:2.39.0
     environment:
       - LOG_LEVEL=TRACE
       - SM_URL=http://cray-smd:27779
@@ -202,7 +202,7 @@ services:
       - kafka
   cray-hmnfd:
     hostname: cray-hmnfd
-    image: artifactory.algol60.net/csm-docker/stable/cray-hmnfd:1.24.0
+    image: artifactory.algol60.net/csm-docker/stable/cray-hmnfd:1.25.0
     environment:
       - DEBUG=0
       - SM_URL=http://cray-smd:27779/hsm/v2

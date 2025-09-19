@@ -1,7 +1,7 @@
 # github.com/Cray-HPE/hms-base/v2 v2.3.0
 ## explicit; go 1.24.0
 github.com/Cray-HPE/hms-base/v2
-# github.com/Cray-HPE/hms-certs v1.7.0
+# github.com/Cray-HPE/hms-certs v1.7.1
 ## explicit; go 1.24.0
 github.com/Cray-HPE/hms-certs/pkg/hms_certs
 # github.com/Cray-HPE/hms-compcredentials v1.15.0
@@ -10,8 +10,8 @@ github.com/Cray-HPE/hms-compcredentials
 # github.com/Cray-HPE/hms-go-http-lib v1.7.1
 ## explicit; go 1.24.0
 github.com/Cray-HPE/hms-go-http-lib
-# github.com/Cray-HPE/hms-msgbus v1.13.0
-## explicit; go 1.23
+# github.com/Cray-HPE/hms-msgbus v1.13.1
+## explicit; go 1.24.0
 github.com/Cray-HPE/hms-msgbus
 # github.com/Cray-HPE/hms-securestorage v1.17.0
 ## explicit; go 1.24.0
@@ -131,7 +131,7 @@ golang.org/x/net/http2
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 golang.org/x/net/internal/httpcommon
-# golang.org/x/sys v0.32.0
+# golang.org/x/sys v0.33.0
 ## explicit; go 1.23.0
 golang.org/x/sys/unix
 golang.org/x/sys/windows
