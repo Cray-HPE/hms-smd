@@ -112,6 +112,9 @@ stages:
                         required: True
                         enum:
                           - "Node"
+                      Subtype:
+                        type: str
+                        required: False
                       State:
                         type: str
                         required: True
