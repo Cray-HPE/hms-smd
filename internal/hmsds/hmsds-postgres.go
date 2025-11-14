@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright [2018-2024] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2018-2025] Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -35,9 +35,9 @@ import (
 	"time"
 
 	base "github.com/Cray-HPE/hms-base/v2"
-	"github.com/Cray-HPE/hms-xname/xnametypes"
 	rf "github.com/Cray-HPE/hms-smd/v2/pkg/redfish"
 	"github.com/Cray-HPE/hms-smd/v2/pkg/sm"
+	"github.com/Cray-HPE/hms-xname/xnametypes"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/lib/pq"
@@ -4567,11 +4567,11 @@ func (d *hmsdbPg) GetCompLocksV2(f sm.CompLockV2Filter) ([]sm.CompLockV2, error)
 	affectedComps, err := t.GetComponentsFilterTx(&cf, FLTR_DEFAULT)
 	if err != nil {
 		t.Rollback()
-		return result, err
+		return nil, err
 	}
 	if len(affectedComps) == 0 {
 		t.Rollback()
-		return result, sm.ErrCompLockV2NotFound
+		return nil, sm.ErrCompLockV2NotFound
 	}
 
 	for _, comp := range affectedComps {
@@ -4583,7 +4583,7 @@ func (d *hmsdbPg) GetCompLocksV2(f sm.CompLockV2Filter) ([]sm.CompLockV2, error)
 	reservations, _, err := t.GetCompReservationsTx(keys, true)
 	if err != nil {
 		t.Rollback()
-		return result, err
+		return nil, err
 	}
 	t.Commit()
 
@@ -4607,7 +4607,7 @@ func (d *hmsdbPg) GetCompLocksV2(f sm.CompLockV2Filter) ([]sm.CompLockV2, error)
 		if f.Reserved != nil {
 			reservedParam, err := strconv.ParseBool(f.Reserved[0])
 			if err != nil {
-				return result, ErrHMSDSArgBadArg
+				return nil, ErrHMSDSArgBadArg
 			}
 			if reservedParam && lock.Reserved {
 				result = append(result, lock)
@@ -4620,7 +4620,7 @@ func (d *hmsdbPg) GetCompLocksV2(f sm.CompLockV2Filter) ([]sm.CompLockV2, error)
 	}
 
 	if len(result) == 0 {
-		return result, sm.ErrCompLockV2NotFound
+		return nil, sm.ErrCompLockV2NotFound
 	}
 
 	return result, nil

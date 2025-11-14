@@ -10412,7 +10412,7 @@ func TestDoCompLocksStatus(t *testing.T) {
 
 func TestDoCompLocksStatusGet(t *testing.T) {
 	reqType := "GET"
-	hmsdsResp := []sm.CompLockV2{
+	hmsdsRespAll := []sm.CompLockV2{
 		sm.CompLockV2{
 			ID:                  "x3000c0s9b0n0",
 			Locked:              true,
@@ -10426,87 +10426,100 @@ func TestDoCompLocksStatusGet(t *testing.T) {
 			ReservationDisabled: true,
 		},
 	}
-	expectedRespGood := json.RawMessage(`{"Components":[{"ID":"x3000c0s9b0n0","Locked":true,"Reserved":false,"ReservationDisabled":false},{"ID":"x3000c0s10b0n0","Locked":false,"Reserved":true,"ReservationDisabled":true}]}` + "\n")
+	expectedRespAllGood := json.RawMessage(`{"Components":[{"ID":"x3000c0s9b0n0","Locked":true,"Reserved":false,"ReservationDisabled":false},{"ID":"x3000c0s10b0n0","Locked":false,"Reserved":true,"ReservationDisabled":true}]}` + "\n")
+
+	hmsdsRespNone := []sm.CompLockV2{}
+	expectedRespNoneGood := json.RawMessage(`{"Components":[]}` + "\n")
 
 	tests := []struct {
 		reqURI         string
+		hmsdsResp      []sm.CompLockV2
 		hmsdsRespErr   error
 		expectedFilter sm.CompLockV2Filter
 		expectedResp   []byte
 		expectError    bool
 	}{{
 		reqURI:       "https://localhost/hsm/v2/locks/status",
+		hmsdsResp: hmsdsRespAll,
 		hmsdsRespErr: nil,
 		expectedFilter: sm.CompLockV2Filter{
 			ProcessingModel: sm.CLProcessingModelRigid,
 		},
-		expectedResp: expectedRespGood,
+		expectedResp: expectedRespAllGood,
 		expectError:  false,
 	}, {
 		reqURI:       "https://localhost/hsm/v2/locks/status?type=Node",
+		hmsdsResp: hmsdsRespAll,
 		hmsdsRespErr: nil,
 		expectedFilter: sm.CompLockV2Filter{
 			Type:            []string{"Node"},
 			ProcessingModel: sm.CLProcessingModelRigid,
 		},
-		expectedResp: expectedRespGood,
+		expectedResp: expectedRespAllGood,
 		expectError:  false,
 	}, {
 		reqURI:       "https://localhost/hsm/v2/locks/status?state=Ready",
+		hmsdsResp: hmsdsRespAll,
 		hmsdsRespErr: nil,
 		expectedFilter: sm.CompLockV2Filter{
 			State:           []string{"Ready"},
 			ProcessingModel: sm.CLProcessingModelRigid,
 		},
-		expectedResp: expectedRespGood,
+		expectedResp: expectedRespAllGood,
 		expectError:  false,
 	}, {
 		reqURI:       "https://localhost/hsm/v2/locks/status?role=Management",
+		hmsdsResp: hmsdsRespAll,
 		hmsdsRespErr: nil,
 		expectedFilter: sm.CompLockV2Filter{
 			Role:            []string{"Management"},
 			ProcessingModel: sm.CLProcessingModelRigid,
 		},
-		expectedResp: expectedRespGood,
+		expectedResp: expectedRespAllGood,
 		expectError:  false,
 	}, {
 		reqURI:       "https://localhost/hsm/v2/locks/status?subrole=Master",
+		hmsdsResp: hmsdsRespAll,
 		hmsdsRespErr: nil,
 		expectedFilter: sm.CompLockV2Filter{
 			SubRole:         []string{"Master"},
 			ProcessingModel: sm.CLProcessingModelRigid,
 		},
-		expectedResp: expectedRespGood,
+		expectedResp: expectedRespAllGood,
 		expectError:  false,
 	}, {
 		reqURI:       "https://localhost/hsm/v2/locks/status?locked=True",
+		hmsdsResp: hmsdsRespAll,
 		hmsdsRespErr: nil,
 		expectedFilter: sm.CompLockV2Filter{
 			ProcessingModel: sm.CLProcessingModelRigid,
 			Locked:          []string{"True"},
 		},
-		expectedResp: expectedRespGood,
+		expectedResp: expectedRespAllGood,
 		expectError:  false,
 	}, {
 		reqURI:       "https://localhost/hsm/v2/locks/status?reserved=False",
+		hmsdsResp: hmsdsRespAll,
 		hmsdsRespErr: nil,
 		expectedFilter: sm.CompLockV2Filter{
 			ProcessingModel: sm.CLProcessingModelRigid,
 			Reserved:        []string{"False"},
 		},
-		expectedResp: expectedRespGood,
+		expectedResp: expectedRespAllGood,
 		expectError:  false,
 	}, {
 		reqURI:       "https://localhost/hsm/v2/locks/status?reservationDisabled=False",
+		hmsdsResp: hmsdsRespAll,
 		hmsdsRespErr: nil,
 		expectedFilter: sm.CompLockV2Filter{
 			ProcessingModel:     sm.CLProcessingModelRigid,
 			ReservationDisabled: []string{"False"},
 		},
-		expectedResp: expectedRespGood,
+		expectedResp: expectedRespAllGood,
 		expectError:  false,
 	}, {
 		reqURI:       "https://localhost/hsm/v2/locks/status?type=Node&state=Ready&role=Management&subrole=Master&locked=True&reserved=False&reservationDisabled=False",
+		hmsdsResp: hmsdsRespAll,
 		hmsdsRespErr: nil,
 		expectedFilter: sm.CompLockV2Filter{
 			Type:                []string{"Node"},
@@ -10518,18 +10531,22 @@ func TestDoCompLocksStatusGet(t *testing.T) {
 			Reserved:            []string{"False"},
 			ReservationDisabled: []string{"False"},
 		},
-		expectedResp: expectedRespGood,
+		expectedResp: expectedRespAllGood,
 		expectError:  false,
 	}, {
-		reqURI:       "https://localhost/hsm/v2/locks/status",
-		hmsdsRespErr: sm.ErrCompLockV2NotFound,
+		reqURI:       "https://localhost/hsm/v2/locks/status?locked=True&reserved=True",
+		hmsdsResp: hmsdsRespNone,
+		hmsdsRespErr: nil,
 		expectedFilter: sm.CompLockV2Filter{
 			ProcessingModel: sm.CLProcessingModelRigid,
+			Locked:              []string{"True"},
+			Reserved:            []string{"True"},
 		},
-		expectedResp: json.RawMessage(`{"type":"about:blank","title":"Bad Request","detail":"Component not found","status":400}` + "\n"),
-		expectError:  true,
+		expectedResp: expectedRespNoneGood,
+		expectError:  false,
 	}, {
 		reqURI:       "https://localhost/hsm/v2/locks/status?type=Fake",
+		hmsdsResp: hmsdsRespAll,
 		hmsdsRespErr: hmsds.ErrHMSDSArgBadType,
 		expectedFilter: sm.CompLockV2Filter{
 			Type:            []string{"Fake"},
@@ -10540,7 +10557,7 @@ func TestDoCompLocksStatusGet(t *testing.T) {
 	}}
 
 	for i, test := range tests {
-		results.GetCompLocksV2.Return.cls = hmsdsResp
+		results.GetCompLocksV2.Return.cls = test.hmsdsResp
 		results.GetCompLocksV2.Return.err = test.hmsdsRespErr
 		req, err := http.NewRequest(reqType, test.reqURI, nil)
 		if err != nil {
