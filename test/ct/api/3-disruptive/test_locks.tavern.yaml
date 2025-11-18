@@ -1,6 +1,6 @@
 # MIT License
 #
-# (C) Copyright [2022-2023] Hewlett Packard Enterprise Development LP
+# (C) Copyright [2022-2023,2025] Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -96,7 +96,7 @@ stages:
   ##############################################
 
   # POST /lock/status No Components
-  - name: hsmAPILocksStatusPOSTNoComponents - Try to get status our non-existent test components
+  - name: hsmAPILocksStatusPOSTNoComponents - Try to get status our non-existent test components (POST)
     request:
       url: "{hsm_base_url}/hsm/v2/locks/status"
       method: POST
@@ -133,40 +133,57 @@ stages:
                   - 400
 
   # GET /lock/status No Components
-  - name: hsmAPILocksStatusGETNoComponents - Try to get status our non-existent test components
+  - name: hsmAPILocksStatusGETNoComponents - Try to get status our non-existent test components (GET)
     request:
       url: "{hsm_base_url}/hsm/v2/locks/status?type=Partition"
       method: GET
       verify: !bool "{verify}"
     response:
-      status_code: 400
+      status_code: 200
       verify_response_with:
-        function: tavern.testutils.helpers:validate_pykwalify
-        extra_kwargs:
-          schema:
-            type: map
-            required: True
-            mapping:
-              type:
-                type: str
-                required: True
-                enum:
-                  - "about:blank"
-              title:
-                type: str
-                required: True
-                enum:
-                  - "Bad Request"
-              detail:
-                type: str
-                required: True
-                enum:
-                  - "Component not found"
-              status:
-                type: int
-                required: True
-                enum:
-                  - 400
+        - function: tavern.testutils.helpers:validate_pykwalify
+          extra_kwargs:
+            schema:
+              type: map
+              required: True
+              mapping:
+                Components:
+                  type: seq
+                  matching: all
+                  required: True
+                  sequence:
+                    - type: map
+                      required: True
+                      mapping:
+                        ID:
+                          type: str
+                          required: True
+                          enum:
+                            - "p9999.9996"
+                            - "p9999.9997"
+                            - "p9999.9998"
+                            - "p9999.9999"
+                        Locked:
+                          type: bool
+                          required: True
+                          enum:
+                            - false
+                        Reserved:
+                          type: bool
+                          required: True
+                          enum:
+                            - false
+                        ReservationDisabled:
+                          type: bool
+                          required: True
+                          enum:
+                            - false
+        - function: tavern.testutils.helpers:validate_content
+          extra_kwargs:
+            comparisons:
+              - jmespath: "length(@.Components)"
+                operator: "eq"
+                expected: 0
 
   # POST /State/Components Node API response code
   # This will create 4 lockable/reservable partition type components.

@@ -5393,11 +5393,16 @@ func (s *SmD) doCompLocksStatusGet(w http.ResponseWriter, r *http.Request) {
 	}
 	locks, err := s.db.GetCompLocksV2(filter)
 	if err != nil {
-		s.lg.Printf("doCompLocksStatus(): %s %s Err: %s", r.RemoteAddr, string(formJSON), err)
-		// Send this message as 500 or 400 plus error message if it is
-		// an HMSError and not, e.g. an internal DB error code.
-		sendJsonDBError(w, "", "operation 'GET' failed during query.", err)
-		return
+		if err == sm.ErrCompLockV2NotFound {
+			sendJsonCompLockV2Rsp(w, results)
+			return
+		} else {
+			s.lg.Printf("doCompLocksStatus(): %s %s Err: %s", r.RemoteAddr, string(formJSON), err)
+			// Send this message as 500 or 400 plus error message if it is
+			// an HMSError and not, e.g. an internal DB error code.
+			sendJsonDBError(w, "", "operation 'GET' failed during query.", err)
+			return
+		}
 	}
 	results.Components = locks
 
