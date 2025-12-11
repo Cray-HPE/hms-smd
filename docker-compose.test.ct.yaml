@@ -257,9 +257,12 @@ services:
       - smd
   rfemulator0:
     hostname: x0c0s1b0
-    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.7.0
+    # image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.7.0
+    image: artifactory.algol60.net/csm-docker/unstable/csm-rie:1.7.0-20251210191447.0dc0895
     environment:
-      - MOCKUPFOLDER=EX235a
+      # - MOCKUPFOLDER=EX235a
+      - MOCKUPFOLDER=EX254n
+      # - MOCKUPFOLDER=EX255a
       - MAC_SCHEMA=Mountain
       - XNAME=x0c0s1b0
       - PORT=443
@@ -269,9 +272,12 @@ services:
           - x0c0s1b0
   rfemulator1:
     hostname: x0c0s2b0
-    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.7.0
+    # image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.7.0
+    image: artifactory.algol60.net/csm-docker/unstable/csm-rie:1.7.0-20251210191447.0dc0895
     environment:
-      - MOCKUPFOLDER=EX235a
+      # - MOCKUPFOLDER=EX235a
+      - MOCKUPFOLDER=EX254n
+      # - MOCKUPFOLDER=EX255a
       - MAC_SCHEMA=Mountain
       - XNAME=x0c0s2b0
       - PORT=443
@@ -281,9 +287,12 @@ services:
           - x0c0s2b0
   rfemulator2:
     hostname: x0c0s3b0
-    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.7.0
+    # image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.7.0
+    image: artifactory.algol60.net/csm-docker/unstable/csm-rie:1.7.0-20251210191447.0dc0895
     environment:
-      - MOCKUPFOLDER=EX235a
+      # - MOCKUPFOLDER=EX235a
+      # - MOCKUPFOLDER=EX254n
+      - MOCKUPFOLDER=EX255a
       - MAC_SCHEMA=Mountain
       - XNAME=x0c0s3b0
       - PORT=443
@@ -293,9 +302,12 @@ services:
           - x0c0s3b0
   rfemulator3:
     hostname: x0c0s4b0
-    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.7.0
+    # image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.7.0
+    image: artifactory.algol60.net/csm-docker/unstable/csm-rie:1.7.0-20251210191447.0dc0895
     environment:
-      - MOCKUPFOLDER=EX235a
+      # - MOCKUPFOLDER=EX235a
+      # - MOCKUPFOLDER=EX254n
+      - MOCKUPFOLDER=EX255a
       - MAC_SCHEMA=Mountain
       - XNAME=x0c0s4b0
       - PORT=443

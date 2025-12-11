@@ -147,9 +147,12 @@ services:
           - x0c0b0
   rfemulator1:
     hostname: x0c0s1b0
-    image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.7.0
+    # image: artifactory.algol60.net/csm-docker/stable/csm-rie:1.7.0
+    image: artifactory.algol60.net/csm-docker/unstable/csm-rie:1.7.0-20251210191447.0dc0895
     environment:
-      - MOCKUPFOLDER=EX235a
+      # - MOCKUPFOLDER=EX235a
+      - MOCKUPFOLDER=EX254n
+      # - MOCKUPFOLDER=EX255a
       - MAC_SCHEMA=Mountain
       - XNAME=x0c0s1b0
       - PORT=443
