@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Test CASMHMS-6450
+
+## [2.45.0] - 2025-11-19
+
+### Fixed
+
 - Return empty list when no components match lock filter for GET requests
 - Update unit and CT tests with change
 - Internal tracking ticket: CASMTRIAGE-8890
